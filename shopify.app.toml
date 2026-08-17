@@ -9,7 +9,7 @@
 # renseignés automatiquement.
 # ---------------------------------------------------------------------------
 
-client_id = "REMPLACER_PAR_LE_CLIENT_ID"
+client_id = "5ab53bf17b214ba23f6dcc9847e02ecb"
 name = "Variantsy"
 handle = "variantsy"
 application_url = "https://variantsy.vercel.app"
