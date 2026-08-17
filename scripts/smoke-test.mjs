@@ -903,7 +903,10 @@ function buildGridHtml(product, currentVariant) {
 
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><title>${product.title}</title><style>${css}
+  .media-gallery__grid { display: grid; grid-template-columns: 100px 100px; }
   .media-gallery__cell { height: 120px; }
+  /* Comme Savor : la cellule de tête occupe toute la largeur. */
+  .media-gallery__grid > .media-gallery__cell:first-child { grid-column: span 2; }
 </style></head>
 <body>
   <main data-section-type="product">
@@ -938,7 +941,7 @@ section("Grille à vignettes composites");
   );
   await page.goto("https://example.com/products/sweat");
   await page.evaluate(() => window.sessionStorage.clear());
-  await page.setContent(buildGridHtml(PRODUCT, PRODUCT.variants[1]));
+  await page.setContent(buildGridHtml(PRODUCT_ALT_ONLY, PRODUCT_ALT_ONLY.variants[1]));
   await page.addScriptTag({ content: js });
   await page.waitForFunction(() => document.querySelector("[data-variantsy-ready]") !== null);
   await page.waitForTimeout(150);
@@ -965,6 +968,33 @@ section("Grille à vignettes composites");
     "Aucune cellule vide ne subsiste dans la grille",
     etat.cellulesVidesMaisVisibles === 0,
     JSON.stringify(etat),
+  );
+
+  // La cellule de tête d'une grille reçoit souvent un format double largeur via
+  // `:first-child`. Comme `display: none` ne change pas qui est le premier
+  // enfant, la première photo visible héritait du petit format et partageait sa
+  // ligne — le symptôme rapporté sur Savor.
+  // On bascule sur un coloris dont le groupe ne contient PAS la cellule de tête :
+  // c'est la seule configuration où le bug se manifeste.
+  await page.locator('.variantsy__swatch[data-variantsy-value="Bleu marine"]').first().click();
+  await page.waitForTimeout(200);
+
+  const tete = await page.evaluate(() => {
+    const cells = Array.from(document.querySelectorAll(".media-gallery__cell"));
+    const premiereVisible = cells.find((c) => !c.classList.contains("variantsy-media-hidden"));
+    return {
+      teteMasquee: cells[0].classList.contains("variantsy-media-hidden"),
+      largeurPremiereVisible: premiereVisible
+        ? Math.round(premiereVisible.getBoundingClientRect().width)
+        : null,
+      largeurTeteOrigine: Math.round(cells[0].getBoundingClientRect().width),
+    };
+  });
+
+  check(
+    "La première photo visible reprend le format pleine largeur de la cellule de tête",
+    !tete.teteMasquee || tete.largeurPremiereVisible > 150,
+    JSON.stringify(tete),
   );
 
   await page.close();

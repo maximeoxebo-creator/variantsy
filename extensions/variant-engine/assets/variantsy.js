@@ -754,8 +754,78 @@
     });
 
     this.syncIndexedControls(collected, visible);
+    this.promoteLeadCell(collected);
     this.refreshSliders(collected.gallery);
     this.focusFirstVisibleMedia(collected);
+  };
+
+  /**
+   * Rend à la première photo visible le format que le thème réserve à sa
+   * première cellule.
+   *
+   * Beaucoup de galeries en grille donnent à la cellule de tête un traitement
+   * particulier — pleine largeur, deux colonnes — via une règle `:first-child`.
+   * Or `display: none` ne change pas qui est le premier enfant : masquer les
+   * cellules de tête laisse la première photo visible avec son format réduit,
+   * et elle se retrouve à partager sa ligne avec la suivante. Constaté sur la
+   * grille desktop de Savor, où la cellule de tête porte `grid-column: span 2`
+   * et passait de 1010 px à 505 px au changement de coloris.
+   *
+   * On ne cherche pas à deviner la règle du thème : on recopie la valeur
+   * calculée de la cellule de tête sur celle qui la remplace. Ce qui vaut pour
+   * `span 2` vaudra pour n'importe quelle autre valeur.
+   */
+  Variantsy.prototype.promoteLeadCell = function (collected) {
+    // Toujours annuler la promotion précédente d'abord : sans ça, une cellule
+    // promue pour un coloris garderait son grand format pour le suivant.
+    var previous = this.scope.querySelectorAll("[data-variantsy-promoted]");
+    Array.prototype.forEach.call(previous, function (element) {
+      element.style.gridColumn = "";
+      element.style.gridRow = "";
+      element.removeAttribute("data-variantsy-promoted");
+    });
+
+    if (!collected.gallery) return;
+
+    // Conteneurs qui abritent réellement nos médias, dédupliqués.
+    var containers = [];
+    collected.nodes.forEach(function (node) {
+      if (!collected.gallery.contains(node.element)) return;
+      var parent = node.element.parentElement;
+      if (parent && containers.indexOf(parent) === -1) containers.push(parent);
+    });
+
+    containers.forEach(function (container) {
+      try {
+        if (window.getComputedStyle(container).display.indexOf("grid") === -1) return;
+
+        var kids = container.children;
+        var lead = kids[0];
+        if (!lead || !lead.classList.contains(HIDDEN_CLASS)) return;
+
+        var leadStyle = window.getComputedStyle(lead);
+        var column = leadStyle.gridColumn;
+        var row = leadStyle.gridRow;
+        // Rien de distinctif à transmettre : la cellule de tête est ordinaire.
+        if ((column === "auto" || !column) && (row === "auto" || !row)) return;
+
+        var target = null;
+        for (var i = 0; i < kids.length; i++) {
+          if (!kids[i].classList.contains(HIDDEN_CLASS)) {
+            target = kids[i];
+            break;
+          }
+        }
+        if (!target || target === lead) return;
+        if (window.getComputedStyle(target).gridColumn === column) return;
+
+        if (column && column !== "auto") target.style.gridColumn = column;
+        if (row && row !== "auto") target.style.gridRow = row;
+        target.setAttribute("data-variantsy-promoted", "");
+      } catch (error) {
+        /* thème exotique : mieux vaut une grille imparfaite qu'une exception */
+      }
+    });
   };
 
   /**
@@ -977,6 +1047,15 @@
     Array.prototype.forEach.call(hidden, function (element) {
       element.classList.remove(HIDDEN_CLASS);
       element.removeAttribute("aria-hidden");
+    });
+    // La cellule promue doit aussi rendre son format : la cellule de tête
+    // d'origine étant de nouveau visible, deux cellules pleine largeur
+    // cohabiteraient sinon.
+    var promoted = this.scope.querySelectorAll("[data-variantsy-promoted]");
+    Array.prototype.forEach.call(promoted, function (element) {
+      element.style.gridColumn = "";
+      element.style.gridRow = "";
+      element.removeAttribute("data-variantsy-promoted");
     });
   };
 
