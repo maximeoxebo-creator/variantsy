@@ -630,6 +630,7 @@ function buildCarouselHtml(product, currentVariant, { withThumbs }) {
     <media-gallery data-section="${SECTION}">
       <slideshow-component>
         <div class="slideshow__track">${slides}</div>
+        <ol class="slideshow-controls__dots">${product.media.map(() => "<li></li>").join("")}</ol>
       </slideshow-component>
     </media-gallery>
     ${thumbs}
@@ -741,6 +742,21 @@ section("Galerie en carrousel");
       cible: firstVisible ? Math.round(firstVisible.offsetLeft - track.offsetLeft) : null,
     };
   });
+
+  const points = await page.evaluate(() => {
+    const dots = Array.from(document.querySelectorAll(".slideshow-controls__dots > li"));
+    const slides = Array.from(document.querySelectorAll("slideshow-slide"));
+    return {
+      total: dots.length,
+      visibles: dots.filter((d) => !d.classList.contains("variantsy-media-hidden")).length,
+      slidesVisibles: slides.filter((s) => !s.classList.contains("variantsy-media-hidden")).length,
+    };
+  });
+  check(
+    "Les points de pagination suivent les diapositives visibles",
+    points.total > points.visibles && points.visibles === points.slidesVisibles,
+    JSON.stringify(points),
+  );
 
   check(
     "Le carrousel se repositionne sur le premier média visible",

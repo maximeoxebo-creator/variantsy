@@ -753,8 +753,53 @@
       else node.element.setAttribute("aria-hidden", "true");
     });
 
+    this.syncIndexedControls(collected, visible);
     this.refreshSliders(collected.gallery);
     this.focusFirstVisibleMedia(collected);
+  };
+
+  /**
+   * Masque les commandes de navigation qui ne portent aucun identifiant.
+   *
+   * Les points de pagination d'un carrousel sont de simples puces ordonnées :
+   * rien ne les relie explicitement à un média. Sans traitement, le thème
+   * continue d'en annoncer quatorze quand sept photos seulement restent
+   * accessibles — le visiteur clique et n'arrive nulle part.
+   *
+   * On les apparie donc par rang, mais seulement si leur nombre correspond
+   * EXACTEMENT à celui des médias distincts de la galerie. Ce garde-fou évite
+   * de mutiler une liste qui n'aurait rien à voir : en cas de doute, on
+   * préfère des points en trop à des commandes détruites au hasard.
+   */
+  Variantsy.prototype.syncIndexedControls = function (collected, visible) {
+    if (!collected.gallery || !visible) return;
+
+    // Ordre d'apparition des médias distincts dans la galerie.
+    var sequence = [];
+    var seen = {};
+    collected.nodes.forEach(function (node) {
+      if (!collected.gallery.contains(node.element)) return;
+      if (seen[node.id]) return;
+      seen[node.id] = true;
+      sequence.push(node.id);
+    });
+    if (sequence.length < 2) return;
+
+    var lists = collected.gallery.querySelectorAll("ol, ul, [role='tablist']");
+    Array.prototype.forEach.call(lists, function (list) {
+      var children = list.children;
+      if (children.length !== sequence.length) return;
+      // Une liste qui porte déjà des identifiants est traitée par le filtrage
+      // normal : y toucher ici la masquerait deux fois, sur deux critères.
+      if (list.querySelector("[data-media-id],[data-target],[data-thumbnail-id]")) return;
+
+      for (var i = 0; i < children.length; i++) {
+        var show = visible[sequence[i]] === true;
+        children[i].classList.toggle(HIDDEN_CLASS, !show);
+        if (show) children[i].removeAttribute("aria-hidden");
+        else children[i].setAttribute("aria-hidden", "true");
+      }
+    });
   };
 
   /**
