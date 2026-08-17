@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------------------
+# Déploie l'extension de thème quand — et seulement quand — un fichier de
+# `extensions/` ou `shopify.app.toml` change.
+#
+# Raison d'être : `git push` déploie l'admin via Vercel mais PAS l'extension
+# storefront (piège n°1). Ce workflow supprime l'oubli manuel.
+#
+# Secrets à créer dans GitHub → Settings → Secrets and variables → Actions :
+#   SHOPIFY_CLI_PARTNERS_TOKEN  (Partner Dashboard → CLI token)
+#   SHOPIFY_API_KEY             (client_id de l'app)
+# ---------------------------------------------------------------------------
+name: Deploy theme extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "extensions/**"
+      - "shopify.app.toml"
+  workflow_dispatch:
+
+concurrency:
+  group: shopify-extension-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: shopify app deploy
+        env:
+          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+          SHOPIFY_API_KEY: ${{ secrets.SHOPIFY_API_KEY }}
+          SHOPIFY_CLI_NO_ANALYTICS: "1"
+        # --force est obligatoire en CI : sans lui la commande attend une
+        # confirmation interactive et le job reste bloqué jusqu'au timeout.
+        run: npx shopify app deploy --force

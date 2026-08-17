@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Variantsy — styles storefront
+   Chargé sur chaque page produit : garder ce fichier court et sans dépendance.
+   ========================================================================== */
+
+.variantsy {
+  --vtsy-size: 40px;
+  --vtsy-gap: 10px;
+  --vtsy-border-width: 1px;
+  --vtsy-border-color: #d9d9d9;
+  --vtsy-selected-color: #111111;
+  --vtsy-radius: 50%;
+
+  display: block;
+  margin: 16px 0;
+  font-family: inherit;
+  color: inherit;
+}
+
+.variantsy__group + .variantsy__group {
+  margin-top: 18px;
+}
+
+.variantsy__label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.variantsy__label-name::after {
+  content: " :";
+}
+
+.variantsy__label-value {
+  font-weight: 600;
+}
+
+.variantsy__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vtsy-gap);
+  align-items: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   PIÈGE N°5 (voir CLAUDE.md) : reset du chrome natif dès la première version.
+
+   Sur un <button> au fond transparent ou coloré, le navigateur ajoute son
+   propre rendu (fond gris clair, bordure système, halo au focus, flash bleu au
+   tap sur mobile). Ce n'est PAS un `background` CSS : tant que ces quatre
+   propriétés ne sont pas remises à zéro, aucun réglage de couleur ne donnera le
+   résultat attendu — et on perd des heures à chasser un bug qui n'en est pas un.
+   -------------------------------------------------------------------------- */
+.variantsy__swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  line-height: 1;
+  cursor: pointer;
+
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+/* Le focus visible reste indispensable pour l'accessibilité : on le supprime
+   pour la souris (outline: none ci-dessus) mais on le rend au clavier. */
+.variantsy__swatch:focus-visible .variantsy__visual {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--vtsy-selected-color);
+}
+
+.variantsy__visual {
+  display: block;
+  width: var(--vtsy-size);
+  height: var(--vtsy-size);
+  border-radius: var(--vtsy-radius);
+  border: var(--vtsy-border-width) solid var(--vtsy-border-color);
+  background: #ececec;
+  background-size: cover;
+  background-position: center;
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease,
+    opacity 120ms ease;
+}
+
+.variantsy__swatch:hover .variantsy__visual {
+  transform: scale(1.04);
+}
+
+/* --- États sélectionnés (le mode actif est posé en classe sur .variantsy) --- */
+.variantsy[data-selected-style="ring"] .variantsy__swatch.is-selected .variantsy__visual {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--vtsy-selected-color);
+}
+
+.variantsy[data-selected-style="border"] .variantsy__swatch.is-selected .variantsy__visual {
+  border: 2px solid var(--vtsy-selected-color);
+}
+
+.variantsy[data-selected-style="shadow"] .variantsy__swatch.is-selected .variantsy__visual {
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--vtsy-selected-color) 45%, transparent);
+  transform: scale(1.06);
+}
+
+/* Repli pour les navigateurs sans color-mix() */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .variantsy[data-selected-style="shadow"] .variantsy__swatch.is-selected .variantsy__visual {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* --- Indisponible --------------------------------------------------------- */
+.variantsy__swatch[data-unavailable="true"] {
+  cursor: not-allowed;
+}
+
+.variantsy[data-sold-out="dim"] .variantsy__swatch[data-unavailable="true"] .variantsy__visual {
+  opacity: 0.35;
+}
+
+.variantsy[data-sold-out="strikethrough"] .variantsy__swatch[data-unavailable="true"] .variantsy__visual {
+  position: relative;
+}
+
+.variantsy[data-sold-out="strikethrough"] .variantsy__swatch[data-unavailable="true"] .variantsy__visual::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--vtsy-border-width) * -1);
+  border-radius: inherit;
+  background: linear-gradient(
+    to top left,
+    transparent calc(50% - 1px),
+    rgba(140, 140, 140, 0.9) 50%,
+    transparent calc(50% + 1px)
+  );
+}
+
+.variantsy[data-sold-out="hide"] .variantsy__swatch[data-unavailable="true"] {
+  display: none;
+}
+
+/* --- Options texte (Taille, Matière…) ------------------------------------- */
+.variantsy__group--text .variantsy__visual {
+  display: none;
+}
+
+.variantsy__group--text .variantsy__swatch {
+  min-width: 44px; /* cible tactile ≥ 44px, requis par l'audit Shopify */
+  min-height: 44px;
+  padding: 0 14px;
+  justify-content: center;
+  border: var(--vtsy-border-width) solid var(--vtsy-border-color);
+  border-radius: 6px;
+  /* Taille de police pilotée par JS, avec synchronisation de ligne :
+     voir syncFontSizes() dans variantsy.js. */
+  font-size: var(--vtsy-text-size, 0.9375rem);
+  white-space: nowrap;
+}
+
+.variantsy__group--text .variantsy__swatch.is-selected {
+  border-color: var(--vtsy-selected-color);
+  box-shadow: inset 0 0 0 1px var(--vtsy-selected-color);
+}
+
+.variantsy__group--text .variantsy__swatch[data-unavailable="true"] {
+  color: #9a9a9a;
+  text-decoration: line-through;
+}
+
+.variantsy__caption {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  max-width: calc(var(--vtsy-size) + 24px);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* --- Repli "+N" ----------------------------------------------------------- */
+.variantsy__swatch[hidden] {
+  display: none;
+}
+
+.variantsy__more {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  border: var(--vtsy-border-width) dashed var(--vtsy-border-color);
+  background: none;
+  border-radius: var(--vtsy-radius);
+  width: var(--vtsy-size);
+  height: var(--vtsy-size);
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* --- Masquage du sélecteur natif ------------------------------------------
+   Classe posée par le JS uniquement une fois Variantsy opérationnel. Si le JS
+   ne s'exécute pas, le sélecteur natif reste visible et la boutique fonctionne.
+   -------------------------------------------------------------------------- */
+.variantsy-native-hidden {
+  display: none !important;
+}
+
+/* --- Filtrage de la galerie -----------------------------------------------
+   Les médias qui n'appartiennent pas à la variante active sont MASQUÉS, jamais
+   retirés du DOM : le zoom, la lightbox, les vidéos et les modèles 3D du thème
+   continuent de fonctionner sur les nœuds d'origine, et l'affichage se rétablit
+   instantanément au changement de variante.
+
+   `!important` est nécessaire : les carrousels posent des styles inline
+   (`display: block`, `transform`) sur leurs slides.
+   -------------------------------------------------------------------------- */
+.variantsy-media-hidden {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .variantsy__visual {
+    transition: none;
+  }
+  .variantsy__swatch:hover .variantsy__visual {
+    transform: none;
+  }
+}

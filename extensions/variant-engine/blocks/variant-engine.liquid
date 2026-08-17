@@ -1,0 +1,252 @@
+{% comment %}
+  Variantsy — images par variante, titre dynamique et swatches
+  (bloc d'app storefront)
+
+  ⚠️ PIÈGE N°1 (voir CLAUDE.md) : ce fichier N'EST PAS déployé par `git push`.
+     Toute modification ici nécessite `npm run deploy:extension`
+     (= `shopify app deploy --force`). Vercel ne sert que l'admin Remix.
+
+  Stratégie de rendu :
+   1. Le HTML des swatches est rendu ICI, côté serveur, en Liquid. Le marchand
+      voit donc la structure finale dès le premier paint : pas de CLS, pas de
+      "flash" de sélecteur natif, et le contenu reste lisible sans JavaScript.
+   2. Les couleurs et les réglages fins arrivent ensuite via l'app proxy
+      (/apps/variantsy/settings), mis en cache 60 s par le CDN Shopify et
+      re-mis en cache côté navigateur pour la session.
+   3. Si l'appel échoue, les swatches restent affichés en gris neutre et le
+      sélecteur natif reste utilisable. Aucune panne côté app ne doit empêcher
+      une vente.
+{% endcomment %}
+
+{%- liquid
+  assign sp_enabled = block.settings.enabled
+  assign sp_color_names = block.settings.color_option_names | downcase | split: ','
+-%}
+
+{%- if sp_enabled and product and product.variants.size > 1 -%}
+  <link rel="stylesheet" href="{{ 'variantsy.css' | asset_url }}" media="all">
+
+  <div
+    class="variantsy"
+    data-variantsy
+    data-product-id="{{ product.id }}"
+    data-section-id="{{ section.id | default: block.id }}"
+    data-endpoint="/apps/variantsy/settings"
+    data-current-variant="{{ product.selected_or_first_available_variant.id }}"
+    style="
+      --vtsy-size: {{ block.settings.size | default: 40 }}px;
+      --vtsy-gap: {{ block.settings.gap | default: 10 }}px;
+      --vtsy-border-width: {{ block.settings.border_width | default: 1 }}px;
+      --vtsy-border-color: {{ block.settings.border_color | default: '#D9D9D9' }};
+      --vtsy-selected-color: {{ block.settings.selected_color | default: '#111111' }};
+      --vtsy-radius: {% case block.settings.shape %}{% when 'square' %}2px{% when 'rounded' %}8px{% else %}50%{% endcase %};
+    "
+  >
+    {%- comment -%}
+      Données produit sérialisées de façon compacte.
+      On n'utilise PAS `product | json` : sur un produit à 200 variantes le
+      payload dépasse 300 Ko et pénalise le LCP. Ici on n'émet que ce dont le
+      JS a besoin.
+    {%- endcomment -%}
+    <script type="application/json" data-variantsy-data>
+      {
+        "id": {{ product.id }},
+        "title": {{ product.title | json }},
+        "url": {{ product.url | json }},
+        "vendor": {{ product.vendor | json }},
+        "type": {{ product.type | json }},
+        {%- comment -%}
+          Liste ORDONNÉE des médias du produit. L'ordre est l'information
+          centrale du groupage : une image assignée à une variante ouvre son
+          groupe, les images qui suivent le rejoignent jusqu'à la prochaine
+          image assignée. C'est exactement la façon dont un marchand range
+          déjà ses photos dans l'admin Shopify — d'où « zéro configuration ».
+        {%- endcomment -%}
+        "media": [
+          {%- for media in product.media -%}
+            {
+              "id": {{ media.id }},
+              "i": {{ forloop.index0 }},
+              "t": {{ media.media_type | json }},
+              "alt": {{ media.alt | default: '' | json }},
+              "src": {{ media.preview_image | image_url: width: 1600 | json }}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ],
+        "options": [
+          {%- for option in product.options_with_values -%}
+            {
+              "name": {{ option.name | json }},
+              "position": {{ option.position }},
+              "values": [{% for value in option.values %}{{ value | json }}{% unless forloop.last %},{% endunless %}{% endfor %}]
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ],
+        "variants": [
+          {%- for variant in product.variants -%}
+            {
+              "id": {{ variant.id }},
+              "o": [{% for opt in variant.options %}{{ opt | json }}{% unless forloop.last %},{% endunless %}{% endfor %}],
+              "a": {{ variant.available }},
+              "p": {{ variant.price | money | json }},
+              "cp": {% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | json }}{% else %}null{% endif %},
+              "sku": {{ variant.sku | json }},
+              "bc": {{ variant.barcode | default: '' | json }},
+              "t": {{ variant.title | json }},
+              "m": {% if variant.featured_media %}{{ variant.featured_media.id }}{% else %}null{% endif %},
+              "img": {% if variant.featured_media %}{{ variant.featured_media.preview_image | image_url: width: 1200 | json }}{% else %}null{% endif %},
+              "imgAlt": {% if variant.featured_media %}{{ variant.featured_media.alt | json }}{% else %}null{% endif %}
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ]
+      }
+    </script>
+
+    {%- for option in product.options_with_values -%}
+      {%- liquid
+        assign opt_name_dc = option.name | downcase
+        assign is_color = false
+        for candidate in sp_color_names
+          assign candidate_trim = candidate | strip
+          if candidate_trim == opt_name_dc
+            assign is_color = true
+            break
+          endif
+        endfor
+      -%}
+      <div
+        class="variantsy__group{% if is_color %} variantsy__group--color{% else %} variantsy__group--text{% endif %}"
+        data-option-position="{{ option.position }}"
+        data-option-name="{{ option.name | escape }}"
+      >
+        {%- if block.settings.show_option_name -%}
+          <div class="variantsy__label">
+            <span class="variantsy__label-name">{{ option.name }}</span>
+            <span class="variantsy__label-value" data-variantsy-current-value>{{ option.selected_value }}</span>
+          </div>
+        {%- endif -%}
+
+        <div class="variantsy__options" role="radiogroup" aria-label="{{ option.name | escape }}">
+          {%- for value in option.values -%}
+            {%- assign is_selected = false -%}
+            {%- if option.selected_value == value -%}{%- assign is_selected = true -%}{%- endif -%}
+            <button
+              type="button"
+              class="variantsy__swatch{% if is_selected %} is-selected{% endif %}"
+              role="radio"
+              aria-checked="{{ is_selected }}"
+              aria-label="{{ option.name | escape }}: {{ value | escape }}"
+              title="{{ value | escape }}"
+              data-variantsy-value="{{ value | escape }}"
+              data-option-position="{{ option.position }}"
+              tabindex="{% if is_selected %}0{% else %}-1{% endif %}"
+            >
+              <span class="variantsy__visual" aria-hidden="true"></span>
+              {%- unless is_color -%}
+                <span class="variantsy__text">{{ value }}</span>
+              {%- endunless -%}
+              {%- if block.settings.show_labels and is_color -%}
+                <span class="variantsy__caption">{{ value }}</span>
+              {%- endif -%}
+            </button>
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+
+  <script src="{{ 'variantsy.js' | asset_url }}" defer></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Variantsy — images & variantes",
+  "target": "section",
+  "stylesheet": "variantsy.css",
+  "javascript": "variantsy.js",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Afficher les swatches",
+      "default": true
+    },
+    {
+      "type": "paragraph",
+      "content": "L'apparence détaillée (couleurs, ruptures, titre dynamique) se règle dans l'app Variantsy. Les réglages ci-dessous ne servent qu'au rendu initial, avant chargement."
+    },
+    {
+      "type": "text",
+      "id": "color_option_names",
+      "label": "Options affichées en pastilles",
+      "default": "color,colour,couleur,farbe,kleur,colore",
+      "info": "Séparées par des virgules, en minuscules."
+    },
+    {
+      "type": "select",
+      "id": "shape",
+      "label": "Forme",
+      "options": [
+        { "value": "circle", "label": "Cercle" },
+        { "value": "rounded", "label": "Carré arrondi" },
+        { "value": "square", "label": "Carré" }
+      ],
+      "default": "circle"
+    },
+    {
+      "type": "range",
+      "id": "size",
+      "label": "Taille",
+      "min": 20,
+      "max": 96,
+      "step": 2,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Espacement",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "label": "Épaisseur de bordure",
+      "min": 0,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Couleur de bordure",
+      "default": "#D9D9D9"
+    },
+    {
+      "type": "color",
+      "id": "selected_color",
+      "label": "Couleur de sélection",
+      "default": "#111111"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_option_name",
+      "label": "Afficher le nom de l'option",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_labels",
+      "label": "Afficher le nom sous chaque pastille",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,234 @@
+{
+  "_comment": "Table de cas du moteur de groupage. npm run test exécute CHAQUE cas contre les deux implémentations — celle du storefront (extensions/variant-engine/assets/variantsy.js) et celle de l'admin (app/grouping.js) — et vérifie qu'elles produisent exactement le même résultat, puis que ce résultat correspond à `expectedGroups`. C'est ce qui garantit que l'inspecteur de l'admin ne ment pas au marchand.",
+  "defaultConfig": {
+    "enabled": true,
+    "groupBy": "auto",
+    "commonMediaMode": "append",
+    "altFallback": true,
+    "altPrefix": "",
+    "thumbSelectorCss": "",
+    "skipSingleGroup": true
+  },
+  "cases": [
+    {
+      "name": "ordre des médias, une image assignée par couleur",
+      "product": {
+        "media": [
+          { "id": 900, "alt": "Guide des tailles" },
+          { "id": 11, "alt": "" },
+          { "id": 12, "alt": "" },
+          { "id": 22, "alt": "" },
+          { "id": 23, "alt": "" }
+        ],
+        "options": [
+          { "name": "Couleur", "values": ["Noir", "Bleu marine"] },
+          { "name": "Taille", "values": ["S", "M"] }
+        ],
+        "variants": [
+          { "o": ["Noir", "S"], "m": 11 },
+          { "o": ["Noir", "M"], "m": 11 },
+          { "o": ["Bleu marine", "S"], "m": 22 },
+          { "o": ["Bleu marine", "M"], "m": 22 }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [900],
+      "expectedGroups": { "Noir": [11, 12], "Bleu marine": [22, 23] }
+    },
+    {
+      "name": "l'option Taille est écartée : deux couleurs différentes en taille S",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "" },
+          { "id": 22, "alt": "" }
+        ],
+        "options": [
+          { "name": "Couleur", "values": ["Noir", "Bleu"] },
+          { "name": "Taille", "values": ["S"] }
+        ],
+        "variants": [
+          { "o": ["Noir", "S"], "m": 11 },
+          { "o": ["Bleu", "S"], "m": 22 }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [],
+      "expectedGroups": { "Noir": [11], "Bleu": [22] }
+    },
+    {
+      "name": "repli sur le texte alternatif, aucune image assignée",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "Sweat noir face" },
+          { "id": 12, "alt": "détail col" },
+          { "id": 22, "alt": "Sweat bleu marine face" }
+        ],
+        "options": [
+          { "name": "Couleur", "values": ["Noir", "Bleu marine"] },
+          { "name": "Taille", "values": ["S", "M"] }
+        ],
+        "variants": [
+          { "o": ["Noir", "S"], "m": null },
+          { "o": ["Bleu marine", "S"], "m": null }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [],
+      "expectedGroups": { "Noir": [11, 12], "Bleu marine": [22] }
+    },
+    {
+      "name": "la valeur la plus longue gagne : « bleu marine » et non « bleu »",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "modele bleu" },
+          { "id": 22, "alt": "modele bleu marine" }
+        ],
+        "options": [{ "name": "Couleur", "values": ["Bleu", "Bleu marine"] }],
+        "variants": [
+          { "o": ["Bleu"], "m": null },
+          { "o": ["Bleu marine"], "m": null }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [],
+      "expectedGroups": { "Bleu": [11], "Bleu marine": [22] }
+    },
+    {
+      "name": "la taille « S » ne matche pas le mot « Sweat » (frontières de mot)",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "Sweat noir" },
+          { "id": 22, "alt": "Sweat bleu" }
+        ],
+        "options": [
+          { "name": "Taille", "values": ["S", "M"] },
+          { "name": "Couleur", "values": ["Noir", "Bleu"] }
+        ],
+        "variants": [
+          { "o": ["S", "Noir"], "m": null },
+          { "o": ["M", "Bleu"], "m": null }
+        ]
+      },
+      "expectedIndex": 1,
+      "expectedCommon": [],
+      "expectedGroups": { "Noir": [11], "Bleu": [22] }
+    },
+    {
+      "name": "un seul groupe : aucun filtrage",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "" },
+          { "id": 12, "alt": "" }
+        ],
+        "options": [{ "name": "Couleur", "values": ["Noir", "Bleu"] }],
+        "variants": [
+          { "o": ["Noir"], "m": 11 },
+          { "o": ["Bleu"], "m": null }
+        ]
+      },
+      "expectedNull": true
+    },
+    {
+      "name": "produit sans média : aucun filtrage",
+      "product": {
+        "media": [],
+        "options": [{ "name": "Couleur", "values": ["Noir", "Bleu"] }],
+        "variants": [
+          { "o": ["Noir"], "m": null },
+          { "o": ["Bleu"], "m": null }
+        ]
+      },
+      "expectedNull": true
+    },
+    {
+      "name": "groupBy forcé sur option2",
+      "config": { "groupBy": "option2" },
+      "product": {
+        "media": [
+          { "id": 11, "alt": "" },
+          { "id": 22, "alt": "" }
+        ],
+        "options": [
+          { "name": "Couleur", "values": ["Noir"] },
+          { "name": "Matière", "values": ["Coton", "Lin"] }
+        ],
+        "variants": [
+          { "o": ["Noir", "Coton"], "m": 11 },
+          { "o": ["Noir", "Lin"], "m": 22 }
+        ]
+      },
+      "expectedIndex": 1,
+      "expectedCommon": [],
+      "expectedGroups": { "Coton": [11], "Lin": [22] }
+    },
+    {
+      "name": "repli alt désactivé : on ne devine rien",
+      "config": { "altFallback": false },
+      "product": {
+        "media": [
+          { "id": 11, "alt": "Sweat noir" },
+          { "id": 22, "alt": "Sweat bleu" }
+        ],
+        "options": [{ "name": "Couleur", "values": ["Noir", "Bleu"] }],
+        "variants": [
+          { "o": ["Noir"], "m": null },
+          { "o": ["Bleu"], "m": null }
+        ]
+      },
+      "expectedNull": true
+    },
+    {
+      "name": "préfixe alt exigé : seuls les médias tagués « #valeur » comptent",
+      "config": { "altPrefix": "#" },
+      "product": {
+        "media": [
+          { "id": 11, "alt": "#noir packshot" },
+          { "id": 12, "alt": "ambiance atelier" },
+          { "id": 22, "alt": "#bleu packshot" }
+        ],
+        "options": [{ "name": "Couleur", "values": ["Noir", "Bleu"] }],
+        "variants": [
+          { "o": ["Noir"], "m": null },
+          { "o": ["Bleu"], "m": null }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [],
+      "expectedGroups": { "Noir": [11, 12], "Bleu": [22] }
+    },
+    {
+      "name": "l'assignation native prime sur le texte alternatif",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "Sweat bleu" },
+          { "id": 22, "alt": "Sweat noir" }
+        ],
+        "options": [{ "name": "Couleur", "values": ["Noir", "Bleu"] }],
+        "variants": [
+          { "o": ["Noir"], "m": 11 },
+          { "o": ["Bleu"], "m": 22 }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [],
+      "expectedGroups": { "Noir": [11], "Bleu": [22] }
+    },
+    {
+      "name": "accents et casse ignorés dans le texte alternatif",
+      "product": {
+        "media": [
+          { "id": 11, "alt": "Pull ÉCRU devant" },
+          { "id": 22, "alt": "Pull anthracite devant" }
+        ],
+        "options": [{ "name": "Couleur", "values": ["Écru", "Anthracite"] }],
+        "variants": [
+          { "o": ["Écru"], "m": null },
+          { "o": ["Anthracite"], "m": null }
+        ]
+      },
+      "expectedIndex": 0,
+      "expectedCommon": [],
+      "expectedGroups": { "Écru": [11], "Anthracite": [22] }
+    }
+  ]
+}

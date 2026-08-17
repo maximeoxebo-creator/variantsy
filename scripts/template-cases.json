@@ -1,0 +1,95 @@
+{
+  "_comment": "Table de cas du moteur de templates de titre. Rejouée par npm run test contre l'implémentation storefront (extensions/variant-engine/assets/variantsy.js). L'implémentation admin (app/shared.ts) doit produire exactement les mêmes résultats — c'est la seule garantie que l'aperçu montré au marchand correspond à ce que verront ses clients.",
+  "vars": {
+    "product_title": "Sweat en coton bio",
+    "variant_title": "Bleu marine / M",
+    "option1": "Bleu marine",
+    "option2": "M",
+    "option3": "",
+    "option:couleur": "Bleu marine",
+    "option:taille": "M",
+    "price": "59,00 €",
+    "compare_at_price": "79,00 €",
+    "sku": "SWT-BM-M",
+    "barcode": "",
+    "vendor": "Atelier Nord",
+    "product_type": "Sweat"
+  },
+  "cases": [
+    {
+      "name": "substitution simple",
+      "template": "{{product_title}} — {{variant_title}}",
+      "expected": "Sweat en coton bio — Bleu marine / M"
+    },
+    {
+      "name": "options séparées",
+      "template": "{{product_title}} — {{option1}} / {{option2}}",
+      "expected": "Sweat en coton bio — Bleu marine / M"
+    },
+    {
+      "name": "variable vide en fin : pas de séparateur orphelin",
+      "template": "{{product_title}} — {{option1}} / {{option3}}",
+      "expected": "Sweat en coton bio — Bleu marine"
+    },
+    {
+      "name": "bloc conditionnel satisfait",
+      "template": "{{product_title}}[[ — réf. {{sku}}]]",
+      "expected": "Sweat en coton bio — réf. SWT-BM-M"
+    },
+    {
+      "name": "bloc conditionnel non satisfait (barcode vide)",
+      "template": "{{product_title}}[[ — EAN {{barcode}}]]",
+      "expected": "Sweat en coton bio"
+    },
+    {
+      "name": "bloc conditionnel : une seule variable vide suffit à tout supprimer",
+      "template": "{{product_title}}[[ — {{sku}} / {{barcode}}]]",
+      "expected": "Sweat en coton bio"
+    },
+    {
+      "name": "accès à une option par son nom",
+      "template": "{{option:Couleur}} — {{option:Taille}}",
+      "expected": "Bleu marine — M"
+    },
+    {
+      "name": "nom d'option insensible à la casse et aux accents",
+      "template": "{{option:COULEUR}}",
+      "expected": "Bleu marine"
+    },
+    {
+      "name": "fournisseur et type de produit",
+      "template": "{{vendor}} · {{product_type}} {{option1}}",
+      "expected": "Atelier Nord · Sweat Bleu marine"
+    },
+    {
+      "name": "prix dans le titre",
+      "template": "{{product_title}} — {{option1}} — {{price}}",
+      "expected": "Sweat en coton bio — Bleu marine — 59,00 €"
+    },
+    {
+      "name": "variable inconnue rendue vide, sans casser le reste",
+      "template": "{{product_title}} {{inexistant}}",
+      "expected": "Sweat en coton bio"
+    },
+    {
+      "name": "espaces autour du nom de variable tolérés",
+      "template": "{{ product_title }} — {{  option1  }}",
+      "expected": "Sweat en coton bio — Bleu marine"
+    },
+    {
+      "name": "template vide",
+      "template": "",
+      "expected": ""
+    },
+    {
+      "name": "texte libre sans variable",
+      "template": "Édition limitée",
+      "expected": "Édition limitée"
+    },
+    {
+      "name": "séparateurs doublés collapsés",
+      "template": "{{product_title}} — — {{option1}}",
+      "expected": "Sweat en coton bio — Bleu marine"
+    }
+  ]
+}

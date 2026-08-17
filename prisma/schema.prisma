@@ -1,0 +1,164 @@
+// Variantsy — schéma Prisma
+//
+// ⚠️  RAPPEL PIÈGE N°2 (voir CLAUDE.md) : Vercel n'exécute PAS `prisma migrate deploy`
+//     par défaut. Ici c'est câblé dans le script `vercel-build` de package.json.
+//     Si tu changes le build command dans le dashboard Vercel, tu casses ça.
+//     Filet de sécurité manuel : `npm run db:deploy` après chaque push de migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon : l'URL poolée (pgbouncer) ne supporte pas les migrations.
+  // directUrl pointe vers l'endpoint direct, utilisé uniquement par `migrate`.
+  directUrl = env("DIRECT_URL")
+}
+
+/// Table requise par @shopify/shopify-app-session-storage-prisma.
+/// Ne pas renommer les champs : le package les attend tels quels.
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+
+  @@index([shop])
+}
+
+/// Réglages globaux d'une boutique. Une ligne par shop.
+model ShopSettings {
+  id        String   @id @default(cuid())
+  shop      String   @unique
+
+  /// Interrupteur maître : si false, l'extension ne rend rien côté storefront.
+  enabled   Boolean  @default(true)
+
+  // --- Apparence des swatches -------------------------------------------
+  /// "circle" | "square" | "rounded"
+  shape          String  @default("circle")
+  /// Taille en px du swatch (côté ou diamètre)
+  size           Int     @default(40)
+  /// Espacement en px entre swatches
+  gap            Int     @default(10)
+  /// Épaisseur de la bordure au repos, en px
+  borderWidth    Int     @default(1)
+  borderColor    String  @default("#D9D9D9")
+  /// Style de l'état sélectionné : "ring" | "border" | "shadow"
+  selectedStyle  String  @default("ring")
+  selectedColor  String  @default("#111111")
+  /// Afficher le libellé de la valeur sous le swatch
+  showLabels     Boolean @default(false)
+  /// Afficher "Couleur : Bleu marine" au-dessus des swatches
+  showOptionName Boolean @default(true)
+  /// Nombre max de swatches avant repli "+N"
+  maxVisible     Int     @default(0)
+
+  // --- Comportement -------------------------------------------------------
+  /// "dim" | "strikethrough" | "hide" — traitement des variantes indisponibles
+  soldOutStyle       String  @default("strikethrough")
+  /// Masquer le sélecteur natif du thème (le nôtre le pilote en arrière-plan)
+  hideNativeSelector Boolean @default(true)
+  /// Sélecteur CSS du bloc à masquer (dépend du thème). Vide = auto-détection.
+  nativeSelectorCss  String  @default("")
+  /// Mettre à jour l'URL avec ?variant=<id> au changement
+  updateUrl          Boolean @default(true)
+  /// Précharger les images de variantes au survol
+  preloadOnHover     Boolean @default(true)
+
+  // --- Image produit ------------------------------------------------------
+  /// Changer l'image principale à la sélection
+  swapImage           Boolean @default(true)
+  /// Sélecteur CSS de la galerie principale. Vide = auto-détection multi-thèmes.
+  imageSelectorCss    String  @default("")
+
+  // --- Galerie multi-images par variante ----------------------------------
+  /// Filtrer la galerie pour n'afficher que les médias de la variante choisie.
+  /// C'est LA fonctionnalité principale : Shopify ne permet nativement qu'une
+  /// seule image par variante.
+  galleryEnabled      Boolean @default(true)
+  /// Option qui porte le groupage. "auto" = celle sur laquelle des images sont
+  /// réellement assignées (dans 95 % des cas : la couleur).
+  /// "auto" | "option1" | "option2" | "option3"
+  groupBy             String  @default("auto")
+  /// Sort des médias placés AVANT la première image assignée (packshot générique,
+  /// guide des tailles, vidéo de marque).
+  /// "append" = visibles pour toutes les variantes
+  /// "first"  = visibles uniquement sur le premier groupe
+  /// "hide"   = jamais visibles quand un groupe est actif
+  commonMediaMode     String  @default("append")
+  /// Repli : rattacher un média à une variante si son texte alternatif contient
+  /// la valeur d'option. Utile quand le marchand ne peut pas réordonner ses médias.
+  altFallback         Boolean @default(true)
+  /// Préfixe exigé dans le texte alternatif (ex. "#" pour ne matcher que
+  /// "#bleu marine"). Vide = simple recherche de la valeur dans le texte.
+  altPrefix           String  @default("")
+  /// Sélecteur CSS de la liste de miniatures. Vide = auto-détection.
+  thumbSelectorCss    String  @default("")
+  /// Ne pas filtrer si toutes les variantes partagent le même groupe : évite de
+  /// masquer des images sur un produit mal configuré.
+  skipSingleGroup     Boolean @default(true)
+
+  // --- Titre dynamique ----------------------------------------------------
+  /// Réécrire le titre produit à la sélection
+  updateTitle         Boolean @default(true)
+  /// Template. Variables : {{product_title}}, {{variant_title}}, {{option1..3}},
+  /// {{option:Couleur}}, {{price}}, {{compare_at_price}}, {{sku}}, {{barcode}},
+  /// {{vendor}}, {{product_type}}.
+  /// Blocs conditionnels : [[ texte {{sku}} ]] disparaît si {{sku}} est vide.
+  titleTemplate       String  @default("{{product_title}} — {{variant_title}}")
+  /// Sélecteur CSS du titre. Vide = auto-détection.
+  titleSelectorCss    String  @default("")
+  /// Mettre aussi à jour le titre de l'onglet du navigateur.
+  updateDocumentTitle Boolean @default(false)
+
+  /// Noms d'options traitées comme "couleur" (donc rendues en pastille/vignette),
+  /// séparés par des virgules. Le reste est rendu en boutons texte.
+  colorOptionNames    String  @default("Color,Colour,Couleur,Farbe,Kleur,Colore,Color/Couleur")
+
+  /// CSS additionnel injecté par le merchant (plan payant uniquement).
+  customCss           String  @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shop])
+}
+
+/// Mapping d'une valeur d'option (ex. "Bleu marine") vers un rendu visuel.
+/// Scope = boutique entière, pour ne pas avoir à re-configurer produit par produit.
+model SwatchValue {
+  id         String  @id @default(cuid())
+  shop       String
+  /// Nom de l'option, normalisé en minuscules (ex. "couleur")
+  optionName String
+  /// Valeur de l'option, normalisée en minuscules (ex. "bleu marine")
+  value      String
+  /// Libellé affiché, casse d'origine conservée (ex. "Bleu marine")
+  label      String
+
+  /// "color" | "gradient" | "image"
+  kind       String  @default("color")
+  colorHex   String? // kind = color / gradient (couleur 1)
+  colorHex2  String? // kind = gradient (couleur 2)
+  imageUrl   String? // kind = image (fichier hébergé sur Shopify Files)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([shop, optionName, value])
+  @@index([shop])
+}

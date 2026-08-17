@@ -1,0 +1,1320 @@
+/* ==========================================================================
+   Variantsy — logique storefront
+   Vanilla JS, aucune dépendance, aucun framework. Chargé sur chaque page
+   produit : chaque kilo-octet compte.
+
+   ⚠️ PIÈGE N°1 (voir CLAUDE.md) : ce fichier n'est PAS déployé par `git push`.
+      Après modification : `npm run test` puis `npm run deploy:extension`.
+
+   Trois fonctionnalités, par ordre d'importance commerciale :
+     1. GALERIE — plusieurs images par variante. Shopify n'en autorise qu'une
+        nativement ; on regroupe les médias et on filtre la galerie du thème.
+     2. TITRE   — réécriture du titre produit selon un template marchand.
+     3. SWATCHES— sélecteur de variantes en pastilles.
+
+   Principes de robustesse (un bug ici = des ventes perdues) :
+    - Tout est enveloppé dans des try/catch : une erreur ne doit jamais casser
+      le bouton « Ajouter au panier » du thème.
+    - Le sélecteur natif est piloté, pas remplacé. On écrit toujours dans
+      l'input `[name="id"]` du formulaire : même si le thème ignore nos events,
+      le panier reçoit la bonne variante.
+    - On MASQUE des médias, on n'en supprime jamais : le zoom, la lightbox et
+      les vidéos du thème continuent de fonctionner sur les nœuds d'origine.
+    - En cas de doute (groupage incohérent, aucun média assigné), on n'agit pas.
+      Une galerie complète vaut mieux qu'une galerie amputée à tort.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  var CACHE_KEY = "variantsy:config:v2";
+  var CACHE_TTL = 5 * 60 * 1000; // 5 min côté navigateur, 60 s côté CDN
+  var HIDDEN_CLASS = "variantsy-media-hidden";
+
+  var DEFAULT_CONFIG = {
+    v: 1,
+    enabled: true,
+    style: {
+      shape: "circle",
+      size: 40,
+      gap: 10,
+      borderWidth: 1,
+      borderColor: "#D9D9D9",
+      selectedStyle: "ring",
+      selectedColor: "#111111",
+      showLabels: false,
+      showOptionName: true,
+      maxVisible: 0,
+      customCss: "",
+    },
+    behavior: {
+      soldOutStyle: "strikethrough",
+      hideNativeSelector: true,
+      nativeSelectorCss: "",
+      updateUrl: true,
+      preloadOnHover: true,
+      swapImage: true,
+      imageSelectorCss: "",
+      updateTitle: true,
+      titleTemplate: "{{product_title}} — {{variant_title}}",
+      titleSelectorCss: "",
+      updateDocumentTitle: false,
+    },
+    gallery: {
+      enabled: true,
+      groupBy: "auto",
+      commonMediaMode: "append",
+      altFallback: true,
+      altPrefix: "",
+      thumbSelectorCss: "",
+      skipSingleGroup: true,
+    },
+    colorOptions: ["color", "colour", "couleur", "farbe", "kleur", "colore"],
+    swatches: {},
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* Utilitaires                                                            */
+  /* ---------------------------------------------------------------------- */
+
+  function normalize(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  /**
+   * Recherche d'un terme dans un texte, avec frontières de mot.
+   *
+   * Un simple `indexOf` est inutilisable ici : la valeur d'option « S » se
+   * trouverait dans « Sweat », et l'app croirait que toutes les photos
+   * appartiennent à la taille S. On exige donc que le terme ne soit ni précédé
+   * ni suivi d'un caractère alphanumérique.
+   */
+  function containsToken(haystack, needle) {
+    if (!haystack || !needle) return false;
+    var from = 0;
+    var index;
+    while ((index = haystack.indexOf(needle, from)) !== -1) {
+      var before = index === 0 ? "" : haystack.charAt(index - 1);
+      var after = haystack.charAt(index + needle.length);
+      if (!/[a-z0-9]/.test(before) && !/[a-z0-9]/.test(after)) return true;
+      from = index + 1;
+    }
+    return false;
+  }
+
+  function deepMerge(base, override) {
+    var out = {};
+    Object.keys(base).forEach(function (key) {
+      var b = base[key];
+      var o = override ? override[key] : undefined;
+      if (b && typeof b === "object" && !Array.isArray(b)) {
+        out[key] = deepMerge(b, o || {});
+      } else {
+        out[key] = o === undefined || o === null ? b : o;
+      }
+    });
+    if (override) {
+      Object.keys(override).forEach(function (key) {
+        if (!(key in out)) out[key] = override[key];
+      });
+    }
+    return out;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Moteur de templates de titre                                           */
+  /*                                                                        */
+  /* ⚠️ DUPLICATION ASSUMÉE avec `app/shared.ts` (renderTemplate).           */
+  /*    L'extension de thème est un asset autonome servi par le CDN Shopify :*/
+  /*    elle ne peut rien importer du bundle Remix. Les deux implémentations */
+  /*    sont validées par la même table de cas, `scripts/template-cases.json`,*/
+  /*    rejouée par `npm run test`. Modifier l'une = modifier l'autre.       */
+  /* ---------------------------------------------------------------------- */
+
+  function lookupVar(vars, rawKey) {
+    var key = String(rawKey).trim();
+    if (vars[key] !== undefined) return vars[key];
+    var lower = normalize(key);
+    if (vars[lower] !== undefined) return vars[lower];
+    var match = /^option\s*:\s*(.+)$/i.exec(key);
+    if (match) {
+      var candidate = "option:" + normalize(match[1]);
+      if (vars[candidate] !== undefined) return vars[candidate];
+    }
+    return "";
+  }
+
+  function renderTemplate(template, vars) {
+    var out = String(template || "").replace(/\[\[([\s\S]*?)\]\]/g, function (_, inner) {
+      var tokens = inner.match(/\{\{\s*[^}]+?\s*\}\}/g) || [];
+      var empty = tokens.some(function (token) {
+        return !lookupVar(vars, token.replace(/^\{\{\s*|\s*\}\}$/g, ""));
+      });
+      return empty ? "" : inner;
+    });
+
+    out = out.replace(/\{\{\s*([^}]+?)\s*\}\}/g, function (_, key) {
+      return lookupVar(vars, key);
+    });
+
+    return out
+      .replace(/\s+/g, " ")
+      .replace(/([–—\-/|,])\s*(?=[–—\-/|,])/g, "")
+      .replace(/^[\s–—\-/|,]+/, "")
+      .replace(/[\s–—\-/|,]+$/, "")
+      .trim();
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Configuration                                                          */
+  /* ---------------------------------------------------------------------- */
+
+  function readCache() {
+    try {
+      var raw = window.sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (Date.now() - parsed.t > CACHE_TTL) return null;
+      return parsed.d;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeCache(data) {
+    try {
+      window.sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data }));
+    } catch (error) {
+      /* quota plein ou navigation privée : sans importance */
+    }
+  }
+
+  /**
+   * Charge la configuration marchand depuis l'app proxy.
+   * Retourne TOUJOURS une config exploitable : en cas d'échec réseau ou de
+   * base endormie (cold-start Neon, piège n°3), on repart des valeurs par
+   * défaut plutôt que de ne rien afficher.
+   */
+  function loadConfig(endpoint) {
+    var cached = readCache();
+    if (cached) return Promise.resolve(deepMerge(DEFAULT_CONFIG, cached));
+
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timeout = setTimeout(function () {
+      if (controller) controller.abort();
+    }, 4000);
+
+    return fetch(endpoint, {
+      headers: { Accept: "application/json" },
+      signal: controller ? controller.signal : undefined,
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      })
+      .then(function (data) {
+        clearTimeout(timeout);
+        writeCache(data);
+        return deepMerge(DEFAULT_CONFIG, data);
+      })
+      .catch(function (error) {
+        clearTimeout(timeout);
+        console.warn("[Variantsy] configuration indisponible, valeurs par défaut appliquées", error);
+        return DEFAULT_CONFIG;
+      });
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Détection des éléments du thème                                        */
+  /* ---------------------------------------------------------------------- */
+
+  var NATIVE_SELECTORS = [
+    "variant-selects",
+    "variant-radios",
+    "variant-picker",
+    ".product-form__input--dropdown",
+    ".product-form__input--swatch",
+    ".product-form__input--pill",
+    ".product-variant-picker",
+    ".selector-wrapper",
+    ".single-option-selector",
+    "[data-product-option]",
+  ];
+
+  var TITLE_SELECTORS = [
+    "[data-variantsy-title]",
+    ".product__title h1",
+    ".product__title",
+    "h1.product-single__title",
+    "h1.product-title",
+    ".product-meta__title",
+    ".product__info-wrapper h1",
+    ".product-info h1",
+    "main h1",
+  ];
+
+  var GALLERY_SELECTORS = [
+    "[data-variantsy-gallery]",
+    "media-gallery",
+    ".product__media-wrapper",
+    ".product__media-list",
+    ".product-gallery",
+    ".product-single__media-group",
+    ".product-media",
+  ];
+
+  var THUMB_SELECTORS = [
+    "[data-variantsy-thumbs]",
+    ".thumbnail-list",
+    ".product__media-thumbnails",
+    ".product-single__thumbnails",
+    ".product-gallery__thumbnails",
+    "[data-thumbnails]",
+  ];
+
+  /** Attributs susceptibles de porter un identifiant de média, par ordre de fiabilité. */
+  var MEDIA_ID_ATTRS = ["data-media-id", "data-target", "data-thumbnail-id", "data-media", "id"];
+
+  function findScope(root) {
+    // On limite les recherches au conteneur produit le plus proche pour ne pas
+    // toucher aux produits recommandés en bas de page.
+    return (
+      root.closest("[data-section-type='product']") ||
+      root.closest(".product") ||
+      root.closest("main") ||
+      document
+    );
+  }
+
+  function queryFirst(scope, selectors, extra) {
+    var list = extra ? [extra].concat(selectors) : selectors;
+    for (var i = 0; i < list.length; i++) {
+      if (!list[i]) continue;
+      try {
+        var found = scope.querySelector(list[i]);
+        if (found) return found;
+      } catch (error) {
+        /* sélecteur CSS invalide saisi par le marchand : on ignore */
+      }
+    }
+    return null;
+  }
+
+  function queryAll(scope, selectors, extra) {
+    var list = extra ? [extra].concat(selectors) : selectors;
+    var out = [];
+    list.forEach(function (selector) {
+      if (!selector) return;
+      try {
+        Array.prototype.push.apply(out, scope.querySelectorAll(selector));
+      } catch (error) {
+        /* idem */
+      }
+    });
+    return out;
+  }
+
+  /**
+   * Extrait l'identifiant de média porté par un élément du thème.
+   *
+   * Les thèmes préfixent l'ID : `template--12345__main-987654321`. On lit donc
+   * les chiffres de fin — mais en exigeant qu'ils soient précédés d'un
+   * non-chiffre ET que l'ID obtenu existe réellement dans le produit. Sans cette
+   * double vérification, un média 123 « matcherait » un élément portant 4123.
+   */
+  /**
+   * Remonte au plus haut ancêtre qui n'enveloppe QUE cet élément.
+   *
+   * Nécessaire parce que les thèmes portent l'identifiant sur le bouton de la
+   * miniature (`<li><button data-target="…">`). Masquer le bouton laisserait un
+   * `<li>` vide qui garde sa marge et son espace dans la grille — la galerie
+   * filtrée aurait des trous. On masque donc l'élément de liste entier.
+   *
+   * La condition `children.length === 1` garantit qu'on ne remonte jamais
+   * jusqu'à un conteneur qui abrite d'autres médias.
+   */
+  function hoist(element, container) {
+    var node = element;
+    while (
+      node.parentElement &&
+      node.parentElement !== container &&
+      node.parentElement.children.length === 1
+    ) {
+      node = node.parentElement;
+    }
+    return node;
+  }
+
+  function mediaIdOf(element, known) {
+    for (var i = 0; i < MEDIA_ID_ATTRS.length; i++) {
+      var raw = element.getAttribute(MEDIA_ID_ATTRS[i]);
+      if (!raw) continue;
+      var match = /(?:^|[^0-9])(\d+)$/.exec(raw.trim());
+      if (match && known[match[1]]) return Number(match[1]);
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Instance                                                               */
+  /* ---------------------------------------------------------------------- */
+
+  function Variantsy(root, config) {
+    this.root = root;
+    this.config = config;
+    this.scope = findScope(root);
+
+    var dataEl = root.querySelector("[data-variantsy-data]");
+    this.product = JSON.parse(dataEl.textContent);
+    this.media = this.product.media || [];
+
+    this.knownMedia = {};
+    for (var i = 0; i < this.media.length; i++) this.knownMedia[String(this.media[i].id)] = true;
+
+    this.optionNames = this.product.options.map(function (option) {
+      return option.name;
+    });
+
+    var initialId = Number(root.getAttribute("data-current-variant"));
+    var initial = this.findVariantById(initialId) || this.product.variants[0] || { o: [] };
+    this.selection = initial.o.slice();
+
+    this.form = this.findForm();
+    this.originalTitle = null;
+    this.originalDocumentTitle = null;
+    this.preloaded = {};
+    this.groups = null;
+  }
+
+  Variantsy.prototype.findVariantById = function (id) {
+    for (var i = 0; i < this.product.variants.length; i++) {
+      if (this.product.variants[i].id === id) return this.product.variants[i];
+    }
+    return null;
+  };
+
+  Variantsy.prototype.findVariantByOptions = function (options) {
+    outer: for (var i = 0; i < this.product.variants.length; i++) {
+      var variant = this.product.variants[i];
+      for (var j = 0; j < options.length; j++) {
+        if (variant.o[j] !== options[j]) continue outer;
+      }
+      return variant;
+    }
+    return null;
+  };
+
+  /** Formulaire d'ajout au panier : c'est lui qui décide de ce qui part au panier. */
+  Variantsy.prototype.findForm = function () {
+    return (
+      this.scope.querySelector('form[action*="/cart/add"]') ||
+      document.querySelector('form[action*="/cart/add"]')
+    );
+  };
+
+  /* ====================================================================== */
+  /* 1. GALERIE — groupage des médias par variante                          */
+  /*                                                                        */
+  /* Fonctions PURES : elles ne dépendent que de (product, config) et sont   */
+  /* exposées sur `window.Variantsy`. C'est volontaire — l'admin en possède */
+  /* un portage ESM (`app/grouping.js`) pour l'inspecteur de groupes, et le  */
+  /* test de fumée compare les deux implémentations sur la même table de cas */
+  /* (`scripts/grouping-cases.json`). Sans ce garde-fou, l'aperçu montré au  */
+  /* marchand pourrait diverger de ce que voient ses clients.                */
+  /* ====================================================================== */
+
+  /**
+   * Rattachement des médias à une valeur d'option d'après leur texte alternatif.
+   * En cas de correspondance multiple, la valeur la plus longue gagne :
+   * « bleu marine » doit l'emporter sur « bleu ».
+   */
+  function altOwners(product, index, cfg) {
+    var option = (product.options || [])[index];
+    if (!option) return {};
+
+    var prefix = normalize(cfg.altPrefix || "");
+    var owners = {};
+
+    (product.media || []).forEach(function (media) {
+      var alt = normalize(media.alt);
+      if (!alt) return;
+      var matched = null;
+      option.values.forEach(function (value) {
+        if (!containsToken(alt, prefix + normalize(value))) return;
+        if (!matched || value.length > matched.length) matched = value;
+      });
+      if (matched) owners[media.id] = matched;
+    });
+
+    return owners;
+  }
+
+  /**
+   * Détermine SUR QUELLE OPTION porte le groupage des images.
+   *
+   * En mode "auto", on cherche l'option dont les assignations d'images sont
+   * cohérentes : toutes les variantes qui partagent la même valeur doivent
+   * pointer vers le même média. Sur un produit Couleur × Taille où le marchand
+   * a assigné une image par couleur, l'option Couleur passe le test et l'option
+   * Taille échoue (S existe en noir ET en bleu, avec deux images différentes).
+   *
+   * À défaut d'assignation native, on retombe sur le texte alternatif.
+   * Retourne -1 si aucune option ne convient : dans ce cas on ne filtre rien.
+   */
+  function resolveGroupIndex(product, cfg) {
+    var options = product.options || [];
+    var explicit = cfg.groupBy;
+    if (/^option[123]$/.test(explicit)) {
+      var forced = Number(explicit.slice(-1)) - 1;
+      return forced < options.length ? forced : -1;
+    }
+
+    var variants = product.variants || [];
+    var best = -1;
+    var bestScore = 0;
+
+    for (var i = 0; i < options.length; i++) {
+      var seen = {};
+      var conflict = false;
+      var distinct = 0;
+
+      for (var v = 0; v < variants.length; v++) {
+        var variant = variants[v];
+        if (!variant.m) continue;
+        var value = variant.o[i];
+        if (seen[value] === undefined) {
+          seen[value] = variant.m;
+          distinct += 1;
+        } else if (seen[value] !== variant.m) {
+          conflict = true;
+          break;
+        }
+      }
+
+      if (!conflict && distinct > bestScore) {
+        bestScore = distinct;
+        best = i;
+      }
+    }
+
+    if (bestScore >= 2) return best;
+    if (!cfg.altFallback) return -1;
+
+    // Aucune image assignée nativement : on tente de déduire l'option porteuse
+    // du seul indice restant, le texte alternatif des médias.
+    for (var j = 0; j < options.length; j++) {
+      var owners = altOwners(product, j, cfg);
+      var values = {};
+      var count = 0;
+      Object.keys(owners).forEach(function (mediaId) {
+        if (values[owners[mediaId]]) return;
+        values[owners[mediaId]] = true;
+        count += 1;
+      });
+      if (count > bestScore) {
+        bestScore = count;
+        best = j;
+      }
+    }
+
+    return bestScore >= 2 ? best : -1;
+  }
+
+  /**
+   * Construit les groupes d'images.
+   *
+   * Règle principale (celle qui rend l'app « sans configuration ») : dans
+   * l'ordre des médias du produit, une image assignée à une variante OUVRE son
+   * groupe, et toutes les images suivantes le rejoignent jusqu'à la prochaine
+   * image assignée. C'est la façon dont un marchand range déjà ses photos.
+   *
+   * Règle secondaire (repli) : si le texte alternatif d'un média contient une
+   * valeur d'option, ce média est rattaché à cette valeur — utile quand l'ordre
+   * des médias ne peut pas être modifié (import automatisé, PIM…).
+   *
+   * Les médias situés avant la première image assignée forment le groupe
+   * « commun » : packshot générique, guide des tailles, vidéo de marque.
+   *
+   * Retourne null quand il ne faut RIEN filtrer.
+   */
+  function computeGroups(product, cfg) {
+    var media = product.media || [];
+    if (!cfg.enabled || !media.length) return null;
+
+    var index = resolveGroupIndex(product, cfg);
+    if (index < 0) return null;
+
+    // 1. Assignations natives Shopify (une image par variante).
+    var owners = {};
+    (product.variants || []).forEach(function (variant) {
+      if (variant.m && owners[variant.m] === undefined) owners[variant.m] = variant.o[index];
+    });
+
+    // 2. Repli sur le texte alternatif, sans écraser les assignations natives :
+    //    ce que le marchand a explicitement rattaché dans l'admin fait foi.
+    if (cfg.altFallback) {
+      var fromAlt = altOwners(product, index, cfg);
+      Object.keys(fromAlt).forEach(function (mediaId) {
+        if (owners[mediaId] === undefined) owners[mediaId] = fromAlt[mediaId];
+      });
+    }
+
+    // 3. Parcours ordonné.
+    var groups = {};
+    var common = [];
+    var order = [];
+    var current = null;
+
+    media.forEach(function (item) {
+      order.push(item.id);
+      if (owners[item.id] !== undefined) current = owners[item.id];
+      if (current === null) {
+        common.push(item.id);
+        return;
+      }
+      if (!groups[current]) groups[current] = [];
+      groups[current].push(item.id);
+    });
+
+    var keys = Object.keys(groups);
+    if (!keys.length) return null;
+    // Un seul groupe = rien à filtrer, et probablement un produit mal rangé.
+    if (cfg.skipSingleGroup && keys.length < 2) return null;
+
+    return { index: index, groups: groups, common: common, order: order, firstKey: keys[0] };
+  }
+
+  /**
+   * Ensemble des médias visibles pour une valeur d'option donnée.
+   * Retourne null quand il ne faut PAS filtrer (valeur sans groupe) : mieux
+   * vaut afficher toute la galerie que de la vider.
+   */
+  function visibleMediaFor(groupsResult, value, cfg) {
+    if (!groupsResult) return null;
+    var list = groupsResult.groups[value];
+    if (!list || !list.length) return null;
+
+    var visible = {};
+    list.forEach(function (id) {
+      visible[id] = true;
+    });
+
+    var mode = cfg.commonMediaMode;
+    if (mode === "append" || (mode === "first" && value === groupsResult.firstKey)) {
+      groupsResult.common.forEach(function (id) {
+        visible[id] = true;
+      });
+    }
+    return visible;
+  }
+
+  /* ====================================================================== */
+  /* 2. GALERIE — filtrage du DOM du thème                                  */
+  /* ====================================================================== */
+
+  /** Tous les nœuds du thème porteurs d'un identifiant de média connu. */
+  Variantsy.prototype.collectMediaNodes = function () {
+    var behavior = this.config.behavior;
+    var gallery = queryFirst(this.scope, GALLERY_SELECTORS, behavior.imageSelectorCss);
+    var thumbs = queryFirst(this.scope, THUMB_SELECTORS, this.config.gallery.thumbSelectorCss);
+    var containers = [gallery, thumbs].filter(Boolean);
+    if (!containers.length) containers = [this.scope];
+
+    var known = this.knownMedia;
+    var seen = [];
+    var nodes = [];
+
+    containers.forEach(function (container) {
+      var selector = MEDIA_ID_ATTRS.map(function (attr) {
+        return "[" + attr + "]";
+      }).join(",");
+      var candidates = container.querySelectorAll(selector);
+      Array.prototype.forEach.call(candidates, function (element) {
+        var id = mediaIdOf(element, known);
+        if (id === null) return;
+        var target = hoist(element, container);
+        if (seen.indexOf(target) !== -1) return;
+        // On ne retient que le nœud le plus haut de chaque sous-arbre : masquer
+        // un <li> suffit, inutile de masquer aussi le <img> qu'il contient.
+        for (var i = 0; i < nodes.length; i++) {
+          if (nodes[i].element.contains(target)) return;
+        }
+        seen.push(target);
+        nodes.push({ element: target, id: id });
+      });
+    });
+
+    return { nodes: nodes, gallery: gallery, thumbs: thumbs };
+  };
+
+  /**
+   * Applique le filtrage à la galerie du thème.
+   * On masque en CSS (classe dédiée) plutôt que de retirer les nœuds : le zoom,
+   * la lightbox, les vidéos et les modèles 3D du thème restent intacts.
+   */
+  Variantsy.prototype.applyGallery = function (variant) {
+    if (!this.groups) return;
+
+    var value = variant.o[this.groups.index];
+    var visible = visibleMediaFor(this.groups, value, this.config.gallery);
+    var collected = this.collectMediaNodes();
+    if (!collected.nodes.length) return;
+
+    collected.nodes.forEach(function (node) {
+      var show = !visible || visible[node.id] === true;
+      node.element.classList.toggle(HIDDEN_CLASS, !show);
+      // aria-hidden en plus de display:none : certains thèmes forcent
+      // l'affichage des slides, l'attribut garde les lecteurs d'écran cohérents.
+      if (show) node.element.removeAttribute("aria-hidden");
+      else node.element.setAttribute("aria-hidden", "true");
+    });
+
+    this.refreshSliders(collected.gallery);
+  };
+
+  /** Rend leur visibilité à tous les médias (galerie désactivée, cas dégradé). */
+  Variantsy.prototype.restoreGallery = function () {
+    var hidden = this.scope.querySelectorAll("." + HIDDEN_CLASS);
+    Array.prototype.forEach.call(hidden, function (element) {
+      element.classList.remove(HIDDEN_CLASS);
+      element.removeAttribute("aria-hidden");
+    });
+  };
+
+  /**
+   * Prévient le thème que la géométrie de la galerie a changé.
+   * Les carrousels calculent leurs largeurs au chargement ; sans ce coup de
+   * pouce, on obtient des pages vides et un compteur « 3 / 7 » faux.
+   */
+  Variantsy.prototype.refreshSliders = function (gallery) {
+    var container = gallery || this.scope;
+    var sliders = container.querySelectorAll ? container.querySelectorAll("slider-component") : [];
+    Array.prototype.forEach.call(sliders, function (slider) {
+      try {
+        if (typeof slider.initPages === "function") slider.initPages();
+        if (typeof slider.resetPages === "function") slider.resetPages();
+        if (typeof slider.update === "function") slider.update();
+      } catch (error) {
+        /* thème récalcitrant : le resize ci-dessous suffit généralement */
+      }
+    });
+    try {
+      window.dispatchEvent(new Event("resize"));
+    } catch (error) {
+      /* noop */
+    }
+  };
+
+  /* ====================================================================== */
+  /* 3. Disponibilité et rendu des swatches                                 */
+  /* ====================================================================== */
+
+  /**
+   * Une valeur est « disponible » s'il existe au moins une variante en stock
+   * qui la contient, en respectant les choix déjà faits sur les options
+   * précédentes. C'est la logique attendue par les clients : choisir « Bleu »
+   * puis voir quelles tailles restent, et non l'inverse.
+   */
+  Variantsy.prototype.isValueAvailable = function (position, value) {
+    var index = position - 1;
+    for (var i = 0; i < this.product.variants.length; i++) {
+      var variant = this.product.variants[i];
+      if (variant.o[index] !== value) continue;
+      if (!variant.a) continue;
+      var matches = true;
+      for (var j = 0; j < this.selection.length; j++) {
+        if (j === index) continue;
+        if (j < index && variant.o[j] !== this.selection[j]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) return true;
+    }
+    return false;
+  };
+
+  Variantsy.prototype.paint = function () {
+    var self = this;
+    var style = this.config.style;
+    var behavior = this.config.behavior;
+
+    this.root.setAttribute("data-selected-style", style.selectedStyle);
+    this.root.setAttribute("data-sold-out", behavior.soldOutStyle);
+    this.root.style.setProperty("--vtsy-size", style.size + "px");
+    this.root.style.setProperty("--vtsy-gap", style.gap + "px");
+    this.root.style.setProperty("--vtsy-border-width", style.borderWidth + "px");
+    this.root.style.setProperty("--vtsy-border-color", style.borderColor);
+    this.root.style.setProperty("--vtsy-selected-color", style.selectedColor);
+    this.root.style.setProperty(
+      "--vtsy-radius",
+      style.shape === "square" ? "2px" : style.shape === "rounded" ? "8px" : "50%",
+    );
+
+    var groups = this.root.querySelectorAll(".variantsy__group");
+    Array.prototype.forEach.call(groups, function (group) {
+      var position = Number(group.getAttribute("data-option-position"));
+      var optionName = normalize(group.getAttribute("data-option-name"));
+      var isColor = self.config.colorOptions.indexOf(optionName) !== -1;
+
+      group.classList.toggle("variantsy__group--color", isColor);
+      group.classList.toggle("variantsy__group--text", !isColor);
+
+      var labelValue = group.querySelector("[data-variantsy-current-value]");
+      if (labelValue) labelValue.textContent = self.selection[position - 1] || "";
+
+      var swatches = group.querySelectorAll(".variantsy__swatch");
+      Array.prototype.forEach.call(swatches, function (button) {
+        var value = button.getAttribute("data-variantsy-value");
+        var selected = self.selection[position - 1] === value;
+        var available = self.isValueAvailable(position, value);
+
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-checked", String(selected));
+        button.setAttribute("tabindex", selected ? "0" : "-1");
+        button.setAttribute("data-unavailable", String(!available));
+
+        if (isColor) {
+          var visual = button.querySelector(".variantsy__visual");
+          if (visual) self.applyVisual(visual, optionName, value);
+        }
+      });
+
+      if (!isColor) self.syncFontSizes(group);
+    });
+
+    if (style.customCss) this.injectCustomCss(style.customCss);
+  };
+
+  /** Applique la couleur / l'image d'un swatch depuis la bibliothèque marchand. */
+  Variantsy.prototype.applyVisual = function (visual, optionName, value) {
+    var key = optionName + "::" + normalize(value);
+    var swatch = this.config.swatches[key];
+
+    if (!swatch) {
+      // Repli 1 : la valeur EST un code couleur (« #1F3A5F »).
+      if (/^#[0-9a-f]{3,8}$/i.test(value.trim())) {
+        visual.style.background = value.trim();
+        return;
+      }
+      // Repli 2 : utiliser l'image de la variante correspondante — mieux qu'un
+      // rond gris, et gratuit puisque le média est déjà chargé par le thème.
+      var fallback = this.mediaForValue(optionName, value);
+      if (fallback) {
+        visual.style.backgroundImage = 'url("' + fallback + '")';
+        visual.style.backgroundColor = "transparent";
+        return;
+      }
+      visual.style.background = "#ECECEC";
+      return;
+    }
+
+    if (swatch.kind === "image" && swatch.img) {
+      visual.style.backgroundImage = 'url("' + swatch.img + '")';
+      visual.style.backgroundColor = "transparent";
+    } else if (swatch.kind === "gradient" && swatch.c1 && swatch.c2) {
+      visual.style.backgroundImage =
+        "linear-gradient(135deg, " + swatch.c1 + " 0 50%, " + swatch.c2 + " 50% 100%)";
+    } else if (swatch.c1) {
+      visual.style.backgroundImage = "none";
+      visual.style.backgroundColor = swatch.c1;
+    }
+  };
+
+  /** Première image d'une variante portant cette valeur d'option. */
+  Variantsy.prototype.mediaForValue = function (optionName, value) {
+    var index = -1;
+    for (var i = 0; i < this.optionNames.length; i++) {
+      if (normalize(this.optionNames[i]) === optionName) {
+        index = i;
+        break;
+      }
+    }
+    if (index < 0) return null;
+    for (var v = 0; v < this.product.variants.length; v++) {
+      var variant = this.product.variants[v];
+      if (variant.o[index] === value && variant.img) return variant.img;
+    }
+    return null;
+  };
+
+  /**
+   * PIÈGE N°5, deuxième partie (voir CLAUDE.md).
+   *
+   * Sur une ligne flex de boutons texte auto-ajustés, réduire la police du
+   * premier bouton libère de l'espace pour les suivants : mesurés juste après,
+   * ils n'ont plus besoin de rétrécir, et on se retrouve avec des tailles de
+   * police différentes sur une même ligne.
+   *
+   * D'où les DEUX passes :
+   *   1. mesure individuelle → taille minimale nécessaire par bouton
+   *   2. synchronisation → on applique le minimum de la ligne à TOUS les boutons
+   */
+  Variantsy.prototype.syncFontSizes = function (group) {
+    var container = group.querySelector(".variantsy__options");
+    if (!container) return;
+    var buttons = container.querySelectorAll(".variantsy__swatch");
+    if (!buttons.length) return;
+
+    var BASE = 15; // px
+    var MIN = 11;
+    var minNeeded = BASE;
+
+    Array.prototype.forEach.call(buttons, function (button) {
+      var text = button.querySelector(".variantsy__text");
+      if (!text) return;
+      button.style.removeProperty("--vtsy-text-size");
+      var available = button.clientWidth - 28;
+      if (available <= 0) return;
+      var needed = text.scrollWidth;
+      if (needed > available) {
+        var scaled = Math.max(MIN, Math.floor((BASE * available) / needed));
+        if (scaled < minNeeded) minNeeded = scaled;
+      }
+    });
+
+    if (minNeeded < BASE) {
+      Array.prototype.forEach.call(buttons, function (button) {
+        button.style.setProperty("--vtsy-text-size", minNeeded + "px");
+      });
+    }
+  };
+
+  Variantsy.prototype.injectCustomCss = function (css) {
+    var id = "variantsy-custom-css";
+    var existing = document.getElementById(id);
+    if (existing) {
+      existing.textContent = css;
+      return;
+    }
+    var style = document.createElement("style");
+    style.id = id;
+    style.textContent = css;
+    document.head.appendChild(style);
+  };
+
+  /* ====================================================================== */
+  /* 4. Sélection                                                           */
+  /* ====================================================================== */
+
+  Variantsy.prototype.select = function (position, value) {
+    var index = position - 1;
+    if (this.selection[index] === value) return;
+
+    this.selection[index] = value;
+
+    // La combinaison choisie peut ne pas exister (« Rouge » n'existe pas en
+    // « XL »). On rabat alors les options suivantes sur la première combinaison
+    // valide, plutôt que de laisser le client sur une variante inexistante.
+    var variant = this.findVariantByOptions(this.selection);
+    if (!variant) {
+      variant = this.findBestMatch(index, value);
+      if (variant) this.selection = variant.o.slice();
+    }
+    if (!variant) return;
+
+    this.paint();
+    this.applyVariant(variant);
+  };
+
+  Variantsy.prototype.findBestMatch = function (index, value) {
+    var self = this;
+    var candidates = this.product.variants.filter(function (variant) {
+      return variant.o[index] === value;
+    });
+    if (!candidates.length) return null;
+
+    function score(variant) {
+      var count = 0;
+      for (var i = 0; i < variant.o.length; i++) {
+        if (i !== index && variant.o[i] === self.selection[i]) count += 1;
+      }
+      return count;
+    }
+
+    candidates.sort(function (a, b) {
+      if (a.a !== b.a) return a.a ? -1 : 1;
+      return score(b) - score(a);
+    });
+    return candidates[0];
+  };
+
+  /* ====================================================================== */
+  /* 5. Propagation vers le thème                                           */
+  /* ====================================================================== */
+
+  Variantsy.prototype.applyVariant = function (variant) {
+    this.root.setAttribute("data-current-variant", String(variant.id));
+
+    var steps = [
+      ["formulaire", this.updateForm],
+      ["sélecteur natif", this.updateNativeSelector],
+      ["url", this.config.behavior.updateUrl ? this.updateUrl : null],
+      ["galerie", this.groups ? this.applyGallery : null],
+      ["image", !this.groups && this.config.behavior.swapImage ? this.updateImage : null],
+      ["titre", this.config.behavior.updateTitle ? this.updateTitle : null],
+    ];
+
+    for (var i = 0; i < steps.length; i++) {
+      var fn = steps[i][1];
+      if (!fn) continue;
+      try {
+        fn.call(this, variant);
+      } catch (error) {
+        // Une étape qui échoue ne doit jamais empêcher les suivantes : le
+        // formulaire compte plus que le titre, le titre plus que la galerie.
+        console.warn("[Variantsy] étape « " + steps[i][0] + " » en échec", error);
+      }
+    }
+
+    document.dispatchEvent(
+      new CustomEvent("variantsy:variant:change", {
+        detail: { variant: variant, productId: this.product.id },
+      }),
+    );
+  };
+
+  /**
+   * Écrit l'ID de variante dans le formulaire d'ajout au panier.
+   * Filet de sécurité ultime : même si le thème ignore tous nos événements, le
+   * panier reçoit la bonne variante.
+   */
+  Variantsy.prototype.updateForm = function (variant) {
+    if (!this.form) return;
+    var input =
+      this.form.querySelector('input[name="id"]') || this.form.querySelector('select[name="id"]');
+    if (input) {
+      input.value = String(variant.id);
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    var button = this.form.querySelector('[type="submit"], [name="add"]');
+    if (button) {
+      button.disabled = !variant.a;
+      var label = button.querySelector("span") || button;
+      if (!variant.a) {
+        if (!button.getAttribute("data-variantsy-label")) {
+          button.setAttribute("data-variantsy-label", label.textContent.trim());
+        }
+        label.textContent = "Rupture de stock";
+      } else if (button.getAttribute("data-variantsy-label")) {
+        label.textContent = button.getAttribute("data-variantsy-label");
+      }
+    }
+  };
+
+  /**
+   * Pilote le sélecteur natif du thème (select ou radios) et déclenche ses
+   * événements. Beaucoup de thèmes accrochent leur logique de prix, de stock ou
+   * de galerie à ces événements : on les laisse faire leur travail.
+   */
+  Variantsy.prototype.updateNativeSelector = function (variant) {
+    var scope = this.scope;
+
+    function matchesOption(element, name, index) {
+      var attrs = [
+        element.getAttribute("name"),
+        element.getAttribute("data-option-name"),
+        element.getAttribute("data-index"),
+        element.id,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return (
+        attrs.indexOf(normalize(name)) !== -1 ||
+        attrs.indexOf("option" + (index + 1)) !== -1 ||
+        attrs.indexOf("option-" + index) !== -1
+      );
+    }
+
+    this.optionNames.forEach(function (name, index) {
+      var value = variant.o[index];
+      if (value === undefined) return;
+
+      var selects = scope.querySelectorAll('select[name*="option"], select[data-index], .single-option-selector');
+      Array.prototype.forEach.call(selects, function (select) {
+        if (!matchesOption(select, name, index)) return;
+        if (select.value === value) return;
+        select.value = value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      var radios = scope.querySelectorAll('input[type="radio"]');
+      Array.prototype.forEach.call(radios, function (radio) {
+        if (radio.value !== value) return;
+        if (!matchesOption(radio, name, index)) return;
+        if (radio.checked) return;
+        radio.checked = true;
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+  };
+
+  Variantsy.prototype.updateUrl = function (variant) {
+    var url = new URL(window.location.href);
+    url.searchParams.set("variant", String(variant.id));
+    window.history.replaceState({ variantsy: variant.id }, "", url.toString());
+  };
+
+  /**
+   * Bascule sur l'image principale de la variante.
+   * Utilisé seul quand le groupage n'a pas pu s'appliquer ; appelé aussi après
+   * le filtrage pour amener le carrousel sur la première image du groupe.
+   */
+  Variantsy.prototype.updateImage = function (variant) {
+    if (!variant.m) return;
+    var behavior = this.config.behavior;
+    var gallery = queryFirst(this.scope, GALLERY_SELECTORS, behavior.imageSelectorCss) || this.scope;
+
+    // 1. Le média existe dans la galerie : on le « clique » comme l'aurait fait
+    //    le client, donc slider, miniatures et zoom restent cohérents.
+    var known = this.knownMedia;
+    var candidates = gallery.querySelectorAll("[data-media-id],[data-target],[data-thumbnail-id]");
+    for (var i = 0; i < candidates.length; i++) {
+      if (mediaIdOf(candidates[i], known) !== variant.m) continue;
+      if (candidates[i].classList.contains(HIDDEN_CLASS)) continue;
+      var trigger =
+        candidates[i].tagName === "BUTTON" || candidates[i].tagName === "A"
+          ? candidates[i]
+          : candidates[i].querySelector("button, a");
+      if (trigger) {
+        trigger.click();
+        return;
+      }
+      if (typeof candidates[i].scrollIntoView === "function") {
+        candidates[i].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+        return;
+      }
+    }
+
+    // 2. API media de Dawn.
+    var mediaGallery = gallery.closest("media-gallery") || gallery.querySelector("media-gallery");
+    if (mediaGallery && typeof mediaGallery.setActiveMedia === "function") {
+      mediaGallery.setActiveMedia(mediaGallery.dataset.section + "-" + variant.m, true);
+      return;
+    }
+
+    // 3. Dernier recours : remplacer la source de l'image principale.
+    if (!variant.img) return;
+    var img = gallery.querySelector("img");
+    if (img) {
+      img.setAttribute("src", variant.img);
+      img.setAttribute("srcset", "");
+      if (variant.imgAlt) img.setAttribute("alt", variant.imgAlt);
+    }
+  };
+
+  /** Variables disponibles dans le template de titre pour une variante donnée. */
+  Variantsy.prototype.templateVars = function (variant) {
+    var vars = {
+      product_title: this.originalTitle,
+      variant_title: variant.t || variant.o.join(" / "),
+      option1: variant.o[0] || "",
+      option2: variant.o[1] || "",
+      option3: variant.o[2] || "",
+      price: variant.p || "",
+      compare_at_price: variant.cp || "",
+      sku: variant.sku || "",
+      barcode: variant.bc || "",
+      vendor: this.product.vendor || "",
+      product_type: this.product.type || "",
+    };
+    // Accès par nom d'option : {{option:Couleur}}
+    this.optionNames.forEach(function (name, index) {
+      vars["option:" + normalize(name)] = variant.o[index] || "";
+    });
+    return vars;
+  };
+
+  /**
+   * Réécrit le titre du produit à partir du template marchand.
+   * `originalTitle` est mémorisé au premier passage : sans cela, le template
+   * repartirait du titre déjà réécrit et concatènerait à l'infini.
+   */
+  Variantsy.prototype.updateTitle = function (variant) {
+    var behavior = this.config.behavior;
+    var element = queryFirst(this.scope, TITLE_SELECTORS, behavior.titleSelectorCss);
+
+    if (this.originalTitle === null) {
+      this.originalTitle =
+        this.product.title || (element ? element.textContent.trim() : "");
+    }
+    if (this.originalDocumentTitle === null) this.originalDocumentTitle = document.title;
+
+    var rendered = renderTemplate(behavior.titleTemplate, this.templateVars(variant));
+    if (!rendered) return;
+
+    if (element && element.textContent.trim() !== rendered) element.textContent = rendered;
+
+    if (behavior.updateDocumentTitle) {
+      // On remplace le nom du produit dans le titre de l'onglet en gardant le
+      // suffixe du thème (« – Ma Boutique »).
+      var suffix = this.originalDocumentTitle.replace(this.originalTitle, "").trim();
+      document.title = suffix ? rendered + " " + suffix : rendered;
+    }
+  };
+
+  /* ====================================================================== */
+  /* 6. Interactions                                                        */
+  /* ====================================================================== */
+
+  Variantsy.prototype.bind = function () {
+    var self = this;
+
+    this.root.addEventListener("click", function (event) {
+      var button = event.target.closest(".variantsy__swatch");
+      if (!button || !self.root.contains(button)) return;
+      event.preventDefault();
+      self.select(
+        Number(button.getAttribute("data-option-position")),
+        button.getAttribute("data-variantsy-value"),
+      );
+    });
+
+    this.root.addEventListener("keydown", function (event) {
+      if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].indexOf(event.key) === -1) return;
+      var button = event.target.closest(".variantsy__swatch");
+      if (!button) return;
+      var group = button.closest(".variantsy__group");
+      var buttons = Array.prototype.slice
+        .call(group.querySelectorAll(".variantsy__swatch"))
+        .filter(function (candidate) {
+          return candidate.offsetParent !== null;
+        });
+      var index = buttons.indexOf(button);
+      var forward = event.key === "ArrowRight" || event.key === "ArrowDown";
+      var next = buttons[(index + (forward ? 1 : -1) + buttons.length) % buttons.length];
+      if (!next) return;
+      event.preventDefault();
+      next.focus();
+      self.select(
+        Number(next.getAttribute("data-option-position")),
+        next.getAttribute("data-variantsy-value"),
+      );
+    });
+
+    if (this.config.behavior.preloadOnHover) {
+      this.root.addEventListener(
+        "pointerenter",
+        function (event) {
+          var button = event.target.closest && event.target.closest(".variantsy__swatch");
+          if (!button) return;
+          self.preload(
+            Number(button.getAttribute("data-option-position")),
+            button.getAttribute("data-variantsy-value"),
+          );
+        },
+        true,
+      );
+    }
+  };
+
+  Variantsy.prototype.preload = function (position, value) {
+    var index = position - 1;
+    var candidate = this.product.variants.find(function (variant) {
+      return variant.o[index] === value && variant.img;
+    });
+    if (!candidate || this.preloaded[candidate.img]) return;
+    this.preloaded[candidate.img] = true;
+    var img = new Image();
+    img.src = candidate.img;
+  };
+
+  /**
+   * Masque le sélecteur natif — seulement maintenant, une fois Variantsy peint
+   * et opérationnel. Si le script avait échoué avant, le client garde un
+   * sélecteur fonctionnel.
+   */
+  Variantsy.prototype.hideNative = function () {
+    if (!this.config.behavior.hideNativeSelector) return;
+    var elements = queryAll(this.scope, NATIVE_SELECTORS, this.config.behavior.nativeSelectorCss);
+    var root = this.root;
+    elements.forEach(function (element) {
+      if (element.contains(root) || root.contains(element)) return;
+      element.classList.add("variantsy-native-hidden");
+    });
+  };
+
+  Variantsy.prototype.start = function () {
+    this.groups = null;
+    try {
+      this.groups = computeGroups(this.product, this.config.gallery);
+    } catch (error) {
+      console.warn("[Variantsy] groupage des images impossible", error);
+    }
+    this.root.setAttribute("data-gallery-mode", this.groups ? "grouped" : "off");
+
+    this.paint();
+    this.bind();
+    this.hideNative();
+
+    var variant = this.findVariantByOptions(this.selection);
+    if (!variant) return;
+
+    // Au chargement, le thème a déjà rendu la bonne variante côté serveur : on
+    // ne touche ni à l'URL ni au formulaire. En revanche le filtrage de la
+    // galerie et le titre dépendent de notre config, donc ils s'appliquent.
+    if (this.groups) {
+      try {
+        this.applyGallery(variant);
+      } catch (error) {
+        console.warn("[Variantsy] filtrage initial impossible", error);
+        this.restoreGallery();
+      }
+    }
+    if (this.config.behavior.updateTitle) {
+      try {
+        this.updateTitle(variant);
+      } catch (error) {
+        /* noop */
+      }
+    }
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* Amorçage                                                               */
+  /* ---------------------------------------------------------------------- */
+
+  function boot() {
+    var roots = document.querySelectorAll("[data-variantsy]:not([data-variantsy-ready])");
+    if (!roots.length) return;
+
+    var endpoint = roots[0].getAttribute("data-endpoint") || "/apps/variantsy/settings";
+
+    loadConfig(endpoint).then(function (config) {
+      if (!config.enabled) return;
+      Array.prototype.forEach.call(roots, function (root) {
+        root.setAttribute("data-variantsy-ready", "true");
+        try {
+          new Variantsy(root, config).start();
+        } catch (error) {
+          console.error("[Variantsy] initialisation impossible", error);
+          root.removeAttribute("data-variantsy-ready");
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+
+  // Thèmes à navigation Ajax / rechargement de section (Dawn, Horizon…).
+  document.addEventListener("shopify:section:load", boot);
+  document.addEventListener("shopify:block:select", boot);
+
+  // Exposé pour les tests automatisés et pour le support (console navigateur).
+  window.Variantsy = {
+    renderTemplate: renderTemplate,
+    normalize: normalize,
+    computeGroups: computeGroups,
+    visibleMediaFor: visibleMediaFor,
+  };
+})();

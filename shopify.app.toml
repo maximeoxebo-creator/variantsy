@@ -1,0 +1,58 @@
+# ---------------------------------------------------------------------------
+# Variantsy — configuration app Shopify
+#
+# ⚠️  Ce fichier est poussé vers le Partner Dashboard par `shopify app deploy`.
+#     Il n'est PAS lu par Vercel. Modifier ce fichier n'a aucun effet tant que
+#     tu n'as pas lancé `npm run deploy:extension`.
+#
+# Après un `shopify app config link`, `client_id` et `application_url` sont
+# renseignés automatiquement.
+# ---------------------------------------------------------------------------
+
+client_id = "REMPLACER_PAR_LE_CLIENT_ID"
+name = "Variantsy"
+handle = "variantsy"
+application_url = "https://variantsy.vercel.app"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
+
+[access_scopes]
+# Doit rester synchronisé avec SCOPES dans .env
+scopes = "read_products,write_products"
+
+[auth]
+redirect_urls = [
+  "https://variantsy.vercel.app/auth/callback",
+  "https://variantsy.vercel.app/auth/shopify/callback",
+  "https://variantsy.vercel.app/api/auth/callback"
+]
+
+# ---------------------------------------------------------------------------
+# App proxy : le storefront appelle https://boutique.com/apps/variantsy/settings
+# qui est proxifié vers https://variantsy.vercel.app/proxy/settings
+#
+# Avantage vs endpoint public + CORS (approche LiquidPop) : même origine, donc
+# zéro préflight CORS, cookies du thème conservés, et Shopify signe la requête
+# (HMAC) donc on sait de quelle boutique elle vient sans paramètre falsifiable.
+# ---------------------------------------------------------------------------
+[app_proxy]
+url = "https://variantsy.vercel.app/proxy"
+prefix = "apps"
+subpath = "variantsy"
+
+[webhooks]
+api_version = "2025-01"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[pos]
+embedded = false

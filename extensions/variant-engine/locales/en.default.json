@@ -1,0 +1,9 @@
+{
+  "variantsy": {
+    "sold_out": "Sold out",
+    "unavailable": "Unavailable",
+    "select": "Select {{ value }}",
+    "more": "+{{ count }} more",
+    "less": "Show less"
+  }
+}
