@@ -20,7 +20,10 @@ automatically_update_urls_on_dev = true
 
 [access_scopes]
 # Doit rester synchronisé avec SCOPES dans .env
-scopes = "read_products,write_products"
+# read_themes : requis par la requête `themes` de app.setup.tsx, qui construit
+# le deep link vers l'éditeur de thème. Sans ce scope la requête échoue en
+# silence et le bouton d'installation disparaît de la page.
+scopes = "read_products,write_products,read_themes"
 
 [auth]
 redirect_urls = [
