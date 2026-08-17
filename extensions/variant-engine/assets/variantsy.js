@@ -694,6 +694,129 @@
     });
 
     this.refreshSliders(collected.gallery);
+    this.focusFirstVisibleMedia(collected);
+  };
+
+  /**
+   * Repositionne la galerie sur un média encore visible.
+   *
+   * Masquer des nœuds suffit sur une galerie en grille — l'hypothèse de départ
+   * de l'app, calquée sur Dawn. Ça ne suffit pas sur un carrousel : celui-ci
+   * garde son propre index de diapositive et continue d'afficher celle qu'on
+   * vient de masquer, donc une zone vide à la place de la photo. Constaté sur
+   * le thème Savor, dont la galerie est un <slideshow-component> resté sur
+   * `initial-slide=0` alors que les sept premières diapositives étaient
+   * masquées.
+   *
+   * Trois recours, du plus propre au plus universel : aucun n'est disponible
+   * sur tous les thèmes, mais le dernier fonctionne sur n'importe quel
+   * conteneur défilant, quel que soit son auteur.
+   */
+  Variantsy.prototype.focusFirstVisibleMedia = function (collected) {
+    var gallery = collected.gallery;
+    if (!gallery) return;
+
+    var target = null;
+    for (var i = 0; i < collected.nodes.length; i++) {
+      var node = collected.nodes[i];
+      if (node.element.classList.contains(HIDDEN_CLASS)) continue;
+      if (!gallery.contains(node.element)) continue;
+      target = node;
+      break;
+    }
+    // Aucun média visible : le garde-fou amont a déjà annulé tout filtrage.
+    // Toucher au défilement ici ne ferait qu'ajouter du désordre.
+    if (!target) return;
+
+    if (this.focusViaThumbnail(collected, target.id)) return;
+    if (this.focusViaComponentApi(gallery, target)) return;
+    this.focusViaScroll(gallery, target.element);
+  };
+
+  /**
+   * Recours 1 — cliquer la miniature correspondante.
+   * C'est le chemin que le visiteur emprunterait lui-même, donc celui qui
+   * laisse l'état interne du thème cohérent : compteur de diapositives,
+   * attributs ARIA, zoom et lightbox restent synchronisés.
+   */
+  Variantsy.prototype.focusViaThumbnail = function (collected, mediaId) {
+    if (!collected.thumbs) return false;
+    for (var i = 0; i < collected.nodes.length; i++) {
+      var node = collected.nodes[i];
+      if (node.id !== mediaId) continue;
+      if (!collected.thumbs.contains(node.element)) continue;
+      if (node.element.classList.contains(HIDDEN_CLASS)) continue;
+      var clickable =
+        node.element.querySelector("button, a, [role='button']") ||
+        (node.element.tagName === "BUTTON" || node.element.tagName === "A"
+          ? node.element
+          : null);
+      if (!clickable) return false;
+      try {
+        clickable.click();
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+    return false;
+  };
+
+  /**
+   * Recours 2 — l'API du composant de galerie, quand le thème en expose une.
+   * On tente plusieurs noms de méthode parce qu'il n'existe aucune convention :
+   * chaque thème nomme la sienne comme il l'entend.
+   */
+  Variantsy.prototype.focusViaComponentApi = function (gallery, target) {
+    var hosts = [gallery];
+    var nested = gallery.querySelectorAll(
+      "media-gallery, slideshow-component, slider-component",
+    );
+    Array.prototype.push.apply(hosts, Array.prototype.slice.call(nested));
+
+    for (var i = 0; i < hosts.length; i++) {
+      var host = hosts[i];
+      if (!host) continue;
+      var methods = ["setActiveMedia", "select", "slideTo", "goToSlide", "setActiveSlide"];
+      for (var m = 0; m < methods.length; m++) {
+        if (typeof host[methods[m]] !== "function") continue;
+        try {
+          // Les signatures diffèrent : certaines attendent l'identifiant du
+          // média, d'autres l'élément, d'autres un index. On passe les trois.
+          host[methods[m]](target.id, target.element, 0);
+          return true;
+        } catch (error) {
+          /* méthode incompatible : on essaie la suivante */
+        }
+      }
+    }
+    return false;
+  };
+
+  /**
+   * Recours 3 — faire défiler le conteneur jusqu'au média.
+   * Sans élégance mais sans dépendance : fonctionne sur tout carrousel à
+   * défilement natif, y compris ceux qu'on n'a jamais vus.
+   */
+  Variantsy.prototype.focusViaScroll = function (gallery, element) {
+    try {
+      var scroller = element.parentNode;
+      while (scroller && scroller !== gallery.parentNode) {
+        var overflow = window.getComputedStyle(scroller).overflowX;
+        if (overflow === "auto" || overflow === "scroll") {
+          scroller.scrollLeft = element.offsetLeft - scroller.offsetLeft;
+          return;
+        }
+        scroller = scroller.parentNode;
+      }
+      // Aucun conteneur défilant identifié : on laisse le navigateur décider,
+      // en restant sur « nearest » pour ne pas emporter la page entière.
+      if (typeof element.scrollIntoView === "function") {
+        element.scrollIntoView({ block: "nearest", inline: "start" });
+      }
+    } catch (error) {
+      /* noop : mieux vaut une galerie mal cadrée qu'une exception */
+    }
   };
 
   /** Rend leur visibilité à tous les médias (galerie désactivée, cas dégradé). */
@@ -712,7 +835,12 @@
    */
   Variantsy.prototype.refreshSliders = function (gallery) {
     var container = gallery || this.scope;
-    var sliders = container.querySelectorAll ? container.querySelectorAll("slider-component") : [];
+    // `slider-component` est l'élément de Dawn. Les thèmes récents de Shopify
+    // (Savor et la famille Horizon) nomment le leur `slideshow-component`, et
+    // ne recalculaient donc jamais leur géométrie après un filtrage.
+    var sliders = container.querySelectorAll
+      ? container.querySelectorAll("slider-component, slideshow-component, media-gallery")
+      : [];
     Array.prototype.forEach.call(sliders, function (slider) {
       try {
         if (typeof slider.initPages === "function") slider.initPages();

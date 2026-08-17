@@ -570,6 +570,185 @@ section("Moteur de groupage (admin ↔ storefront)");
 }
 
 /* ========================================================================== */
+/* Scénario — galerie en carrousel (thèmes façon Savor / Horizon)             */
+/*                                                                            */
+/* Les scénarios précédents simulent tous une galerie en grille, façon Dawn.  */
+/* C'est l'angle mort qui a laissé passer un bug réel : sur un carrousel,     */
+/* masquer les diapositives ne suffit pas — le composant garde son propre     */
+/* index et continue d'afficher celle qu'on vient de masquer, donc du vide.   */
+/* ========================================================================== */
+
+function buildCarouselHtml(product, currentVariant, { withThumbs }) {
+  const selected = currentVariant.o;
+
+  const slides = product.media
+    .map(
+      (media) => `
+      <slideshow-slide class="slideshow__slide" data-media-id="${SECTION}-${media.id}">
+        <img src="${media.src}" alt="${media.alt}">
+      </slideshow-slide>`,
+    )
+    .join("");
+
+  const thumbs = withThumbs
+    ? `<div class="thumbnail-list"><ul>${product.media
+        .map(
+          (media) => `
+        <li class="thumbnail-list__item">
+          <button class="thumbnail" data-target="${SECTION}-${media.id}">${media.id}</button>
+        </li>`,
+        )
+        .join("")}</ul></div>`
+    : "";
+
+  const selects = product.options
+    .map(
+      (option) => `
+      <select name="options[${option.name}]" data-index="option${option.position}">
+        ${option.values
+          .map(
+            (value) =>
+              `<option value="${value}"${value === selected[option.position - 1] ? " selected" : ""}>${value}</option>`,
+          )
+          .join("")}
+      </select>`,
+    )
+    .join("");
+
+  // Largeurs fixes : le test doit pouvoir comparer scrollLeft et offsetLeft
+  // sans dépendre de la mise en page du navigateur.
+  return `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>${product.title}</title><style>${css}
+  .slideshow__track { display: flex; overflow-x: auto; width: 200px; }
+  .slideshow__slide { flex: 0 0 200px; width: 200px; height: 120px; }
+</style></head>
+<body>
+  <main data-section-type="product">
+    <media-gallery data-section="${SECTION}">
+      <slideshow-component>
+        <div class="slideshow__track">${slides}</div>
+      </slideshow-component>
+    </media-gallery>
+    ${thumbs}
+
+    <div class="product__info-wrapper">
+      <h1 class="product__title">${product.title}</h1>
+      <variant-selects class="product-variant-picker">${selects}</variant-selects>
+
+      <div class="variantsy" data-variantsy data-product-id="${product.id}"
+           data-endpoint="/apps/variantsy/settings" data-current-variant="${currentVariant.id}">
+        <script type="application/json" data-variantsy-data>${JSON.stringify(product)}</script>
+        ${product.options.map((option) => groupHtml(option, selected)).join("")}
+      </div>
+
+      <form action="/cart/add" method="post">
+        <input type="hidden" name="id" value="${currentVariant.id}">
+        <button type="submit" name="add"><span>Ajouter au panier</span></button>
+      </form>
+    </div>
+  </main>
+</body></html>`;
+}
+
+async function openCarouselPage(product, currentVariant, options = {}) {
+  const page = await browser.newPage();
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => consoleErrors.push(String(error)));
+
+  await page.route("https://example.com/**", (route) => route.fulfill({ status: 200, body: "" }));
+  await page.route("**/apps/variantsy/settings", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(BASE_CONFIG) }),
+  );
+
+  await page.goto("https://example.com/products/sweat");
+  await page.evaluate(() => window.sessionStorage.clear());
+  await page.setContent(buildCarouselHtml(product, currentVariant, options));
+  // Espionne les clics de miniature : c'est ainsi qu'on vérifie que le recours
+  // n°1 est bien emprunté, plutôt que de deviner à partir du résultat visuel.
+  await page.evaluate(() => {
+    window.__thumbClicks = [];
+    document.querySelectorAll(".thumbnail[data-target]").forEach((button) => {
+      button.addEventListener("click", () =>
+        window.__thumbClicks.push(button.getAttribute("data-target")),
+      );
+    });
+  });
+  await page.addScriptTag({ content: js });
+  await page.waitForFunction(() => document.querySelector("[data-variantsy-ready]") !== null);
+  await page.waitForTimeout(120);
+  return page;
+}
+
+section("Galerie en carrousel");
+{
+  // --- Avec miniatures : le recours n°1 doit être emprunté ------------------
+  const page = await openCarouselPage(PRODUCT, PRODUCT.variants[1], { withThumbs: true });
+
+  const otherColor = PRODUCT.options[0].values.find((v) => v !== PRODUCT.variants[1].o[0]);
+  await page.locator(`.variantsy__swatch[data-variantsy-value="${otherColor}"]`).first().click();
+  await page.waitForTimeout(150);
+
+  const state = await page.evaluate(() => {
+    const slides = Array.from(document.querySelectorAll("slideshow-slide"));
+    const firstVisible = slides.find((s) => !s.classList.contains("variantsy-media-hidden"));
+    return {
+      clicks: window.__thumbClicks,
+      firstVisibleId: firstVisible ? firstVisible.getAttribute("data-media-id") : null,
+      nbVisibles: slides.filter((s) => !s.classList.contains("variantsy-media-hidden")).length,
+      nbTotal: slides.length,
+    };
+  });
+
+  check(
+    "Le filtrage laisse au moins une diapositive visible",
+    state.nbVisibles > 0 && state.nbVisibles < state.nbTotal,
+    JSON.stringify(state),
+  );
+  check(
+    "La miniature du premier média visible est activée",
+    state.clicks.length > 0 && state.clicks[state.clicks.length - 1] === state.firstVisibleId,
+    JSON.stringify(state),
+  );
+
+  await page.close();
+}
+
+{
+  // --- Sans miniatures : le recours n°3 doit repositionner le défilement ----
+  const page = await openCarouselPage(PRODUCT, PRODUCT.variants[1], { withThumbs: false });
+
+  // On place volontairement le carrousel loin du début, comme un visiteur qui
+  // aurait fait défiler avant de changer de coloris.
+  await page.evaluate(() => {
+    document.querySelector(".slideshow__track").scrollLeft = 600;
+  });
+
+  const otherColor = PRODUCT.options[0].values.find((v) => v !== PRODUCT.variants[1].o[0]);
+  await page.locator(`.variantsy__swatch[data-variantsy-value="${otherColor}"]`).first().click();
+  await page.waitForTimeout(200);
+
+  const geometry = await page.evaluate(() => {
+    const track = document.querySelector(".slideshow__track");
+    const slides = Array.from(document.querySelectorAll("slideshow-slide"));
+    const firstVisible = slides.find((s) => !s.classList.contains("variantsy-media-hidden"));
+    return {
+      scrollLeft: Math.round(track.scrollLeft),
+      cible: firstVisible ? Math.round(firstVisible.offsetLeft - track.offsetLeft) : null,
+    };
+  });
+
+  check(
+    "Le carrousel se repositionne sur le premier média visible",
+    geometry.cible !== null && Math.abs(geometry.scrollLeft - geometry.cible) <= 2,
+    JSON.stringify(geometry),
+  );
+
+  await page.close();
+}
+
+/* ========================================================================== */
 /* Bilan                                                                      */
 /* ========================================================================== */
 
