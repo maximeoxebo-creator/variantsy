@@ -690,6 +690,13 @@ section("Galerie en carrousel");
   // --- Avec miniatures : le recours n°1 doit être emprunté ------------------
   const page = await openCarouselPage(PRODUCT, PRODUCT.variants[1], { withThumbs: true });
 
+  // Le carrousel est délibérément laissé loin du début : sans repositionnement
+  // à faire, l'app ne doit toucher à rien, et il n'y aurait pas de clic à
+  // observer. C'est le cas « déjà bien placé », couvert plus bas.
+  await page.evaluate(() => {
+    document.querySelector(".slideshow__track").scrollLeft = 600;
+  });
+
   const otherColor = PRODUCT.options[0].values.find((v) => v !== PRODUCT.variants[1].o[0]);
   await page.locator(`.variantsy__swatch[data-variantsy-value="${otherColor}"]`).first().click();
   await page.waitForTimeout(150);
@@ -705,6 +712,15 @@ section("Galerie en carrousel");
     };
   });
 
+  // Second changement : la galerie est désormais correctement cadrée, donc
+  // l'app ne doit plus rien déclencher.
+  await page.evaluate(() => {
+    window.__thumbClicks = [];
+  });
+  await page.locator(`.variantsy__swatch[data-variantsy-value="${otherColor}"]`).first().click();
+  await page.waitForTimeout(150);
+  state.clicsApresCoup = (await page.evaluate(() => window.__thumbClicks)).length;
+
   check(
     "Le filtrage laisse au moins une diapositive visible",
     state.nbVisibles > 0 && state.nbVisibles < state.nbTotal,
@@ -713,6 +729,11 @@ section("Galerie en carrousel");
   check(
     "La miniature du premier média visible est activée",
     state.clicks.length > 0 && state.clicks[state.clicks.length - 1] === state.firstVisibleId,
+    JSON.stringify(state),
+  );
+  check(
+    "Aucun recours n'est tenté quand le média est déjà en place",
+    state.clicsApresCoup === 0,
     JSON.stringify(state),
   );
 

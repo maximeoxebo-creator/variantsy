@@ -833,10 +833,52 @@
     // Toucher au défilement ici ne ferait qu'ajouter du désordre.
     if (!target) return;
 
-    if (this.focusViaThumbnail(collected, target.id)) return;
-    if (this.focusViaComponentApi(gallery, target)) return;
+    // Chaque recours est VÉRIFIÉ, pas cru sur parole. Un thème peut exposer
+    // une méthode qui ne lève aucune exception sans rien repositionner pour
+    // autant : c'est le cas de Savor, dont le composant acceptait l'appel et
+    // laissait le carrousel exactement où il était. « Ne pas planter » n'est
+    // pas « avoir fonctionné ».
+    if (this.mediaIsInView(gallery, target.element)) return;
+
+    this.focusViaThumbnail(collected, target.id);
+    if (this.mediaIsInView(gallery, target.element)) return;
+
+    this.focusViaComponentApi(gallery, target);
+    if (this.mediaIsInView(gallery, target.element)) return;
+
+    // Dernier recours, synchrone et sans intermédiaire : il fait autorité.
     this.focusViaScroll(gallery, target.element);
   };
+
+  /**
+   * Le média est-il réellement à sa place dans la fenêtre de la galerie ?
+   *
+   * On compare les bords à l'écran plutôt que de faire confiance à un appel de
+   * méthode : c'est la seule mesure qui corresponde à ce que voit le visiteur.
+   */
+  Variantsy.prototype.mediaIsInView = function (gallery, element) {
+    try {
+      var box = element.getBoundingClientRect();
+      if (box.width < 1 || box.height < 1) return false;
+      var scroller = findScroller(element, gallery);
+      if (!scroller) return true; // pas de défilement : rien à recaler
+      var frame = scroller.getBoundingClientRect();
+      return Math.abs(box.left - frame.left) <= 1;
+    } catch (error) {
+      return true; // en cas de doute, ne pas s'acharner
+    }
+  };
+
+  /** Premier ancêtre défilant horizontalement, sans dépasser la galerie. */
+  function findScroller(element, gallery) {
+    var node = element.parentNode;
+    while (node && node !== gallery.parentNode && node.nodeType === 1) {
+      var overflow = window.getComputedStyle(node).overflowX;
+      if (overflow === "auto" || overflow === "scroll") return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
 
   /**
    * Recours 1 — cliquer la miniature correspondante.
@@ -905,10 +947,9 @@
    */
   Variantsy.prototype.focusViaScroll = function (gallery, element) {
     try {
-      var scroller = element.parentNode;
-      while (scroller && scroller !== gallery.parentNode) {
-        var overflow = window.getComputedStyle(scroller).overflowX;
-        if (overflow === "auto" || overflow === "scroll") {
+      var scroller = findScroller(element, gallery);
+      if (scroller) {
+        {
           // Différence de positions à l'écran, et non `offsetLeft` : ce dernier
           // se mesure depuis l'ancêtre positionné, qui n'est pas forcément le
           // conteneur défilant. Quand les deux diffèrent, le carrousel se cale
@@ -919,7 +960,6 @@
           scroller.scrollLeft += delta;
           return;
         }
-        scroller = scroller.parentNode;
       }
       // Aucun conteneur défilant identifié : on laisse le navigateur décider,
       // en restant sur « nearest » pour ne pas emporter la page entière.
