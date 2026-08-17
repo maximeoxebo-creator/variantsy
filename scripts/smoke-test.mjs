@@ -817,6 +817,111 @@ section("Repli des pastilles");
 }
 
 /* ========================================================================== */
+/* Scénario — grille dont les vignettes contiennent plus que l'image          */
+/*                                                                            */
+/* Reproduit la grille desktop du thème Savor : la cellule <li> abrite un      */
+/* conteneur d'image ET un badge. Si l'app ne masque que le conteneur, la      */
+/* cellule garde sa hauteur et laisse une case blanche à la place de la photo. */
+/* ========================================================================== */
+
+function buildGridHtml(product, currentVariant) {
+  const selected = currentVariant.o;
+  const cells = product.media
+    .map(
+      (media) => `
+      <li class="media-gallery__cell">
+        <div class="product-media-container" data-media-id="${SECTION}-${media.id}">
+          <img src="${media.src}" alt="${media.alt}">
+        </div>
+        <span class="media-badge">Nouveau</span>
+      </li>`,
+    )
+    .join("");
+
+  const selects = product.options
+    .map(
+      (option) => `
+      <select name="options[${option.name}]" data-index="option${option.position}">
+        ${option.values
+          .map(
+            (value) =>
+              `<option value="${value}"${value === selected[option.position - 1] ? " selected" : ""}>${value}</option>`,
+          )
+          .join("")}
+      </select>`,
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>${product.title}</title><style>${css}
+  .media-gallery__cell { height: 120px; }
+</style></head>
+<body>
+  <main data-section-type="product">
+    <media-gallery data-section="${SECTION}">
+      <ul class="media-gallery__grid">${cells}</ul>
+    </media-gallery>
+    <div class="product__info-wrapper">
+      <h1 class="product__title">${product.title}</h1>
+      <variant-selects class="product-variant-picker">${selects}</variant-selects>
+      <div class="variantsy" data-variantsy data-product-id="${product.id}"
+           data-endpoint="/apps/variantsy/settings" data-current-variant="${currentVariant.id}">
+        <script type="application/json" data-variantsy-data>${JSON.stringify(product)}</script>
+        ${product.options.map((option) => groupHtml(option, selected)).join("")}
+      </div>
+      <form action="/cart/add" method="post">
+        <input type="hidden" name="id" value="${currentVariant.id}">
+        <button type="submit" name="add"><span>Ajouter au panier</span></button>
+      </form>
+    </div>
+  </main>
+</body></html>`;
+}
+
+section("Grille à vignettes composites");
+{
+  const page = await browser.newPage();
+  page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
+  page.on("pageerror", (e) => consoleErrors.push(String(e)));
+  await page.route("https://example.com/**", (r) => r.fulfill({ status: 200, body: "" }));
+  await page.route("**/apps/variantsy/settings", (r) =>
+    r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(BASE_CONFIG) }),
+  );
+  await page.goto("https://example.com/products/sweat");
+  await page.evaluate(() => window.sessionStorage.clear());
+  await page.setContent(buildGridHtml(PRODUCT, PRODUCT.variants[1]));
+  await page.addScriptTag({ content: js });
+  await page.waitForFunction(() => document.querySelector("[data-variantsy-ready]") !== null);
+  await page.waitForTimeout(150);
+
+  const etat = await page.evaluate(() => {
+    const cells = Array.from(document.querySelectorAll(".media-gallery__cell"));
+    return {
+      cellulesMasquees: cells.filter((c) => c.classList.contains("variantsy-media-hidden")).length,
+      cellulesVidesMaisVisibles: cells.filter(
+        (c) =>
+          !c.classList.contains("variantsy-media-hidden") &&
+          c.querySelector(".product-media-container.variantsy-media-hidden"),
+      ).length,
+      total: cells.length,
+    };
+  });
+
+  check(
+    "C'est la cellule entière qui est masquée, pas seulement l'image",
+    etat.cellulesMasquees > 0,
+    JSON.stringify(etat),
+  );
+  check(
+    "Aucune cellule vide ne subsiste dans la grille",
+    etat.cellulesVidesMaisVisibles === 0,
+    JSON.stringify(etat),
+  );
+
+  await page.close();
+}
+
+/* ========================================================================== */
 /* Bilan                                                                      */
 /* ========================================================================== */
 

@@ -387,16 +387,46 @@
    * La condition `children.length === 1` garantit qu'on ne remonte jamais
    * jusqu'à un conteneur qui abrite d'autres médias.
    */
-  function hoist(element, container) {
+  /**
+   * Remonte du nœud porteur de l'identifiant jusqu'à l'élément qu'il faut
+   * réellement masquer.
+   *
+   * Le critère « parent à enfant unique » utilisé jusqu'ici cassait dès qu'une
+   * vignette contenait autre chose que l'image : un badge, une légende, un
+   * bouton de zoom. On s'arrêtait alors sur le conteneur interne, et la cellule
+   * de grille qui l'entoure gardait sa hauteur — une case blanche vide à la
+   * place de la photo. Constaté sur la grille desktop du thème Savor.
+   *
+   * Le bon critère est l'appartenance : on remonte tant que le parent n'abrite
+   * pas un AUTRE média, puisque le masquer emporterait des photos qui doivent
+   * rester visibles.
+   */
+  function hoist(element, container, known) {
     var node = element;
-    while (
-      node.parentElement &&
-      node.parentElement !== container &&
-      node.parentElement.children.length === 1
-    ) {
+    while (node.parentElement && node.parentElement !== container) {
+      if (countMediaIn(node.parentElement, known) > 1) break;
       node = node.parentElement;
     }
     return node;
+  }
+
+  /** Nombre de médias connus distincts présents sous un élément. */
+  function countMediaIn(element, known) {
+    if (!known) return 2; // prudence : sans référentiel, on ne remonte pas
+    var selector = MEDIA_ID_ATTRS.map(function (attr) {
+      return "[" + attr + "]";
+    }).join(",");
+    var found = element.querySelectorAll(selector);
+    var ids = {};
+    var total = 0;
+    for (var i = 0; i < found.length; i++) {
+      var id = mediaIdOf(found[i], known);
+      if (id === null || ids[id]) continue;
+      ids[id] = true;
+      total += 1;
+      if (total > 1) return total; // inutile de compter plus loin
+    }
+    return total;
   }
 
   function mediaIdOf(element, known) {
@@ -686,7 +716,7 @@
       Array.prototype.forEach.call(candidates, function (element) {
         var id = mediaIdOf(element, known);
         if (id === null) return;
-        var target = hoist(element, container);
+        var target = hoist(element, container, known);
         if (seen.indexOf(target) !== -1) return;
         // On ne retient que le nœud le plus haut de chaque sous-arbre : masquer
         // un <li> suffit, inutile de masquer aussi le <img> qu'il contient.
