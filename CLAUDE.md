@@ -265,6 +265,8 @@ jamais empêcher une vente.
 ## 8. Commandes
 
 ```bash
+npm install                # dépendances
+npx playwright install chromium   # une seule fois, sinon `npm run test` échoue
 npm run dev                # dev local via Shopify CLI (tunnel + HMR)
 npm run typecheck          # tsc --noEmit
 npm run test               # test de fumée du JS storefront dans Chromium
