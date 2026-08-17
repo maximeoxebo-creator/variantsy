@@ -88,8 +88,15 @@ export default function SetupPage() {
                   </InlineStack>
                 )}
                 <List type="number">
-                  <List.Item>Dans le modèle « Produit », cliquez sur « Ajouter un bloc ».</List.Item>
-                  <List.Item>Choisissez « Sélecteur de variantes Variantsy ».</List.Item>
+                  <List.Item>
+                    En haut de l&apos;éditeur, basculez sur le modèle <strong>Produit</strong> —
+                    le bloc n&apos;existe pas sur les autres modèles.
+                  </List.Item>
+                  <List.Item>
+                    Dans la section principale, cliquez sur « Ajouter un bloc », puis ouvrez
+                    l&apos;onglet <strong>Apps</strong>.
+                  </List.Item>
+                  <List.Item>Choisissez « Variantsy ».</List.Item>
                   <List.Item>Glissez-le au-dessus du bouton d&apos;ajout au panier.</List.Item>
                   <List.Item>Enregistrez.</List.Item>
                 </List>
