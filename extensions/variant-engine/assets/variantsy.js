@@ -48,6 +48,8 @@
       selectedWidth: 2,
       selectedGap: 2,
       cornerRadius: 8,
+      swatchFallback: "image",
+      neutralColor: "#ECECEC",
       showLabels: false,
       showOptionName: true,
       maxVisible: 0,
@@ -103,6 +105,34 @@
   function num(value, fallback) {
     var n = Number(value);
     return isFinite(n) ? n : fallback;
+  }
+
+  /**
+   * Devine une couleur d'après le nom de la valeur.
+   *
+   * Miroir exact de `guessColor()` dans app/colors.ts — la duplication est
+   * imposée par l'architecture (l'extension ne peut rien importer du bundle
+   * Remix), et le dictionnaire lui-même n'est PAS dupliqué : il arrive dans la
+   * config servie par l'app proxy.
+   *
+   * On retient la clé la plus longue contenue dans le nom, pour que
+   * « bleu marine » l'emporte sur « bleu » dans « Bleu marine chiné ».
+   */
+  function guessColorFrom(dictionary, label) {
+    if (!dictionary) return null;
+    var key = normalize(label);
+    if (dictionary[key]) return dictionary[key];
+
+    var best = null;
+    var bestLength = 0;
+    for (var name in dictionary) {
+      if (!Object.prototype.hasOwnProperty.call(dictionary, name)) continue;
+      if (key.indexOf(name) !== -1 && name.length > bestLength) {
+        best = dictionary[name];
+        bestLength = name.length;
+      }
+    }
+    return best;
   }
 
   /**
@@ -953,20 +983,40 @@
     var swatch = this.config.swatches[key];
 
     if (!swatch) {
+      var style = this.config.style || {};
+      var neutral = style.neutralColor || "#ECECEC";
+      var mode = style.swatchFallback || "image";
+
       // Repli 1 : la valeur EST un code couleur (« #1F3A5F »).
       if (/^#[0-9a-f]{3,8}$/i.test(value.trim())) {
         visual.style.background = value.trim();
         return;
       }
-      // Repli 2 : utiliser l'image de la variante correspondante — mieux qu'un
-      // rond gris, et gratuit puisque le média est déjà chargé par le thème.
-      var fallback = this.mediaForValue(optionName, value);
-      if (fallback) {
-        visual.style.backgroundImage = 'url("' + fallback + '")';
-        visual.style.backgroundColor = "transparent";
+
+      // Repli 2 : deviner la couleur d'après le nom, en mode « pastilles de
+      // couleur ». Le dictionnaire arrive dans la config, il n'alourdit donc
+      // pas ce fichier — et le marchand n'a rien eu à saisir.
+      if (mode === "color") {
+        var guessed = guessColorFrom(this.config.colors, value);
+        visual.style.backgroundImage = "none";
+        visual.style.backgroundColor = guessed || neutral;
         return;
       }
-      visual.style.background = "#ECECEC";
+
+      // Repli 3 : la photo de la variante. Utile quand les coloris ne portent
+      // pas de nom de couleur (motifs, imprimés), trompeur quand tous les
+      // produits se ressemblent — d'où le réglage ci-dessus.
+      if (mode === "image") {
+        var fallback = this.mediaForValue(optionName, value);
+        if (fallback) {
+          visual.style.backgroundImage = 'url("' + fallback + '")';
+          visual.style.backgroundColor = "transparent";
+          return;
+        }
+      }
+
+      visual.style.backgroundImage = "none";
+      visual.style.backgroundColor = neutral;
       return;
     }
 

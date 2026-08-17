@@ -260,6 +260,9 @@ async function openPage(product, currentVariant, configOverrides = {}) {
     ...BASE_CONFIG,
     behavior: { ...BASE_CONFIG.behavior, ...(configOverrides.behavior || {}) },
     gallery: { ...BASE_CONFIG.gallery, ...(configOverrides.gallery || {}) },
+    style: { ...BASE_CONFIG.style, ...(configOverrides.style || {}) },
+    ...(configOverrides.colors ? { colors: configOverrides.colors } : {}),
+    ...(configOverrides.swatches ? { swatches: configOverrides.swatches } : {}),
   };
 
   // Playwright évalue les routes de la plus récente à la plus ancienne : la
@@ -746,6 +749,71 @@ section("Galerie en carrousel");
   );
 
   await page.close();
+}
+
+/* ========================================================================== */
+/* Scénario — repli des pastilles sans couleur associée                       */
+/*                                                                            */
+/* Sur un catalogue dont toutes les photos se ressemblent, le repli sur        */
+/* l'image de variante produit une rangée de vignettes indiscernables au lieu  */
+/* d'un nuancier. Le mode « couleur » doit deviner la teinte d'après le nom.   */
+/* ========================================================================== */
+
+section("Repli des pastilles");
+{
+  const dictionnaire = { navy: "#1F3A5F", "bleu marine": "#1F3A5F", noir: "#111111" };
+  const valeur = PRODUCT.options[0].values[0];
+
+  // Mode « couleur » : bibliothèque vide, la teinte vient du dictionnaire.
+  const page = await openPage(PRODUCT, PRODUCT.variants[1], {
+    swatches: {},
+    colors: { ...dictionnaire, [valeur.toLowerCase()]: "#1F3A5F" },
+    style: { swatchFallback: "color", neutralColor: "#ECECEC" },
+  });
+
+  const fond = await page
+    .locator(`.variantsy__swatch[data-variantsy-value="${valeur}"] .variantsy__visual`)
+    .evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { image: s.backgroundImage, couleur: s.backgroundColor };
+    });
+
+  check(
+    "Mode couleur : la teinte est devinée depuis le nom",
+    fond.couleur === "rgb(31, 58, 95)",
+    JSON.stringify(fond),
+  );
+  check("Mode couleur : aucune photo de variante n'est utilisée", fond.image === "none", JSON.stringify(fond));
+  await page.close();
+
+  // Mode « neutre » : jamais d'image, jamais de devinette.
+  const page2 = await openPage(PRODUCT, PRODUCT.variants[1], {
+    swatches: {},
+    style: { swatchFallback: "neutral", neutralColor: "#ABCDEF" },
+  });
+  const fond2 = await page2
+    .locator(`.variantsy__swatch[data-variantsy-value="${valeur}"] .variantsy__visual`)
+    .evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { image: s.backgroundImage, couleur: s.backgroundColor };
+    });
+  check(
+    "Mode neutre : la teinte configurée est appliquée",
+    fond2.couleur === "rgb(171, 205, 239)" && fond2.image === "none",
+    JSON.stringify(fond2),
+  );
+  await page2.close();
+
+  // Mode « image » : comportement historique préservé.
+  const page3 = await openPage(PRODUCT, PRODUCT.variants[1], {
+    swatches: {},
+    style: { swatchFallback: "image" },
+  });
+  const fond3 = await page3
+    .locator(`.variantsy__swatch[data-variantsy-value="${valeur}"] .variantsy__visual`)
+    .evaluate((el) => getComputedStyle(el).backgroundImage);
+  check("Mode image : le repli historique reste en place", fond3 !== "none", fond3);
+  await page3.close();
 }
 
 /* ========================================================================== */

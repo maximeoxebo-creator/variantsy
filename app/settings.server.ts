@@ -1,6 +1,7 @@
 import type { ShopSettings, SwatchValue } from "@prisma/client";
 import prisma, { withRetry } from "./db.server";
 import { normalize } from "./shared";
+import { COLOR_DICTIONARY } from "./colors";
 
 export { normalize };
 
@@ -23,6 +24,8 @@ export type SettingsInput = {
   selectedWidth: number;
   selectedGap: number;
   cornerRadius: number;
+  swatchFallback: string;
+  neutralColor: string;
   showLabels: boolean;
   showOptionName: boolean;
   maxVisible: number;
@@ -60,6 +63,8 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   selectedWidth: 2,
   selectedGap: 2,
   cornerRadius: 8,
+  swatchFallback: "image",
+  neutralColor: "#ECECEC",
   showLabels: false,
   showOptionName: true,
   maxVisible: 0,
@@ -173,6 +178,8 @@ export type StorefrontConfig = {
     selectedWidth: number;
     selectedGap: number;
     cornerRadius: number;
+    swatchFallback: string;
+    neutralColor: string;
     showLabels: boolean;
     showOptionName: boolean;
     maxVisible: number;
@@ -203,6 +210,13 @@ export type StorefrontConfig = {
   colorOptions: string[];
   /** clé = `${optionName}::${value}` normalisés */
   swatches: Record<string, { kind: string; c1?: string; c2?: string; img?: string }>;
+  /**
+   * Dictionnaire nom → hex, envoyé UNIQUEMENT en mode `swatchFallback: "color"`.
+   * Il permet au storefront de deviner « Navy » ou « Bleu marine » sans que le
+   * marchand ait rien saisi. On ne l'envoie pas dans les autres modes : ce
+   * payload voyage sur chaque page produit, et il ne servirait à rien.
+   */
+  colors?: Record<string, string>;
 };
 
 export function toStorefrontConfig(
@@ -232,6 +246,8 @@ export function toStorefrontConfig(
       selectedWidth: settings.selectedWidth,
       selectedGap: settings.selectedGap,
       cornerRadius: settings.cornerRadius,
+      swatchFallback: settings.swatchFallback,
+      neutralColor: settings.neutralColor,
       showLabels: settings.showLabels,
       showOptionName: settings.showOptionName,
       maxVisible: settings.maxVisible,
@@ -264,5 +280,6 @@ export function toStorefrontConfig(
       .map((s) => normalize(s))
       .filter(Boolean),
     swatches,
+    ...(settings.swatchFallback === "color" ? { colors: COLOR_DICTIONARY } : {}),
   };
 }

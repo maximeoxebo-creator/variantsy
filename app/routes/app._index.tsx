@@ -53,6 +53,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     selectedWidth: Math.min(8, Math.max(1, int("selectedWidth", DEFAULT_SETTINGS.selectedWidth))),
     selectedGap: Math.min(8, Math.max(0, int("selectedGap", DEFAULT_SETTINGS.selectedGap))),
     cornerRadius: Math.min(24, Math.max(0, int("cornerRadius", DEFAULT_SETTINGS.cornerRadius))),
+    swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
+    neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
@@ -253,6 +255,32 @@ export default function SettingsPage() {
                     onChange={(v) => set("selectedColor", v)}
                   />
                 </InlineGrid>
+
+                <Divider />
+                <Select
+                  label="Valeur sans couleur définie"
+                  options={[
+                    { label: "Afficher la photo de la variante", value: "image" },
+                    { label: "Deviner la couleur d'après son nom", value: "color" },
+                    { label: "Toujours la teinte neutre", value: "neutral" },
+                  ]}
+                  value={form.swatchFallback}
+                  onChange={(v) => set("swatchFallback", v)}
+                  helpText={
+                    form.swatchFallback === "image"
+                      ? "Trompeur quand toutes vos photos se ressemblent : vous obtenez une rangée de vignettes indiscernables au lieu d'un nuancier."
+                      : form.swatchFallback === "color"
+                        ? "Variantsy reconnaît les noms courants en français et en anglais (« Navy », « Bleu marine », « Terracotta »…). Les teintes maison se saisissent en hexadécimal dans la Bibliothèque de swatches."
+                        : "Toutes les valeurs non renseignées prennent la même teinte."
+                  }
+                />
+                {form.swatchFallback !== "image" && (
+                  <ColorField
+                    label="Teinte neutre"
+                    value={form.neutralColor}
+                    onChange={(v) => set("neutralColor", v)}
+                  />
+                )}
 
                 <Divider />
                 <Checkbox

@@ -68,6 +68,13 @@ model ShopSettings {
   selectedGap    Int     @default(2)
   /// Rayon des coins quand shape = "rounded", en px. Ignoré sinon.
   cornerRadius   Int     @default(8)
+  /// Que faire d'une valeur sans couleur associée dans la bibliothèque :
+  /// "image"   → afficher la photo de la variante (défaut historique)
+  /// "color"   → rester en pastille de couleur, devinée depuis le nom
+  /// "neutral" → rester en pastille, toujours de la teinte neutre
+  swatchFallback String @default("image")
+  /// Teinte servie quand aucune couleur n'a pu être déterminée.
+  neutralColor   String  @default("#ECECEC")
   /// Afficher le libellé de la valeur sous le swatch
   showLabels     Boolean @default(false)
   /// Afficher "Couleur : Bleu marine" au-dessus des swatches
