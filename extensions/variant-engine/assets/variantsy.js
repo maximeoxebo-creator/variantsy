@@ -909,7 +909,14 @@
       while (scroller && scroller !== gallery.parentNode) {
         var overflow = window.getComputedStyle(scroller).overflowX;
         if (overflow === "auto" || overflow === "scroll") {
-          scroller.scrollLeft = element.offsetLeft - scroller.offsetLeft;
+          // Différence de positions à l'écran, et non `offsetLeft` : ce dernier
+          // se mesure depuis l'ancêtre positionné, qui n'est pas forcément le
+          // conteneur défilant. Quand les deux diffèrent, le carrousel se cale
+          // entre deux diapositives et laisse une bande vide sur le côté.
+          var delta =
+            element.getBoundingClientRect().left - scroller.getBoundingClientRect().left;
+          if (Math.abs(delta) < 1) return;
+          scroller.scrollLeft += delta;
           return;
         }
         scroller = scroller.parentNode;

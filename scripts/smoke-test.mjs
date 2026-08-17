@@ -737,9 +737,16 @@ section("Galerie en carrousel");
     const track = document.querySelector(".slideshow__track");
     const slides = Array.from(document.querySelectorAll("slideshow-slide"));
     const firstVisible = slides.find((s) => !s.classList.contains("variantsy-media-hidden"));
+    // On mesure ce que le visiteur voit — l'alignement des bords à l'écran —
+    // et non `offsetLeft`, qui se calcule depuis l'ancêtre positionné et
+    // masquait justement un décalage laissant une bande vide sur le côté.
+    if (!firstVisible) return { ecart: null };
     return {
-      scrollLeft: Math.round(track.scrollLeft),
-      cible: firstVisible ? Math.round(firstVisible.offsetLeft - track.offsetLeft) : null,
+      ecart: Math.round(
+        firstVisible.getBoundingClientRect().left - track.getBoundingClientRect().left,
+      ),
+      largeurVisible: Math.round(firstVisible.getBoundingClientRect().width),
+      largeurPiste: Math.round(track.getBoundingClientRect().width),
     };
   });
 
@@ -760,7 +767,12 @@ section("Galerie en carrousel");
 
   check(
     "Le carrousel se repositionne sur le premier média visible",
-    geometry.cible !== null && Math.abs(geometry.scrollLeft - geometry.cible) <= 2,
+    geometry.ecart !== null && Math.abs(geometry.ecart) <= 1,
+    JSON.stringify(geometry),
+  );
+  check(
+    "La diapositive occupe toute la piste, sans bande vide",
+    geometry.largeurVisible === geometry.largeurPiste,
     JSON.stringify(geometry),
   );
 
