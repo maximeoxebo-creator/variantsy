@@ -1,17 +1,4 @@
 # ---------------------------------------------------------------------------
-# ⚠️  WORKFLOW EN SOMMEIL — il ne s'exécute PAS depuis cet emplacement.
-#
-# GitHub refuse tout push qui touche `.github/workflows/` si le token n'a pas
-# la portée `workflow`. Le fichier est donc garé ici, un cran au-dessus, pour
-# débloquer le premier push sans perdre son contenu.
-#
-# Pour le remettre en service, une fois le token doté de la portée `workflow` :
-#   git mv .github/deploy-extension.yml.disabled .github/workflows/deploy-extension.yml
-#
-# Il restera de toute façon inerte tant que ses deux secrets n'existent pas.
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 # Déploie l'extension de thème quand — et seulement quand — un fichier de
 # `extensions/` ou `shopify.app.toml` change.
 #
