@@ -50,6 +50,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     borderColor: str("borderColor", DEFAULT_SETTINGS.borderColor),
     selectedStyle: str("selectedStyle", DEFAULT_SETTINGS.selectedStyle),
     selectedColor: str("selectedColor", DEFAULT_SETTINGS.selectedColor),
+    selectedWidth: Math.min(8, Math.max(1, int("selectedWidth", DEFAULT_SETTINGS.selectedWidth))),
+    selectedGap: Math.min(8, Math.max(0, int("selectedGap", DEFAULT_SETTINGS.selectedGap))),
+    cornerRadius: Math.min(24, Math.max(0, int("cornerRadius", DEFAULT_SETTINGS.cornerRadius))),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
@@ -201,7 +204,42 @@ export default function SettingsPage() {
                   value={form.borderWidth}
                   onChange={(v) => set("borderWidth", v as number)}
                   output
+                  helpText="Bordure de la pastille au repos, à ne pas confondre avec le trait de sélection ci-dessous."
                 />
+
+                {form.shape === "rounded" && (
+                  <RangeSlider
+                    label={`Arrondi des coins — ${form.cornerRadius} px`}
+                    min={0}
+                    max={24}
+                    value={form.cornerRadius}
+                    onChange={(v) => set("cornerRadius", v as number)}
+                    output
+                  />
+                )}
+
+                {form.selectedStyle !== "shadow" && (
+                  <RangeSlider
+                    label={`Épaisseur du trait de sélection — ${form.selectedWidth} px`}
+                    min={1}
+                    max={8}
+                    value={form.selectedWidth}
+                    onChange={(v) => set("selectedWidth", v as number)}
+                    output
+                  />
+                )}
+
+                {form.selectedStyle === "ring" && (
+                  <RangeSlider
+                    label={`Écart entre la pastille et l'anneau — ${form.selectedGap} px`}
+                    min={0}
+                    max={8}
+                    value={form.selectedGap}
+                    onChange={(v) => set("selectedGap", v as number)}
+                    output
+                    helpText="À 0, l'anneau vient coller à la pastille."
+                  />
+                )}
 
                 <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
                   <ColorField

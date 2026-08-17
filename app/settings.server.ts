@@ -20,6 +20,9 @@ export type SettingsInput = {
   borderColor: string;
   selectedStyle: string;
   selectedColor: string;
+  selectedWidth: number;
+  selectedGap: number;
+  cornerRadius: number;
   showLabels: boolean;
   showOptionName: boolean;
   maxVisible: number;
@@ -54,6 +57,9 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   borderColor: "#D9D9D9",
   selectedStyle: "ring",
   selectedColor: "#111111",
+  selectedWidth: 2,
+  selectedGap: 2,
+  cornerRadius: 8,
   showLabels: false,
   showOptionName: true,
   maxVisible: 0,
@@ -164,6 +170,9 @@ export type StorefrontConfig = {
     borderColor: string;
     selectedStyle: string;
     selectedColor: string;
+    selectedWidth: number;
+    selectedGap: number;
+    cornerRadius: number;
     showLabels: boolean;
     showOptionName: boolean;
     maxVisible: number;
@@ -220,6 +229,9 @@ export function toStorefrontConfig(
       borderColor: settings.borderColor,
       selectedStyle: settings.selectedStyle,
       selectedColor: settings.selectedColor,
+      selectedWidth: settings.selectedWidth,
+      selectedGap: settings.selectedGap,
+      cornerRadius: settings.cornerRadius,
       showLabels: settings.showLabels,
       showOptionName: settings.showOptionName,
       maxVisible: settings.maxVisible,

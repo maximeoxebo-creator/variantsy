@@ -9,6 +9,9 @@ export type PreviewSettings = {
   borderColor: string;
   selectedStyle: string;
   selectedColor: string;
+  selectedWidth: number;
+  selectedGap: number;
+  cornerRadius: number;
   showLabels: boolean;
   showOptionName: boolean;
   soldOutStyle: string;
@@ -32,8 +35,14 @@ const DEMO_SIZE = "M";
 export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
   const [selected, setSelected] = useState(1);
 
+  // Doit rester aligné sur le calcul de --vtsy-radius dans variantsy.js :
+  // un aperçu qui ment au marchand est pire que pas d'aperçu du tout.
   const radius =
-    settings.shape === "circle" ? "50%" : settings.shape === "rounded" ? "8px" : "2px";
+    settings.shape === "circle"
+      ? "50%"
+      : settings.shape === "rounded"
+        ? `${settings.cornerRadius}px`
+        : "2px";
 
   const title = useMemo(() => {
     if (!settings.updateTitle) return DEMO_PRODUCT;
@@ -86,9 +95,13 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
           const isSelected = index === selected;
           const unavailable = !value.available;
 
+          // Même formule que la règle [data-selected-style="ring"] de
+          // variantsy.css : l'écart d'abord en blanc, puis le trait par-dessus.
           const ring =
             isSelected && settings.selectedStyle === "ring"
-              ? `0 0 0 2px #fff, 0 0 0 4px ${settings.selectedColor}`
+              ? `0 0 0 ${settings.selectedGap}px #fff, 0 0 0 ${
+                  settings.selectedGap + settings.selectedWidth
+                }px ${settings.selectedColor}`
               : isSelected && settings.selectedStyle === "shadow"
                 ? `0 2px 8px ${settings.selectedColor}66`
                 : "none";
@@ -110,7 +123,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                   background: value.color,
                   border:
                     isSelected && settings.selectedStyle === "border"
-                      ? `2px solid ${settings.selectedColor}`
+                      ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
                       : `${settings.borderWidth}px solid ${settings.borderColor}`,
                   boxShadow: ring,
                   cursor: "pointer",

@@ -27,7 +27,10 @@
 (function () {
   "use strict";
 
-  var CACHE_KEY = "variantsy:config:v2";
+  // Incrémenté à chaque changement de forme du payload : sans ça, un navigateur
+  // qui a déjà la config en cache continuerait 5 minutes durant à travailler
+  // avec une version dépourvue des nouvelles clés de style.
+  var CACHE_KEY = "variantsy:config:v3";
   var CACHE_TTL = 5 * 60 * 1000; // 5 min côté navigateur, 60 s côté CDN
   var HIDDEN_CLASS = "variantsy-media-hidden";
 
@@ -42,6 +45,9 @@
       borderColor: "#D9D9D9",
       selectedStyle: "ring",
       selectedColor: "#111111",
+      selectedWidth: 2,
+      selectedGap: 2,
+      cornerRadius: 8,
       showLabels: false,
       showOptionName: true,
       maxVisible: 0,
@@ -83,6 +89,20 @@
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  /**
+   * Nombre s\u00fbr pour construire une longueur CSS.
+   *
+   * Une config servie par une version ant\u00e9rieure de l'app \u2014 ou rest\u00e9e en cache
+   * dans le navigateur \u2014 n'a pas les cl\u00e9s r\u00e9centes. Sans ce garde-fou,
+   * `undefined + "px"` produit \u00ab undefinedpx \u00bb, que le navigateur rejette en
+   * silence : la r\u00e8gle enti\u00e8re est ignor\u00e9e et le style part en vrille sans la
+   * moindre erreur en console.
+   */
+  function num(value, fallback) {
+    var n = Number(value);
+    return isFinite(n) ? n : fallback;
   }
 
   /**
@@ -751,8 +771,17 @@
     this.root.style.setProperty("--vtsy-border-color", style.borderColor);
     this.root.style.setProperty("--vtsy-selected-color", style.selectedColor);
     this.root.style.setProperty(
+      "--vtsy-selected-width",
+      num(style.selectedWidth, 2) + "px",
+    );
+    this.root.style.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
+    this.root.style.setProperty(
       "--vtsy-radius",
-      style.shape === "square" ? "2px" : style.shape === "rounded" ? "8px" : "50%",
+      style.shape === "square"
+        ? "2px"
+        : style.shape === "rounded"
+          ? num(style.cornerRadius, 8) + "px"
+          : "50%",
     );
 
     var groups = this.root.querySelectorAll(".variantsy__group");

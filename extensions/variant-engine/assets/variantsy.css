@@ -9,6 +9,8 @@
   --vtsy-border-width: 1px;
   --vtsy-border-color: #d9d9d9;
   --vtsy-selected-color: #111111;
+  --vtsy-selected-width: 2px;
+  --vtsy-selected-gap: 2px;
   --vtsy-radius: 50%;
 
   display: block;
@@ -84,6 +86,10 @@
     0 0 0 4px var(--vtsy-selected-color);
 }
 
+/* Le halo du focus clavier garde une épaisseur fixe : c'est un repère
+   d'accessibilité, il ne doit pas pouvoir être réduit à l'invisible par un
+   réglage marchand. Seul l'anneau de sélection ci-dessous est ajustable. */
+
 .variantsy__visual {
   display: block;
   width: var(--vtsy-size);
@@ -106,12 +112,13 @@
 /* --- États sélectionnés (le mode actif est posé en classe sur .variantsy) --- */
 .variantsy[data-selected-style="ring"] .variantsy__swatch.is-selected .variantsy__visual {
   box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 4px var(--vtsy-selected-color);
+    0 0 0 var(--vtsy-selected-gap) #fff,
+    0 0 0 calc(var(--vtsy-selected-gap) + var(--vtsy-selected-width))
+      var(--vtsy-selected-color);
 }
 
 .variantsy[data-selected-style="border"] .variantsy__swatch.is-selected .variantsy__visual {
-  border: 2px solid var(--vtsy-selected-color);
+  border: var(--vtsy-selected-width) solid var(--vtsy-selected-color);
 }
 
 .variantsy[data-selected-style="shadow"] .variantsy__swatch.is-selected .variantsy__visual {

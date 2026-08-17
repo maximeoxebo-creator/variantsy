@@ -60,6 +60,14 @@ model ShopSettings {
   /// Style de l'état sélectionné : "ring" | "border" | "shadow"
   selectedStyle  String  @default("ring")
   selectedColor  String  @default("#111111")
+  /// Épaisseur du trait de sélection, en px. S'applique à l'anneau comme à la
+  /// bordure épaisse, qui étaient tous deux figés à 2 px avant ce réglage.
+  selectedWidth  Int     @default(2)
+  /// Écart entre la pastille et l'anneau, en px. À 0 l'anneau colle au swatch.
+  /// N'a d'effet que sur le style "ring".
+  selectedGap    Int     @default(2)
+  /// Rayon des coins quand shape = "rounded", en px. Ignoré sinon.
+  cornerRadius   Int     @default(8)
   /// Afficher le libellé de la valeur sous le swatch
   showLabels     Boolean @default(false)
   /// Afficher "Couleur : Bleu marine" au-dessus des swatches
