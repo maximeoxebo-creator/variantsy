@@ -469,6 +469,10 @@ function ApparencePanel({ form, set }: PanelProps) {
   const radius =
     form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
   const accent = form.selectedColor;
+  // Forme, taille, arrondi, style de sélection et repli de couleur n'ont
+  // aucun effet sur des boutons texte ou une liste déroulante : les afficher
+  // laisserait croire à un réglage sans conséquence.
+  const enPastilles = form.displayMode === "swatch";
 
   return (
     <BlockStack gap="600">
@@ -543,6 +547,8 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <Divider />
 
+      {enPastilles && (
+        <>
       <ChoiceCards
         label="Forme des pastilles"
         value={form.shape}
@@ -569,27 +575,37 @@ function ApparencePanel({ form, set }: PanelProps) {
           output
         />
       )}
+        </>
+      )}
 
-      <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-        <RangeSlider
-          label={`Taille — ${form.size} px`}
-          min={20}
-          max={96}
-          value={form.size}
-          onChange={(v) => set("size", Number(v))}
-          output
-          helpText="44 px minimum est recommandé pour le tactile."
-        />
-        <RangeSlider
-          label={`Espacement — ${form.gap} px`}
-          min={0}
-          max={40}
-          value={form.gap}
-          onChange={(v) => set("gap", Number(v))}
-          output
-        />
-      </InlineGrid>
+      {form.displayMode !== "dropdown" && (
+        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+          {enPastilles ? (
+            <RangeSlider
+              label={`Taille — ${form.size} px`}
+              min={20}
+              max={96}
+              value={form.size}
+              onChange={(v) => set("size", Number(v))}
+              output
+              helpText="44 px minimum est recommandé pour le tactile."
+            />
+          ) : (
+            <Box />
+          )}
+          <RangeSlider
+            label={`Espacement — ${form.gap} px`}
+            min={0}
+            max={40}
+            value={form.gap}
+            onChange={(v) => set("gap", Number(v))}
+            output
+          />
+        </InlineGrid>
+      )}
 
+      {enPastilles && (
+        <>
       <Divider />
 
       <ChoiceCards
@@ -629,19 +645,14 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
         ]}
       />
+        </>
+      )}
 
-      <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-        <ColorField
-          label="Couleur de sélection"
-          value={form.selectedColor}
-          onChange={(v) => set("selectedColor", v)}
-        />
-        <ColorField
-          label="Couleur de bordure"
-          value={form.borderColor}
-          onChange={(v) => set("borderColor", v)}
-        />
-      </InlineGrid>
+      <ColorField
+        label="Couleur de bordure"
+        value={form.borderColor}
+        onChange={(v) => set("borderColor", v)}
+      />
 
       {form.selectedStyle !== "shadow" && (
         <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
@@ -677,6 +688,8 @@ function ApparencePanel({ form, set }: PanelProps) {
         output
       />
 
+      {enPastilles && (
+        <>
       <Divider />
 
       <ChoiceCards
@@ -722,7 +735,8 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
         ]}
       />
-
+        </>
+      )}
 
       <Divider />
 
@@ -764,11 +778,13 @@ function ApparencePanel({ form, set }: PanelProps) {
         <SectionTitle accent={accent} help="Ce qui accompagne les pastilles, en toutes lettres.">
           Textes affichés
         </SectionTitle>
-        <Checkbox
-          label="Le nom de la couleur sous chaque pastille"
-          checked={form.showLabels}
-          onChange={(v) => set("showLabels", v)}
-        />
+        {enPastilles && (
+          <Checkbox
+            label="Le nom de la couleur sous chaque pastille"
+            checked={form.showLabels}
+            onChange={(v) => set("showLabels", v)}
+          />
+        )}
         <Checkbox
           label="La ligne « Couleur : Bleu marine » au-dessus des pastilles"
           checked={form.showOptionName}
@@ -784,6 +800,11 @@ function ApparencePanel({ form, set }: PanelProps) {
           Ces réglages sont déjà actifs et se règlent seuls. N&apos;y touchez que si quelque
           chose ne s&apos;affiche pas correctement.
         </Text>
+        <ColorField
+          label="Couleur du trait de sélection"
+          value={form.selectedColor}
+          onChange={(v) => set("selectedColor", v)}
+        />
         <Checkbox
           label="Précharger l'image au survol d'une pastille"
           helpText="Le changement d'image paraît instantané au clic."
