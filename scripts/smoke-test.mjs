@@ -1071,6 +1071,12 @@ section("Modes d'affichage");
       classeCouleur: g.classList.contains("variantsy__group--color"),
       pastilleVisible: visual ? getComputedStyle(visual).display !== "none" : null,
       libelle: g.querySelector(".variantsy__text")?.textContent?.trim(),
+      // Présent dans le DOM ne suffit pas : en mode pastilles il est masqué,
+      // et c'est précisément cette confusion qui a rendu le mode texte vide.
+      libelleVisible: (() => {
+        const t = g.querySelector(".variantsy__text");
+        return t ? getComputedStyle(t).display !== "none" : false;
+      })(),
     };
   });
   check(
@@ -1079,6 +1085,11 @@ section("Modes d'affichage");
     JSON.stringify(texte),
   );
   check("Mode texte : le nom de la valeur reste lisible", texte.libelle === "Noir", JSON.stringify(texte));
+  check(
+    "Mode texte : le libellé est réellement affiché, pas seulement présent",
+    texte.libelleVisible === true,
+    JSON.stringify(texte),
+  );
   await page.close();
 
   // --- Libellés pilotés par l'app, plus par le bloc Liquid -----------------
@@ -1142,6 +1153,26 @@ section("Modes d'affichage");
     rClair,
   );
   await pageClair.close();
+
+  // --- En mode pastilles, le libellé doit rester masqué --------------------
+  const pagePastilles = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { displayMode: "swatch" },
+  });
+  const pastilles = await pagePastilles.evaluate(() => {
+    const g = document.querySelector('.variantsy__group[data-option-position="1"]');
+    const t = g.querySelector(".variantsy__text");
+    const v = g.querySelector(".variantsy__visual");
+    return {
+      libelleMasque: t ? getComputedStyle(t).display === "none" : null,
+      pastilleVisible: v ? getComputedStyle(v).display !== "none" : null,
+    };
+  });
+  check(
+    "Mode pastilles : le libellé texte reste masqué, la pastille visible",
+    pastilles.libelleMasque === true && pastilles.pastilleVisible === true,
+    JSON.stringify(pastilles),
+  );
+  await pagePastilles.close();
 
   // --- « Aucun » doit vraiment n'appliquer aucun accent aux boutons --------
   const pageSansAccent = await openPage(PRODUCT, PRODUCT.variants[1], {

@@ -159,9 +159,13 @@
               tabindex="{% if is_selected %}0{% else %}-1{% endif %}"
             >
               <span class="variantsy__visual" aria-hidden="true"></span>
-              {%- unless is_color -%}
-                <span class="variantsy__text">{{ value }}</span>
-              {%- endunless -%}
+              {%- comment -%}
+                Toujours rendu, y compris sur une option de couleur : en mode
+                « boutons texte » la pastille est masquée, et sans ce libellé le
+                bouton serait vide. Le masquer en CSS plutôt que ne pas
+                l'émettre permet aussi de changer de mode sans recharger.
+              {%- endcomment -%}
+              <span class="variantsy__text">{{ value }}</span>
               {%- if is_color -%}
                 <span class="variantsy__caption">{{ value }}</span>
               {%- endif -%}

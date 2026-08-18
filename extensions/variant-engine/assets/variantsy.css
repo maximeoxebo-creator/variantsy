@@ -339,3 +339,11 @@
 .variantsy[data-show-labels="false"] .variantsy__caption {
   display: none;
 }
+
+/* En mode pastilles, le nom de la valeur est superflu : la couleur parle
+   d'elle-même, et le libellé optionnel sous la pastille s'en charge. On le
+   masque donc ici plutôt que de ne pas l'émettre — c'est ce qui permet de
+   basculer entre pastilles et boutons texte sans recharger la page. */
+.variantsy__group--color .variantsy__text {
+  display: none;
+}
