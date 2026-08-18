@@ -1470,6 +1470,21 @@ section("Pastilles en collection");
     }),
   );
 
+  await page.route("**/products/veste.js", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 2,
+        options: [{ name: "Couleur", values: ["Noir", "Beige"] }],
+        variants: [
+          { id: 901, options: ["Noir"], featured_image: { src: "https://example.com/v-noir.jpg" } },
+          { id: 902, options: ["Beige"], featured_image: { src: "https://example.com/v-beige.jpg" } },
+        ],
+      }),
+    }),
+  );
+
   await page.goto("https://example.com/collections/tout");
   await page.evaluate(() => window.sessionStorage.clear());
   await page.setContent(`<!doctype html>
@@ -1493,7 +1508,22 @@ section("Pastilles en collection");
         <a href="/products/sweat" class="prix">59,00 €</a>
       </div>
     </li>
+    <li class="carte">
+      <div class="carte__media">
+        <a href="/products/veste"><img src="https://example.com/veste.jpg" alt="Veste"></a>
+      </div>
+      <div class="carte__infos">
+        <a href="/products/veste" class="titre">Veste en lin</a>
+      </div>
+    </li>
   </ul>
+  <!-- Certains thèmes répètent les liens produit hors de la vignette — tiroir
+       d'achat rapide, aperçu. Exiger que la carte les réunisse TOUS faisait
+       remonter jusqu'à la grille, et deux vignettes sur quatorze seulement
+       recevaient leurs pastilles. -->
+  <div class="tiroir-achat-rapide" hidden>
+    <a href="/products/sweat">Ajouter au panier</a>
+  </div>
   <div data-variantsy-collection-root data-endpoint="/apps/variantsy/settings" hidden></div>
 </body></html>`);
   await page.addScriptTag({ content: jsCollection });
@@ -1509,6 +1539,9 @@ section("Pastilles en collection");
       premiereCouleur: getComputedStyle(visuels[0]).backgroundColor,
       dansLaCarte: !!document.querySelector(".carte [data-variantsy-collection]"),
       nbRangees: document.querySelectorAll("[data-variantsy-collection]").length,
+      cartesServies: Array.from(document.querySelectorAll(".carte")).filter((c) =>
+        c.querySelector("[data-variantsy-collection]"),
+      ).length,
     };
   });
 
@@ -1518,8 +1551,13 @@ section("Pastilles en collection");
     JSON.stringify(rendu),
   );
   check(
-    "Une seule rangée, malgré plusieurs liens vers le même produit",
-    rendu.nbRangees === 1,
+    "Une seule rangée par vignette, malgré des liens répétés",
+    rendu.nbRangees === 2,
+    JSON.stringify(rendu),
+  );
+  check(
+    "Chaque vignette de la grille reçoit la sienne",
+    rendu.cartesServies === 2,
     JSON.stringify(rendu),
   );
   check(

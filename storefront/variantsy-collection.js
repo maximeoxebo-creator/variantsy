@@ -106,54 +106,73 @@
    * lien vers un produit et une image. On remonte depuis le lien plutôt que
    * de deviner des noms de classes, qui changent d'un thème à l'autre.
    */
+  function handleDe(lien) {
+    var trouve = (lien.getAttribute("href") || "").match(/\/products\/([^/?#]+)/);
+    return trouve ? trouve[1] : null;
+  }
+
+  /** Le produit a-t-il ici un lien SANS image — typiquement son titre ? */
+  function aUnLienTexte(element, handle) {
+    var liens = element.querySelectorAll('a[href*="/products/"]');
+    for (var i = 0; i < liens.length; i++) {
+      if (handleDe(liens[i]) === handle && !liens[i].querySelector("img")) return true;
+    }
+    return false;
+  }
+
+  /** Cet élément abrite-t-il un lien vers un AUTRE produit que celui-ci ? */
+  function contientAutreProduit(element, handle) {
+    var liens = element.querySelectorAll('a[href*="/products/"]');
+    for (var i = 0; i < liens.length; i++) {
+      var autre = handleDe(liens[i]);
+      if (autre && autre !== handle) return true;
+    }
+    return false;
+  }
+
   /**
-   * Une carte produit est le plus petit élément qui réunit TOUS les liens
-   * pointant vers un même produit.
+   * Une carte produit est le plus GRAND conteneur qui n'appartient qu'à un
+   * seul produit.
    *
-   * La première version retenait le conteneur le plus interne portant une
-   * image : elle tombait sur le bloc photo, et greffait les pastilles dedans —
-   * sans le retrait du texte, donc collées au bord de la vignette. Passer par
-   * l'ancêtre commun donne la carte entière, ce qui est ce qu'on veut.
+   * Deux règles ont échoué avant celle-ci. « Le plus petit conteneur portant
+   * une image » tombait sur le bloc photo, sans le retrait du texte. « Le plus
+   * petit réunissant tous les liens du produit » remontait jusqu'à la grille
+   * entière sur les thèmes qui répètent leurs liens ailleurs — tiroir d'achat
+   * rapide, aperçu rapide — et se faisait écarter : deux vignettes sur quatorze
+   * recevaient leurs pastilles.
+   *
+   * S'arrêter dès qu'un autre produit entre dans le cadre donne exactement la
+   * carte, quelle que soit la façon dont le thème la construit.
    */
   function trouverCartes(racine) {
     var liens = racine.querySelectorAll('a[href*="/products/"]');
-    var parHandle = {};
+    var vus = {};
+    var cartes = [];
 
     Array.prototype.forEach.call(liens, function (lien) {
-      var trouve = (lien.getAttribute("href") || "").match(/\/products\/([^/?#]+)/);
-      if (!trouve) return;
-      var handle = trouve[1];
-      if (!parHandle[handle]) parHandle[handle] = [];
-      parHandle[handle].push(lien);
-    });
+      var handle = handleDe(lien);
+      if (!handle || vus[handle]) return;
 
-    var cartes = [];
-    Object.keys(parHandle).forEach(function (handle) {
-      var groupe = parHandle[handle];
-      var carte = groupe[0];
-
-      // On remonte jusqu'à englober tous les liens du produit. La limite de
-      // huit niveaux évite de finir sur <body> quand un thème place ses liens
-      // dans des sections éloignées.
-      for (var i = 0; i < 8 && carte.parentElement; i++) {
-        var complet = groupe.every(function (lien) {
-          return carte.contains(lien);
-        });
-        if (complet && carte.querySelector("img")) break;
-        carte = carte.parentElement;
+      var noeud = lien;
+      var carte = null;
+      for (var i = 0; i < 8 && noeud.parentElement; i++) {
+        var parent = noeud.parentElement;
+        // Premier signal d'arrêt : un autre produit entre dans le cadre.
+        if (parent === document.body || contientAutreProduit(parent, handle)) break;
+        noeud = parent;
+        if (!noeud.querySelector("img")) continue;
+        carte = noeud;
+        // Second signal : ce conteneur réunit déjà l'image ET un lien texte,
+        // donc c'est la carte. Sans lui, une page ne portant qu'un seul
+        // produit laisserait la remontée aller jusqu'à la grille.
+        if (aUnLienTexte(noeud, handle)) break;
       }
-      if (!carte || carte === document.body) return;
-      cartes.push({ carte: carte, lien: groupe[0], handle: handle });
+      if (!carte) return;
+      vus[handle] = true;
+      cartes.push({ carte: carte, lien: lien, handle: handle });
     });
 
-    // Deux produits ne peuvent pas partager une carte : si l'un englobe
-    // l'autre, la mesure a dérapé et on écarte les deux plutôt que d'injecter
-    // au mauvais endroit.
-    return cartes.filter(function (candidat) {
-      return !cartes.some(function (autre) {
-        return autre !== candidat && candidat.carte.contains(autre.carte);
-      });
-    });
+    return cartes;
   }
 
   /** Données produit servies par Shopify, mises en cache par handle. */
