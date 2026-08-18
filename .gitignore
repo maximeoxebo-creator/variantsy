@@ -12,7 +12,7 @@ dist
 .vercel
 extensions/**/node_modules
 
-# Scripts storefront générés par `npm run minify` depuis extensions/*/src/.
+# Scripts storefront générés par `npm run minify` depuis storefront/.
 # Ils sont produits avant chaque déploiement (predeploy:extension) : les
 # committer exposerait à déployer une version périmée de la source.
 extensions/variant-engine/assets/variantsy.js

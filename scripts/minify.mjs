@@ -6,8 +6,8 @@
  * compris, et ils sont nombreux parce qu'ils documentent des pièges qui ont
  * coûté cher.
  *
- * La source reste donc lisible dans `src/`, et `assets/` ne contient que le
- * résultat. Sacrifier les commentaires pour tenir un seuil aurait été le pire
+ * La source reste donc lisible dans `storefront/`, et `assets/` ne contient que
+ * le résultat. Sacrifier les commentaires pour tenir un seuil aurait été le pire
  * des deux mondes.
  *
  * Lancé automatiquement par `predeploy:extension` : impossible de déployer une
@@ -19,19 +19,23 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dossier = join(racine, "extensions/variant-engine");
+// La source vit HORS de l'extension : Shopify n'autorise que assets, blocks,
+// locales et snippets dans une extension de thème, et refuse le déploiement
+// dès qu'un autre dossier s'y trouve.
+const source = join(racine, "storefront");
+const cible = join(racine, "extensions/variant-engine/assets");
 
 const fichiers = ["variantsy.js", "variantsy-collection.js"];
 
 const ko = (chemin) => (statSync(chemin).size / 1024).toFixed(1);
 
 for (const nom of fichiers) {
-  const source = join(dossier, "src", nom);
-  const cible = join(dossier, "assets", nom);
+  const entree = join(source, nom);
+  const sortie = join(cible, nom);
 
   await build({
-    entryPoints: [source],
-    outfile: cible,
+    entryPoints: [entree],
+    outfile: sortie,
     minify: true,
     // Cible volontairement large : ce code tourne sur les navigateurs des
     // clients d'un marchand, pas sur ceux d'un développeur.
@@ -40,5 +44,5 @@ for (const nom of fichiers) {
     logLevel: "error",
   });
 
-  console.log(`${nom} : ${ko(source)} ko → ${ko(cible)} ko`);
+  console.log(`${nom} : ${ko(entree)} ko → ${ko(sortie)} ko`);
 }
