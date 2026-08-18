@@ -26,6 +26,7 @@ import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
+import { ListesCombineesPanel } from "../components/ListesCombineesPanel";
 
 /** Thème publié : sert au lien direct vers l'éditeur, dans l'onglet Installation. */
 const PUBLISHED_THEME_QUERY = `#graphql
@@ -130,6 +131,7 @@ const TABS = [
   { id: "installation", content: "Installation", panelID: "panel-installation" },
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
   { id: "titre", content: "Titre", panelID: "panel-titre" },
+  { id: "combinees", content: "Produits liés", panelID: "panel-combinees" },
 ];
 
 export default function SettingsPage() {
@@ -279,6 +281,7 @@ export default function SettingsPage() {
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
+                  {tab === 3 && <ListesCombineesPanel />}
                 </Box>
               </Tabs>
             </Card>
@@ -287,7 +290,7 @@ export default function SettingsPage() {
 
         {/* L'aperçu n'a rien à montrer pendant qu'on lit un guide d'installation :
             il occuperait un tiers de l'écran pour rien. */}
-        {tab !== 0 && (
+        {tab !== 0 && tab !== 3 && (
         <Layout.Section variant="oneThird">
           <Box position="sticky" insetBlockStart="400">
             <Card>
