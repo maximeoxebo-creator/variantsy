@@ -537,7 +537,7 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <ChoiceCards
         label="Quand une couleur n'est pas renseignée"
-        help="Ce que verra le client pour une valeur absente de votre Bibliothèque de swatches. Chaque aperçu montre trois valeurs : Navy, Beige, Terracotta."
+        help="Ce que verra le client pour une valeur absente de votre Bibliothèque de swatches. Chaque aperçu montre trois valeurs différentes : Navy, Beige, Terracotta."
         value={form.swatchFallback}
         accent={accent}
         onChange={(v) => set("swatchFallback", v)}
@@ -578,7 +578,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
           {
             id: "neutral",
-            label: "La même pour toutes",
+            label: "Aucune couleur",
             preview: (
               <span style={{ display: "flex", gap: 4 }}>
                 <Chip radius={radius} background={form.neutralColor} size={20} />
@@ -596,6 +596,27 @@ function ApparencePanel({ form, set }: PanelProps) {
           value={form.neutralColor}
           onChange={(v) => set("neutralColor", v)}
         />
+      )}
+
+      {/* Piège réel : toutes les valeurs non renseignées prennent la MÊME
+          teinte. Sans leur nom affiché, le client voit des pastilles
+          identiques et ne peut pas choisir. Le mode reste légitime — c'est le
+          seul qui n'invente rien — mais il exige les libellés. */}
+      {form.swatchFallback === "neutral" && !form.showLabels && (
+        <Banner
+          tone="warning"
+          title="Vos clients ne pourront pas distinguer les coloris"
+          action={{
+            content: "Afficher les noms",
+            onAction: () => set("showLabels", true),
+          }}
+        >
+          <p>
+            Toutes les valeurs non renseignées prennent la même teinte. Sans leur nom sous la
+            pastille, le client voit des ronds identiques. Affichez les noms, ou renseignez vos
+            couleurs dans la Bibliothèque de swatches.
+          </p>
+        </Banner>
       )}
 
       <Divider />
