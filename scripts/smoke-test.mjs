@@ -1080,6 +1080,43 @@ section("Modes d'affichage");
   check("Mode texte : le nom de la valeur reste lisible", texte.libelle === "Noir", JSON.stringify(texte));
   await page.close();
 
+  // --- Fond plein sur la case choisie --------------------------------------
+  // Deux teintes volontairement opposées : le contraste du texte doit basculer
+  // du blanc au noir sans intervention du marchand.
+  const pageFonce = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { displayMode: "text", controlSelectedStyle: "fill", selectedColor: "#111111" },
+  });
+  const rFonce = await pageFonce
+    .locator('.variantsy__swatch[data-variantsy-value="Noir"]')
+    .evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { fond: s.backgroundColor, texte: s.color };
+    });
+  check(
+    "Fond plein : la case choisie prend la couleur de sélection",
+    rFonce.fond === "rgb(17, 17, 17)",
+    JSON.stringify(rFonce),
+  );
+  check(
+    "Fond plein sombre : le texte passe en blanc",
+    rFonce.texte === "rgb(255, 255, 255)",
+    JSON.stringify(rFonce),
+  );
+  await pageFonce.close();
+
+  const pageClair = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { displayMode: "text", controlSelectedStyle: "fill", selectedColor: "#F5E7C8" },
+  });
+  const rClair = await pageClair
+    .locator('.variantsy__swatch[data-variantsy-value="Noir"]')
+    .evaluate((el) => getComputedStyle(el).color);
+  check(
+    "Fond plein clair : le texte passe en noir",
+    rClair === "rgb(17, 17, 17)",
+    rClair,
+  );
+  await pageClair.close();
+
   // --- Liste déroulante ----------------------------------------------------
   const page2 = await openPage(PRODUCT, PRODUCT.variants[1], {
     style: { displayMode: "dropdown" },

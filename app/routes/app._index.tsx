@@ -95,6 +95,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     cornerRadius: Math.min(24, Math.max(0, int("cornerRadius", DEFAULT_SETTINGS.cornerRadius))),
     displayMode: str("displayMode", DEFAULT_SETTINGS.displayMode),
     controlRadius: Math.min(20, Math.max(0, int("controlRadius", DEFAULT_SETTINGS.controlRadius))),
+    controlSelectedStyle: str("controlSelectedStyle", DEFAULT_SETTINGS.controlSelectedStyle),
     dropdownFullWidth: bool("dropdownFullWidth"),
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
@@ -696,6 +697,60 @@ function ApparencePanel({ form, set }: PanelProps) {
           arrondi figé et d'une largeur maximale codée en dur, sans recours. */}
       {!enPastilles && (
         <BlockStack gap="400">
+          <ChoiceCards
+            label="Comment se voit la case choisie"
+            value={form.controlSelectedStyle}
+            accent={accent}
+            onChange={(v) => set("controlSelectedStyle", v)}
+            options={[
+              {
+                id: "outline",
+                label: "Liseré",
+                preview: (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 46,
+                      height: 28,
+                      padding: "0 10px",
+                      fontSize: 12,
+                      borderRadius: form.controlRadius,
+                      border: `2px solid ${accent}`,
+                      color: "#4A4A4A",
+                      background: "#fff",
+                    }}
+                  >
+                    M
+                  </span>
+                ),
+              },
+              {
+                id: "fill",
+                label: "Fond plein",
+                preview: (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 46,
+                      height: 28,
+                      padding: "0 10px",
+                      fontSize: 12,
+                      borderRadius: form.controlRadius,
+                      border: `1px solid ${accent}`,
+                      background: accent,
+                      color: contrasteSur(accent),
+                    }}
+                  >
+                    M
+                  </span>
+                ),
+              },
+            ]}
+          />
           <RangeSlider
             label={`Arrondi des angles — ${form.controlRadius} px`}
             min={0}
@@ -1222,6 +1277,24 @@ function TitrePanel({ form, set }: PanelProps) {
   );
 }
 
+
+/**
+ * Noir ou blanc, selon ce qui se lit le mieux sur la couleur donnée.
+ * Miroir de `contrasteSur()` dans variantsy.js : l'aperçu doit montrer
+ * exactement le contraste que le storefront appliquera.
+ */
+function contrasteSur(couleur: string): string {
+  let hex = String(couleur || "#111111").trim();
+  const court = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  if (court) hex = `#${court[1]}${court[1]}${court[2]}${court[2]}${court[3]}${court[3]}`;
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return "#ffffff";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const v = (n >> 8) & 255;
+  const b = n & 255;
+  return (r * 299 + v * 587 + b * 114) / 1000 > 150 ? "#111111" : "#ffffff";
+}
 
 /** Champ couleur : input natif + saisie hex, gardés synchronisés. */
 function ColorField({

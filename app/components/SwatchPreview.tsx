@@ -14,6 +14,7 @@ export type PreviewSettings = {
   cornerRadius: number;
   displayMode: string;
   controlRadius: number;
+  controlSelectedStyle: string;
   dropdownFullWidth: boolean;
   showLabels: boolean;
   showOptionName: boolean;
@@ -21,6 +22,24 @@ export type PreviewSettings = {
   updateTitle: boolean;
   titleTemplate: string;
 };
+
+/**
+ * Noir ou blanc, selon ce qui se lit le mieux sur la couleur donnée.
+ * Miroir de `contrasteSur()` dans variantsy.js : un aperçu qui montrerait un
+ * autre contraste que le storefront mentirait au marchand.
+ */
+function contrasteSur(couleur: string): string {
+  let hex = String(couleur || "#111111").trim();
+  const court = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  if (court) hex = `#${court[1]}${court[1]}${court[2]}${court[2]}${court[3]}${court[3]}`;
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return "#ffffff";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const v = (n >> 8) & 255;
+  const b = n & 255;
+  return (r * 299 + v * 587 + b * 114) / 1000 > 150 ? "#111111" : "#ffffff";
+}
 
 type PreviewValue = { label: string; color: string; available: boolean };
 
@@ -109,9 +128,13 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
             padding: "0 12px",
             border: `${settings.borderWidth}px solid ${settings.borderColor}`,
             borderRadius: settings.controlRadius,
-            background: "#fff",
+            background:
+              settings.controlSelectedStyle === "fill" ? settings.selectedColor : "#fff",
             font: "inherit",
-            color: "#1A1A1A",
+            color:
+              settings.controlSelectedStyle === "fill"
+                ? contrasteSur(settings.selectedColor)
+                : "#1A1A1A",
             cursor: "pointer",
           }}
         >
@@ -137,11 +160,19 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                   minHeight: 44,
                   padding: "0 14px",
                   borderRadius: settings.controlRadius,
-                  background: "#fff",
+                  background:
+                    isSelected && settings.controlSelectedStyle === "fill"
+                      ? settings.selectedColor
+                      : "#fff",
                   border: isSelected
                     ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
                     : `${settings.borderWidth}px solid ${settings.borderColor}`,
-                  color: value.available ? "#1A1A1A" : "#9A9A9A",
+                  color:
+                    isSelected && settings.controlSelectedStyle === "fill"
+                      ? contrasteSur(settings.selectedColor)
+                      : value.available
+                        ? "#1A1A1A"
+                        : "#9A9A9A",
                   textDecoration: value.available ? "none" : "line-through",
                   opacity: !value.available && settings.soldOutStyle === "dim" ? 0.45 : 1,
                   font: "inherit",

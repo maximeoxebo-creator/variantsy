@@ -76,6 +76,10 @@ model ShopSettings {
   /// Arrondi des boutons texte et de la liste déroulante, en px.
   /// Sans objet en mode pastilles, où `cornerRadius` fait ce travail.
   controlRadius  Int     @default(6)
+  /// Aspect de la case choisie, hors mode pastilles :
+  /// "outline" → liseré coloré (défaut)
+  /// "fill"    → fond plein, texte contrasté automatiquement
+  controlSelectedStyle String @default("outline")
   /// La liste déroulante occupe toute la largeur disponible.
   dropdownFullWidth Boolean @default(false)
   /// Que faire d'une valeur sans couleur associée dans la bibliothèque :

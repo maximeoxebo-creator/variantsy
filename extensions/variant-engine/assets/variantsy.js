@@ -50,6 +50,7 @@
       cornerRadius: 8,
       displayMode: "swatch",
       controlRadius: 6,
+      controlSelectedStyle: "outline",
       dropdownFullWidth: false,
       swatchFallback: "image",
       neutralColor: "#ECECEC",
@@ -108,6 +109,27 @@
   function num(value, fallback) {
     var n = Number(value);
     return isFinite(n) ? n : fallback;
+  }
+
+  /**
+   * Noir ou blanc, selon ce qui se lit le mieux sur la couleur donnée.
+   *
+   * Le marchand choisit librement sa teinte de sélection ; écrire en blanc
+   * par défaut rendrait le libellé illisible sur un jaune ou un beige. On
+   * mesure donc la luminance perçue plutôt que de parier.
+   */
+  function contrasteSur(couleur) {
+    var hex = String(couleur || "#111111").trim();
+    var court = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+    if (court) hex = "#" + court[1] + court[1] + court[2] + court[2] + court[3] + court[3];
+    var m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return "#ffffff";
+    var n = parseInt(m[1], 16);
+    var r = (n >> 16) & 255;
+    var v = (n >> 8) & 255;
+    var b = n & 255;
+    // Coefficients de luminance perçue (Rec. 601), suffisants ici.
+    return (r * 299 + v * 587 + b * 114) / 1000 > 150 ? "#111111" : "#ffffff";
   }
 
   /**
@@ -1255,6 +1277,13 @@
     );
     this.root.style.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
     this.root.style.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
+    this.root.setAttribute("data-control-selected", style.controlSelectedStyle || "outline");
+    // Le texte doit rester lisible sur le fond plein, quelle que soit la teinte
+    // choisie par le marchand : on la mesure au lieu de parier sur du blanc.
+    this.root.style.setProperty(
+      "--vtsy-selected-contrast",
+      contrasteSur(style.selectedColor) ,
+    );
     this.root.style.setProperty(
       "--vtsy-control-width",
       style.dropdownFullWidth ? "100%" : "320px",

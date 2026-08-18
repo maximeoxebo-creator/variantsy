@@ -26,6 +26,7 @@ export type SettingsInput = {
   cornerRadius: number;
   displayMode: string;
   controlRadius: number;
+  controlSelectedStyle: string;
   dropdownFullWidth: boolean;
   swatchFallback: string;
   neutralColor: string;
@@ -68,6 +69,7 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   cornerRadius: 8,
   displayMode: "swatch",
   controlRadius: 6,
+  controlSelectedStyle: "outline",
   dropdownFullWidth: false,
   swatchFallback: "image",
   neutralColor: "#ECECEC",
@@ -186,6 +188,7 @@ export type StorefrontConfig = {
     cornerRadius: number;
     displayMode: string;
     controlRadius: number;
+    controlSelectedStyle: string;
     dropdownFullWidth: boolean;
     swatchFallback: string;
     neutralColor: string;
@@ -257,6 +260,7 @@ export function toStorefrontConfig(
       cornerRadius: settings.cornerRadius,
       displayMode: settings.displayMode,
       controlRadius: settings.controlRadius,
+      controlSelectedStyle: settings.controlSelectedStyle,
       dropdownFullWidth: settings.dropdownFullWidth,
       swatchFallback: settings.swatchFallback,
       neutralColor: settings.neutralColor,

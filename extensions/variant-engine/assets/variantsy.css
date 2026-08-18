@@ -287,3 +287,25 @@
   border-color: var(--vtsy-selected-color);
   box-shadow: 0 0 0 2px var(--vtsy-selected-color);
 }
+
+/* --- Case choisie en mode « fond plein » ----------------------------------
+   Alternative au liseré, plus lisible sur un nuancier dense — c'est ce que
+   font la plupart des sélecteurs de taille. Le texte prend un contraste
+   calculé côté JS : le marchand choisit sa teinte librement, et écrire en
+   blanc par défaut rendrait le libellé illisible sur un beige.
+   -------------------------------------------------------------------------- */
+.variantsy[data-control-selected="fill"] .variantsy__group--text .variantsy__swatch.is-selected {
+  background: var(--vtsy-selected-color);
+  border-color: var(--vtsy-selected-color);
+  color: var(--vtsy-selected-contrast, #fff);
+  box-shadow: none;
+}
+
+.variantsy[data-control-selected="fill"] .variantsy__select {
+  background-color: var(--vtsy-selected-color);
+  border-color: var(--vtsy-selected-color);
+  color: var(--vtsy-selected-contrast, #fff);
+}
+
+/* La flèche du select est dessinée avec `currentColor` : elle suit donc le
+   contraste sans réglage supplémentaire. */
