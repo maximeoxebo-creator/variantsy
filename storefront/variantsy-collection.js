@@ -106,51 +106,57 @@
    * lien vers un produit et une image. On remonte depuis le lien plutôt que
    * de deviner des noms de classes, qui changent d'un thème à l'autre.
    */
+  /**
+   * Une carte produit est le plus petit élément qui réunit TOUS les liens
+   * pointant vers un même produit.
+   *
+   * La première version retenait le conteneur le plus interne portant une
+   * image : elle tombait sur le bloc photo, et greffait les pastilles dedans —
+   * sans le retrait du texte, donc collées au bord de la vignette. Passer par
+   * l'ancêtre commun donne la carte entière, ce qui est ce qu'on veut.
+   */
   function trouverCartes(racine) {
     var liens = racine.querySelectorAll('a[href*="/products/"]');
-    var candidats = [];
+    var parHandle = {};
 
     Array.prototype.forEach.call(liens, function (lien) {
-      var handle = (lien.getAttribute("href") || "").match(/\/products\/([^/?#]+)/);
-      if (!handle) return;
-
-      var noeud = lien;
-      var carte = null;
-      for (var i = 0; i < 6 && noeud && noeud.parentElement; i++) {
-        noeud = noeud.parentElement;
-        if (noeud.querySelector("img")) {
-          carte = noeud;
-          break;
-        }
-      }
-      if (!carte) return;
-      candidats.push({ carte: carte, lien: lien, handle: handle[1] });
+      var trouve = (lien.getAttribute("href") || "").match(/\/products\/([^/?#]+)/);
+      if (!trouve) return;
+      var handle = trouve[1];
+      if (!parHandle[handle]) parHandle[handle] = [];
+      parHandle[handle].push(lien);
     });
 
-    // Une carte porte plusieurs liens — l'image, le titre — et chacun remonte
-    // vers un ancêtre différent. Sans ce tri, la même vignette recevait trois
-    // rangées de pastilles. On ne garde que le conteneur le plus INTERNE de
-    // chaque famille, et un seul par produit.
-    var retenus = [];
-    candidats.forEach(function (candidat) {
-      var remplace = false;
-      for (var i = 0; i < retenus.length; i++) {
-        var deja = retenus[i];
-        if (deja.carte === candidat.carte) return;
-        if (deja.carte.contains(candidat.carte)) {
-          // Le nouveau est plus interne : il prend la place de l'ancien.
-          retenus[i] = candidat;
-          remplace = true;
-          break;
-        }
-        if (candidat.carte.contains(deja.carte)) return; // l'ancien est meilleur
+    var cartes = [];
+    Object.keys(parHandle).forEach(function (handle) {
+      var groupe = parHandle[handle];
+      var carte = groupe[0];
+
+      // On remonte jusqu'à englober tous les liens du produit. La limite de
+      // huit niveaux évite de finir sur <body> quand un thème place ses liens
+      // dans des sections éloignées.
+      for (var i = 0; i < 8 && carte.parentElement; i++) {
+        var complet = groupe.every(function (lien) {
+          return carte.contains(lien);
+        });
+        if (complet && carte.querySelector("img")) break;
+        carte = carte.parentElement;
       }
-      if (!remplace) retenus.push(candidat);
+      if (!carte || carte === document.body) return;
+      cartes.push({ carte: carte, lien: groupe[0], handle: handle });
     });
 
-    return retenus;
+    // Deux produits ne peuvent pas partager une carte : si l'un englobe
+    // l'autre, la mesure a dérapé et on écarte les deux plutôt que d'injecter
+    // au mauvais endroit.
+    return cartes.filter(function (candidat) {
+      return !cartes.some(function (autre) {
+        return autre !== candidat && candidat.carte.contains(autre.carte);
+      });
+    });
   }
 
+  /** Données produit servies par Shopify, mises en cache par handle. */
   function chargerProduit(handle) {
     if (PRODUIT_CACHE[handle]) return PRODUIT_CACHE[handle];
     PRODUIT_CACHE[handle] = fetch("/products/" + handle + ".js")
@@ -162,10 +168,6 @@
       });
     return PRODUIT_CACHE[handle];
   }
-
-  /* ---------------------------------------------------------------------- */
-  /* Rendu                                                                  */
-  /* ---------------------------------------------------------------------- */
 
   /** Photo de la première variante portant cette valeur. */
   function photoPour(produit, index, valeur) {
@@ -228,7 +230,7 @@
     // Une vignette de collection est petite : tout est réduit d'un même
     // facteur, liseré compris. Le laisser à sa taille de page produit lui
     // faisait occuper un sixième du diamètre de la pastille.
-    var echelle = 0.55;
+    var echelle = 0.72;
     var taille = Math.round((style.size || 40) * echelle);
     conteneur.style.setProperty("--vtsy-size", taille + "px");
     conteneur.style.setProperty("--vtsy-gap", Math.max(4, Math.round((style.gap || 10) * echelle)) + "px");
@@ -284,6 +286,7 @@
     // sinon deux rangées.
     if (entree.carte.querySelector("[data-variantsy-collection]")) return;
     entree.carte.appendChild(conteneur);
+    aligner(entree.carte, conteneur);
   }
 
   /**
@@ -320,6 +323,45 @@
       });
     } catch (error) {
       /* une carte récalcitrante ne doit pas emporter la page */
+    }
+  }
+
+
+  /**
+   * Aligne la rangée sur le texte de la vignette.
+   *
+   * Une marge fixe serait fausse partout : selon le thème, le titre est collé
+   * au bord ou retiré de vingt pixels, et notre rangée doublerait la seconde
+   * tout en laissant la première à ras. On mesure donc le décalage réel du
+   * titre et on l'applique — ce qui s'ajuste seul, quel que soit le thème.
+   */
+  function aligner(carte, conteneur) {
+    var texte = null;
+    // `:has()` n'existe pas sur les navigateurs anciens et fait lever le
+    // sélecteur entier. On l'isole donc, pour que son absence ne prive pas du
+    // repli qui suit.
+    try {
+      texte = carte.querySelector("a[href*='/products/']:not(:has(img))");
+    } catch (error) {
+      texte = null;
+    }
+    if (!texte) {
+      texte = carte.querySelector("h2, h3, [class*='title'], [class*='titre']");
+    }
+    if (!texte) return;
+
+    try {
+      var decalage = Math.round(
+        texte.getBoundingClientRect().left - carte.getBoundingClientRect().left,
+      );
+      // Au-delà de 60 px on soupçonne une mesure aberrante — mieux vaut ne
+      // rien faire que décaler une rangée au milieu de la vignette.
+      if (decalage > 0 && decalage <= 60) {
+        conteneur.style.paddingInlineStart = decalage + "px";
+        conteneur.style.paddingInlineEnd = decalage + "px";
+      }
+    } catch (error) {
+      /* sélecteur non supporté par un vieux navigateur : on laisse tel quel */
     }
   }
 

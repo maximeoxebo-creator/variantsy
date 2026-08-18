@@ -1475,6 +1475,11 @@ section("Pastilles en collection");
   await page.setContent(`<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><style>${cssCollection}</style></head>
 <body>
+  <style>
+    /* Un thème réel retire son texte du bord : sans ce décalage, le test
+       d'alignement passerait même sans alignement. */
+    .carte__infos { padding-inline: 16px; }
+  </style>
   <!-- Structure imbriquée d'un vrai thème : plusieurs liens vers le même
        produit, à des profondeurs différentes. C'est ce qui produisait trois
        rangées de pastilles par vignette. -->
@@ -1533,6 +1538,7 @@ section("Pastilles en collection");
   const anneau = await page.evaluate(() => {
     const v = document.querySelector(".variantsy-collection__swatch.is-selected .variantsy-collection__visual");
     const conteneur = document.querySelector("[data-variantsy-collection]");
+    if (!v || !conteneur) return { absent: true };
     return {
       taille: getComputedStyle(v).width,
       trait: conteneur.style.getPropertyValue("--vtsy-selected-width"),
@@ -1541,8 +1547,27 @@ section("Pastilles en collection");
   });
   check(
     "Le liseré est mis à l'échelle avec la pastille",
-    anneau.trait === "1px" && anneau.ecart === "1px" && anneau.taille === "22px",
+    !anneau.absent && anneau.trait === "1px" && anneau.ecart === "1px" && anneau.taille === "29px",
     JSON.stringify(anneau),
+  );
+
+  // La rangée doit s'aligner sur le texte de la vignette, pas coller au bord.
+  const alignement = await page.evaluate(() => {
+    const carte = document.querySelector(".carte");
+    const rangee = document.querySelector("[data-variantsy-collection]");
+    const titre = document.querySelector(".titre");
+    if (!rangee || !titre) return { absent: true };
+    const gauche = (el) => Math.round(el.getBoundingClientRect().left);
+    return {
+      bordCarte: gauche(carte),
+      premierePastille: gauche(rangee.querySelector(".variantsy-collection__swatch")),
+      titre: gauche(titre),
+    };
+  });
+  check(
+    "La rangée s'aligne sur le titre de la vignette",
+    !alignement.absent && Math.abs(alignement.premierePastille - alignement.titre) <= 2,
+    JSON.stringify(alignement),
   );
 
   // Cliquer doit changer l'image ET pointer le lien vers la variante.
