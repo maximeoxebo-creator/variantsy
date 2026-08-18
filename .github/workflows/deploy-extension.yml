@@ -16,6 +16,7 @@ on:
     branches: [main]
     paths:
       - "extensions/**"
+      - "scripts/minify.mjs"
       - "shopify.app.toml"
   workflow_dispatch:
 
@@ -43,4 +44,6 @@ jobs:
           SHOPIFY_CLI_NO_ANALYTICS: "1"
         # --force est obligatoire en CI : sans lui la commande attend une
         # confirmation interactive et le job reste bloqué jusqu'au timeout.
-        run: npx shopify app deploy --force
+        # La minification doit précéder le déploiement : `assets/` est généré,
+        # pas versionné. Sans cette ligne, l'extension partirait sans son JS.
+        run: npm run minify && npx shopify app deploy --force

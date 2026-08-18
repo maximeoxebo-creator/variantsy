@@ -22,9 +22,9 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const js = readFileSync(join(root, "extensions/variant-engine/assets/variantsy.js"), "utf8");
+const js = readFileSync(join(root, "extensions/variant-engine/src/variantsy.js"), "utf8");
 const jsCollection = readFileSync(
-  join(root, "extensions/variant-engine/assets/variantsy-collection.js"),
+  join(root, "extensions/variant-engine/src/variantsy-collection.js"),
   "utf8",
 );
 const cssCollection = readFileSync(

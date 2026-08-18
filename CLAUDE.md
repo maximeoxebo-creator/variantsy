@@ -204,8 +204,12 @@ app/
 extensions/
   variant-engine/
     blocks/variant-engine.liquid   # rendu serveur des swatches + données produit + médias
-    assets/variantsy.js           # logique storefront (galerie, titre, swatches)
+    src/variantsy.js              # SOURCE storefront (galerie, titre, swatches)
+    src/variantsy-collection.js   # SOURCE pastilles en page de collection
+    assets/*.js                   # GÉNÉRÉS par npm run minify — jamais édités
     assets/variantsy.css          # styles storefront (reset boutons inclus)
+    assets/variantsy-collection.css
+    blocks/collection.liquid      # app embed : pastilles en collection
 prisma/
   schema.prisma
   migrations/             # jouées par vercel-build ; filet manuel : npm run db:deploy
@@ -266,6 +270,7 @@ jamais empêcher une vente.
 
 ```bash
 npm install                # dépendances
+npm run minify             # génère extensions/*/assets depuis src/ (auto avant deploy)
 npx playwright install chromium   # une seule fois, sinon `npm run test` échoue
 npm run dev                # dev local via Shopify CLI (tunnel + HMR)
 npm run typecheck          # tsc --noEmit

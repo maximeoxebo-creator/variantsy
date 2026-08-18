@@ -20,7 +20,9 @@
     "deploy:extension": "shopify app deploy --force",
     "deploy:all": "./scripts/deploy.sh",
     "config:link": "shopify app config link",
-    "setup": "prisma generate && prisma migrate deploy"
+    "setup": "prisma generate && prisma migrate deploy",
+    "minify": "node scripts/minify.mjs",
+    "predeploy:extension": "npm run minify"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
