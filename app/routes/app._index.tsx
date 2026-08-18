@@ -14,7 +14,6 @@ import {
   Layout,
   Page,
   RangeSlider,
-  Select,
   Tabs,
   Text,
   TextField,
@@ -78,7 +77,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const TABS = [
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
-  { id: "comportement", content: "Comportement", panelID: "panel-comportement" },
+  { id: "reglages", content: "Réglages", panelID: "panel-reglages" },
   { id: "titre", content: "Titre", panelID: "panel-titre" },
 ];
 
@@ -146,7 +145,7 @@ export default function SettingsPage() {
               <Banner tone="warning" title="Variantsy est désactivé">
                 <p>
                   Rien ne s&apos;affiche sur votre boutique tant que cette option est désactivée.
-                  Réactivez-la dans l&apos;onglet « Comportement ».
+                  Réactivez-la dans l&apos;onglet « Réglages ».
                 </p>
               </Banner>
             )}
@@ -155,7 +154,7 @@ export default function SettingsPage() {
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="400">
                   {tab === 0 && <ApparencePanel form={form} set={set} />}
-                  {tab === 1 && <ComportementPanel form={form} set={set} />}
+                  {tab === 1 && <ReglagesPanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
                 </Box>
               </Tabs>
@@ -246,56 +245,64 @@ function Advanced({ id, children }: { id: string; children: React.ReactNode }) {
   );
 }
 
+
+
 /**
- * Choix de la forme sur des formes réellement dessinées.
+ * Choix présenté sur des rendus, pas sur des intitulés.
  *
- * Une liste déroulante « Cercle / Carré arrondi / Carré » oblige le marchand à
- * se représenter le résultat, puis à essayer chaque valeur pour comparer. Les
- * trois formes affichées côte à côte suppriment cet aller-retour.
+ * « Anneau extérieur », « Deviner la couleur », « Barrer la pastille » ne
+ * disent rien tant qu'on ne les a pas vus : le marchand devait essayer chaque
+ * valeur pour comparer. Chaque option est donc dessinée avec les réglages en
+ * cours, et le choix se fait à l'œil.
  */
-function ShapePicker({
+function ChoiceCards({
+  label,
+  help,
   value,
-  cornerRadius,
-  selectedColor,
+  accent,
+  options,
   onChange,
 }: {
+  label: string;
+  help?: string;
   value: string;
-  cornerRadius: number;
-  selectedColor: string;
+  accent: string;
+  options: { id: string; label: string; preview: React.ReactNode }[];
   onChange: (value: string) => void;
 }) {
-  const shapes = [
-    { id: "circle", label: "Cercle", radius: "50%" },
-    { id: "rounded", label: "Arrondi", radius: `${cornerRadius}px` },
-    { id: "square", label: "Carré", radius: "2px" },
-  ];
-
   return (
     <BlockStack gap="200">
-      <Text as="p" variant="bodyMd">
-        Forme
-      </Text>
-      <InlineStack gap="300">
-        {shapes.map((shape) => {
-          const active = value === shape.id;
+      <BlockStack gap="050">
+        <Text as="p" variant="bodyMd">
+          {label}
+        </Text>
+        {help && (
+          <Text as="p" variant="bodySm" tone="subdued">
+            {help}
+          </Text>
+        )}
+      </BlockStack>
+      <InlineStack gap="300" wrap>
+        {options.map((option) => {
+          const active = value === option.id;
           return (
             <button
-              key={shape.id}
+              key={option.id}
               type="button"
-              onClick={() => onChange(shape.id)}
+              onClick={() => onChange(option.id)}
               aria-pressed={active}
               style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 8,
-                padding: "12px 16px",
+                justifyContent: "flex-end",
+                gap: 10,
+                minWidth: 84,
+                padding: "14px 12px",
                 borderRadius: 10,
                 cursor: "pointer",
                 background: active ? "var(--p-color-bg-surface-selected)" : "transparent",
-                border: active
-                  ? `2px solid ${selectedColor}`
-                  : "1px solid var(--p-color-border)",
+                border: active ? `2px solid ${accent}` : "1px solid var(--p-color-border)",
                 // PIÈGE N°5 : reset du chrome natif sur tout bouton custom.
                 WebkitAppearance: "none",
                 appearance: "none",
@@ -303,18 +310,11 @@ function ShapePicker({
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <span
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: shape.radius,
-                  background: "#C9CFD6",
-                  border: "1px solid #B0B7BF",
-                  display: "block",
-                }}
-              />
+              <span style={{ display: "flex", alignItems: "center", height: 44 }}>
+                {option.preview}
+              </span>
               <Text as="span" variant="bodySm">
-                {shape.label}
+                {option.label}
               </Text>
             </button>
           );
@@ -324,248 +324,291 @@ function ShapePicker({
   );
 }
 
-/**
- * Choix du style de sélection sur des pastilles réellement stylées.
- *
- * « Anneau extérieur », « Bordure épaisse » et « Ombre portée » sont trois
- * intitulés qui ne disent rien tant qu'on ne les a pas vus. Chaque option est
- * donc rendue avec ses propres réglages, dans son état sélectionné.
- */
-function SelectionPicker({
-  value,
-  color,
-  width,
-  gap,
+/** Pastille de démonstration, partagée par tous les sélecteurs ci-dessus. */
+function Chip({
   radius,
-  onChange,
+  background,
+  border,
+  boxShadow,
+  opacity,
+  struck,
+  size = 30,
 }: {
-  value: string;
-  color: string;
-  width: number;
-  gap: number;
   radius: string;
-  onChange: (value: string) => void;
+  background: string;
+  border?: string;
+  boxShadow?: string;
+  opacity?: number;
+  struck?: boolean;
+  size?: number;
 }) {
-  const styles: { id: string; label: string; shadow: string; border: string }[] = [
-    {
-      id: "ring",
-      label: "Anneau",
-      shadow: `0 0 0 ${gap}px #fff, 0 0 0 ${gap + width}px ${color}`,
-      border: "1px solid #B0B7BF",
-    },
-    { id: "border", label: "Bordure", shadow: "none", border: `${width}px solid ${color}` },
-    {
-      id: "shadow",
-      label: "Ombre",
-      shadow: `0 2px 8px ${color}66`,
-      border: "1px solid #B0B7BF",
-    },
-  ];
-
   return (
-    <BlockStack gap="200">
-      <Text as="p" variant="bodyMd">
-        Sélection
-      </Text>
-      <InlineStack gap="300">
-        {styles.map((style) => {
-          const active = value === style.id;
-          return (
-            <button
-              key={style.id}
-              type="button"
-              onClick={() => onChange(style.id)}
-              aria-pressed={active}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 10,
-                padding: "14px 18px",
-                borderRadius: 10,
-                cursor: "pointer",
-                background: active ? "var(--p-color-bg-surface-selected)" : "transparent",
-                border: active ? `2px solid ${color}` : "1px solid var(--p-color-border)",
-                WebkitAppearance: "none",
-                appearance: "none",
-                outline: "none",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              <span
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: radius,
-                  background: "#C9CFD6",
-                  border: style.border,
-                  boxShadow: style.shadow,
-                  display: "block",
-                }}
-              />
-              <Text as="span" variant="bodySm">
-                {style.label}
-              </Text>
-            </button>
-          );
-        })}
-      </InlineStack>
-    </BlockStack>
+    <span
+      style={{
+        position: "relative",
+        width: size,
+        height: size,
+        borderRadius: radius,
+        background,
+        border: border ?? "1px solid #B0B7BF",
+        boxShadow,
+        opacity,
+        display: "block",
+      }}
+    >
+      {struck && (
+        <span
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: radius,
+            background:
+              "linear-gradient(to top left, transparent calc(50% - 1px), rgba(120,120,120,.9) 50%, transparent calc(50% + 1px))",
+          }}
+        />
+      )}
+    </span>
   );
 }
 
 function ApparencePanel({ form, set }: PanelProps) {
+  const radius =
+    form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
+  const accent = form.selectedColor;
+
   return (
     <BlockStack gap="500">
-      <BlockStack gap="400">
-        <SectionTitle help="La forme et la taille des pastilles telles que vos clients les verront.">
-          Forme
-        </SectionTitle>
-        <ShapePicker
-          value={form.shape}
-          cornerRadius={form.cornerRadius}
-          selectedColor={form.selectedColor}
-          onChange={(v) => set("shape", v)}
-        />
-        {form.shape === "rounded" && (
-          <RangeSlider
-            label={`Arrondi — ${form.cornerRadius} px`}
-            min={0}
-            max={24}
-            value={form.cornerRadius}
-            onChange={(v) => set("cornerRadius", Number(v))}
-            output
-          />
-        )}
+      <ChoiceCards
+        label="Forme des pastilles"
+        value={form.shape}
+        accent={accent}
+        onChange={(v) => set("shape", v)}
+        options={[
+          { id: "circle", label: "Cercle", preview: <Chip radius="50%" background="#C9CFD6" /> },
+          {
+            id: "rounded",
+            label: "Arrondi",
+            preview: <Chip radius={`${form.cornerRadius}px`} background="#C9CFD6" />,
+          },
+          { id: "square", label: "Carré", preview: <Chip radius="0px" background="#C9CFD6" /> },
+        ]}
+      />
 
-        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-          <RangeSlider
-            label={`Taille — ${form.size} px`}
-            min={20}
-            max={96}
-            value={form.size}
-            onChange={(v) => set("size", Number(v))}
-            output
-            helpText="44 px minimum est recommandé pour le tactile."
-          />
-          <RangeSlider
-            label={`Espacement — ${form.gap} px`}
-            min={0}
-            max={40}
-            value={form.gap}
-            onChange={(v) => set("gap", Number(v))}
-            output
-          />
-        </InlineGrid>
-      </BlockStack>
+      {form.shape === "rounded" && (
+        <RangeSlider
+          label={`Arrondi des angles — ${form.cornerRadius} px`}
+          min={0}
+          max={24}
+          value={form.cornerRadius}
+          onChange={(v) => set("cornerRadius", Number(v))}
+          output
+        />
+      )}
+
+      <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+        <RangeSlider
+          label={`Taille — ${form.size} px`}
+          min={20}
+          max={96}
+          value={form.size}
+          onChange={(v) => set("size", Number(v))}
+          output
+          helpText="44 px minimum est recommandé pour le tactile."
+        />
+        <RangeSlider
+          label={`Espacement — ${form.gap} px`}
+          min={0}
+          max={40}
+          value={form.gap}
+          onChange={(v) => set("gap", Number(v))}
+          output
+        />
+      </InlineGrid>
 
       <Divider />
 
-      <BlockStack gap="400">
-        <SectionTitle help="Comment on distingue la pastille choisie des autres.">
-          Sélection
-        </SectionTitle>
-        <SelectionPicker
-          value={form.selectedStyle}
-          color={form.selectedColor}
-          width={form.selectedWidth}
-          gap={form.selectedGap}
-          radius={
-            form.shape === "circle"
-              ? "50%"
-              : form.shape === "rounded"
-                ? `${form.cornerRadius}px`
-                : "2px"
-          }
-          onChange={(v) => set("selectedStyle", v)}
-        />
+      <ChoiceCards
+        label="Comment se voit la pastille choisie"
+        value={form.selectedStyle}
+        accent={accent}
+        onChange={(v) => set("selectedStyle", v)}
+        options={[
+          {
+            id: "ring",
+            label: "Anneau",
+            preview: (
+              <Chip
+                radius={radius}
+                background="#C9CFD6"
+                boxShadow={`0 0 0 ${form.selectedGap}px #fff, 0 0 0 ${form.selectedGap + form.selectedWidth}px ${accent}`}
+              />
+            ),
+          },
+          {
+            id: "border",
+            label: "Bordure",
+            preview: (
+              <Chip
+                radius={radius}
+                background="#C9CFD6"
+                border={`${form.selectedWidth}px solid ${accent}`}
+              />
+            ),
+          },
+          {
+            id: "shadow",
+            label: "Ombre",
+            preview: (
+              <Chip radius={radius} background="#C9CFD6" boxShadow={`0 2px 8px ${accent}66`} />
+            ),
+          },
+        ]}
+      />
+
+      <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
         <ColorField
           label="Couleur de sélection"
           value={form.selectedColor}
           onChange={(v) => set("selectedColor", v)}
         />
-
-        {form.selectedStyle !== "shadow" && (
-          <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-            <RangeSlider
-              label={`Épaisseur du trait — ${form.selectedWidth} px`}
-              min={1}
-              max={8}
-              value={form.selectedWidth}
-              onChange={(v) => set("selectedWidth", Number(v))}
-              output
-            />
-            {form.selectedStyle === "ring" ? (
-              <RangeSlider
-                label={`Écart avec la pastille — ${form.selectedGap} px`}
-                min={0}
-                max={8}
-                value={form.selectedGap}
-                onChange={(v) => set("selectedGap", Number(v))}
-                output
-                helpText="À 0, l'anneau vient coller à la pastille."
-              />
-            ) : (
-              <Box />
-            )}
-          </InlineGrid>
-        )}
-      </BlockStack>
-
-      <Divider />
-
-      <BlockStack gap="400">
-        <SectionTitle help="Ce qu'affiche une pastille dont la couleur n'est pas encore renseignée.">
-          Couleurs
-        </SectionTitle>
-        <Select
-          label="Valeur sans couleur définie"
-          options={[
-            { label: "Deviner la couleur d'après son nom", value: "color" },
-            { label: "Afficher la photo de la variante", value: "image" },
-            { label: "Toujours la teinte neutre", value: "neutral" },
-          ]}
-          value={form.swatchFallback}
-          onChange={(v) => set("swatchFallback", v)}
-          helpText={
-            form.swatchFallback === "image"
-              ? "Trompeur quand toutes vos photos se ressemblent : vous obtenez une rangée de vignettes indiscernables au lieu d'un nuancier."
-              : form.swatchFallback === "color"
-                ? "Variantsy reconnaît les noms courants en français et en anglais (« Navy », « Bleu marine », « Terracotta »…). Les teintes maison se saisissent en hexadécimal dans la Bibliothèque de swatches."
-                : "Toutes les valeurs non renseignées prennent la même teinte."
-          }
+        <ColorField
+          label="Couleur de bordure"
+          value={form.borderColor}
+          onChange={(v) => set("borderColor", v)}
         />
+      </InlineGrid>
+
+      {form.selectedStyle !== "shadow" && (
         <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-          <ColorField
-            label="Couleur de bordure"
-            value={form.borderColor}
-            onChange={(v) => set("borderColor", v)}
+          <RangeSlider
+            label={`Épaisseur du trait — ${form.selectedWidth} px`}
+            min={1}
+            max={8}
+            value={form.selectedWidth}
+            onChange={(v) => set("selectedWidth", Number(v))}
+            output
           />
-          {form.swatchFallback !== "image" ? (
-            <ColorField
-              label="Teinte neutre"
-              value={form.neutralColor}
-              onChange={(v) => set("neutralColor", v)}
+          {form.selectedStyle === "ring" ? (
+            <RangeSlider
+              label={`Écart avec la pastille — ${form.selectedGap} px`}
+              min={0}
+              max={8}
+              value={form.selectedGap}
+              onChange={(v) => set("selectedGap", Number(v))}
+              output
             />
           ) : (
             <Box />
           )}
         </InlineGrid>
-        <RangeSlider
-          label={`Épaisseur de bordure — ${form.borderWidth} px`}
-          min={0}
-          max={6}
-          value={form.borderWidth}
-          onChange={(v) => set("borderWidth", Number(v))}
-          output
-          helpText="Bordure de la pastille au repos, à ne pas confondre avec le trait de sélection."
+      )}
+
+      <RangeSlider
+        label={`Épaisseur de bordure — ${form.borderWidth} px`}
+        min={0}
+        max={6}
+        value={form.borderWidth}
+        onChange={(v) => set("borderWidth", Number(v))}
+        output
+      />
+
+      <Divider />
+
+      <ChoiceCards
+        label="Quand une couleur n'est pas renseignée"
+        help="Vous n'avez rien saisi dans la Bibliothèque de swatches pour cette valeur : voici ce que verra le client."
+        value={form.swatchFallback}
+        accent={accent}
+        onChange={(v) => set("swatchFallback", v)}
+        options={[
+          {
+            id: "color",
+            label: "Deviner",
+            preview: <Chip radius={radius} background="#1F3A5F" />,
+          },
+          {
+            id: "image",
+            label: "Photo",
+            preview: (
+              <Chip
+                radius={radius}
+                background="linear-gradient(135deg,#B9C6D2 0 40%,#8FA3B5 40% 70%,#6E8296 70% 100%)"
+              />
+            ),
+          },
+          {
+            id: "neutral",
+            label: "Teinte unie",
+            preview: <Chip radius={radius} background={form.neutralColor} />,
+          },
+        ]}
+      />
+
+      {form.swatchFallback !== "image" && (
+        <ColorField
+          label="Teinte utilisée"
+          value={form.neutralColor}
+          onChange={(v) => set("neutralColor", v)}
+        />
+      )}
+
+      <Divider />
+
+      <ChoiceCards
+        label="Quand un coloris est en rupture"
+        value={form.soldOutStyle}
+        accent={accent}
+        onChange={(v) => set("soldOutStyle", v)}
+        options={[
+          {
+            id: "strikethrough",
+            label: "Barré",
+            preview: <Chip radius={radius} background="#C9CFD6" struck />,
+          },
+          {
+            id: "dim",
+            label: "Atténué",
+            preview: <Chip radius={radius} background="#C9CFD6" opacity={0.35} />,
+          },
+          {
+            id: "hide",
+            label: "Retiré",
+            preview: (
+              <Chip radius={radius} background="transparent" border="1px dashed #B0B7BF" />
+            ),
+          },
+        ]}
+      />
+      {form.soldOutStyle === "hide" && (
+        <Text as="p" variant="bodySm" tone="subdued">
+          Le client ne saura pas que ce coloris existe — il ne pourra donc pas demander son retour
+          en stock.
+        </Text>
+      )}
+
+      <Divider />
+
+      <BlockStack gap="300">
+        <Text as="p" variant="bodyMd">
+          Textes affichés
+        </Text>
+        <Checkbox
+          label="Le nom de la couleur sous chaque pastille"
+          checked={form.showLabels}
+          onChange={(v) => set("showLabels", v)}
+        />
+        <Checkbox
+          label="La ligne « Couleur : Bleu marine » au-dessus des pastilles"
+          checked={form.showOptionName}
+          onChange={(v) => set("showOptionName", v)}
         />
       </BlockStack>
     </BlockStack>
   );
 }
 
-function ComportementPanel({ form, set }: PanelProps) {
+
+function ReglagesPanel({ form, set }: PanelProps) {
   return (
     <BlockStack gap="500">
       <BlockStack gap="400">
@@ -585,34 +628,6 @@ function ComportementPanel({ form, set }: PanelProps) {
         />
       </BlockStack>
 
-      <Divider />
-
-      <BlockStack gap="400">
-        <SectionTitle help="Ce que voit le client sur les libellés et les ruptures de stock.">
-          Libellés et disponibilité
-        </SectionTitle>
-        <Checkbox
-          label="Afficher le nom de la valeur sous chaque pastille"
-          checked={form.showLabels}
-          onChange={(v) => set("showLabels", v)}
-        />
-        <Checkbox
-          label="Afficher « Couleur : Bleu marine » au-dessus des pastilles"
-          checked={form.showOptionName}
-          onChange={(v) => set("showOptionName", v)}
-        />
-        <Select
-          label="Variantes en rupture"
-          options={[
-            { label: "Barrer la pastille", value: "strikethrough" },
-            { label: "Atténuer (opacité réduite)", value: "dim" },
-            { label: "Masquer complètement", value: "hide" },
-          ]}
-          helpText="Masquer complètement peut dérouter : le client ne sait pas que le coloris existe."
-          value={form.soldOutStyle}
-          onChange={(v) => set("soldOutStyle", v)}
-        />
-      </BlockStack>
 
       <Divider />
 

@@ -42,7 +42,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
       ? "50%"
       : settings.shape === "rounded"
         ? `${settings.cornerRadius}px`
-        : "2px";
+        : "0px";
 
   const title = useMemo(() => {
     if (!settings.updateTitle) return DEMO_PRODUCT;

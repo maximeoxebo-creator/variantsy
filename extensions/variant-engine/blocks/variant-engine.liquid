@@ -39,7 +39,7 @@
       --vtsy-border-width: {{ block.settings.border_width | default: 1 }}px;
       --vtsy-border-color: {{ block.settings.border_color | default: '#D9D9D9' }};
       --vtsy-selected-color: {{ block.settings.selected_color | default: '#111111' }};
-      --vtsy-radius: {% case block.settings.shape %}{% when 'square' %}2px{% when 'rounded' %}8px{% else %}50%{% endcase %};
+      --vtsy-radius: {% case block.settings.shape %}{% when 'square' %}0px{% when 'rounded' %}8px{% else %}50%{% endcase %};
     "
   >
     {%- comment -%}

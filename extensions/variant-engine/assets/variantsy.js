@@ -1137,7 +1137,7 @@
     this.root.style.setProperty(
       "--vtsy-radius",
       style.shape === "square"
-        ? "2px"
+        ? "0px"
         : style.shape === "rounded"
           ? num(style.cornerRadius, 8) + "px"
           : "50%",
