@@ -21,7 +21,7 @@ import {
   Banner,
 } from "@shopify/polaris";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
-import { TEMPLATE_VARIABLES } from "../shared";
+import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
 import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { SwatchPreview } from "../components/SwatchPreview";
@@ -475,7 +475,94 @@ function ComportementPanel({ form, set }: PanelProps) {
   );
 }
 
+const TITLE_PRESETS = [
+  {
+    label: "Nom du produit seul",
+    hint: "Le titre ne change jamais.",
+    value: "{{product_title}}",
+  },
+  {
+    label: "Nom — Coloris",
+    hint: "Pour un catalogue dont les noms ne mentionnent pas le coloris.",
+    value: "{{product_title}} — {{option1}}",
+  },
+  {
+    label: "Nom — Coloris / Taille",
+    hint: "La taille disparaît d'elle-même sur les produits qui n'en ont pas.",
+    value: "{{product_title}} — {{option1}}[[ / {{option2}}]]",
+  },
+  {
+    label: "Nom — Référence",
+    hint: "Affiche le SKU de la variante choisie.",
+    value: "{{product_title}}[[ — {{sku}}]]",
+  },
+];
+
+/** Deux produits fictifs : un à deux options, un à une seule. Leur intérêt est
+ *  de rendre visible ce que font les blocs conditionnels — invisible sinon. */
+const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
+  {
+    nom: "Produit à deux options",
+    vars: {
+      product_title: "Sweat en coton bio",
+      variant_title: "Bleu marine / M",
+      option1: "Bleu marine",
+      option2: "M",
+      option3: "",
+      "option:couleur": "Bleu marine",
+      "option:taille": "M",
+      price: "59,00 €",
+      compare_at_price: "79,00 €",
+      sku: "SWT-001-BM-M",
+      barcode: "3760000000017",
+      vendor: "Atelier Nord",
+      product_type: "Sweat",
+    },
+  },
+  {
+    nom: "Produit à une seule option",
+    vars: {
+      product_title: "Cocotte en fonte",
+      variant_title: "Navy",
+      option1: "Navy",
+      option2: "",
+      option3: "",
+      "option:couleur": "Navy",
+      "option:taille": "",
+      price: "129,00 €",
+      compare_at_price: "",
+      sku: "ALMA25-NV",
+      barcode: "",
+      vendor: "La Fonderie",
+      product_type: "Cocotte",
+    },
+  },
+];
+
+const TITLE_FIELD_ID = "variantsy-title-template";
+
 function TitrePanel({ form, set }: PanelProps) {
+  // Insertion à la position du curseur, et non en fin de champ : ajouter
+  // aveuglement à la fin produisait des templates que le marchand n'avait pas
+  // voulus — c'est ainsi qu'un « {{price}} » s'est retrouvé collé à un titre.
+  const insert = (token: string) => {
+    const field = document.getElementById(TITLE_FIELD_ID) as HTMLInputElement | null;
+    const value = form.titleTemplate;
+    if (!field || field.selectionStart === null) {
+      set("titleTemplate", value + token);
+      return;
+    }
+    const start = field.selectionStart;
+    const end = field.selectionEnd ?? start;
+    set("titleTemplate", value.slice(0, start) + token + value.slice(end));
+    requestAnimationFrame(() => {
+      field.focus();
+      field.setSelectionRange(start + token.length, start + token.length);
+    });
+  };
+
+  const actif = TITLE_PRESETS.find((p) => p.value === form.titleTemplate);
+
   return (
     <BlockStack gap="400">
       <SectionTitle help="Réécrit le titre affiché sur la page produit selon la variante choisie.">
@@ -487,77 +574,107 @@ function TitrePanel({ form, set }: PanelProps) {
         checked={form.updateTitle}
         onChange={(v) => set("updateTitle", v)}
       />
-      <TextField
-        label="Template du titre"
-        value={form.titleTemplate}
-        onChange={(v) => set("titleTemplate", v)}
-        disabled={!form.updateTitle}
-        autoComplete="off"
-        helpText="Cliquez sur une variable ci-dessous pour l'insérer."
-      />
 
-      <BlockStack gap="200">
-        <Text as="p" variant="bodySm" tone="subdued">
-          Variables disponibles
-        </Text>
-        <InlineStack gap="150" wrap>
-          {TEMPLATE_VARIABLES.map((variable) => (
-            <Button
-              key={variable.token}
-              size="micro"
-              disabled={!form.updateTitle}
-              onClick={() =>
-                set("titleTemplate" as never, (form.titleTemplate + variable.token) as never)
-              }
-            >
-              {variable.token}
-            </Button>
-          ))}
-        </InlineStack>
-      </BlockStack>
+      {form.updateTitle && (
+        <>
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" fontWeight="semibold">
+              Modèles prêts à l&apos;emploi
+            </Text>
+            <InlineStack gap="200" wrap>
+              {TITLE_PRESETS.map((preset) => (
+                <Button
+                  key={preset.label}
+                  size="slim"
+                  pressed={preset.value === form.titleTemplate}
+                  onClick={() => set("titleTemplate", preset.value)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </InlineStack>
+            {actif && (
+              <Text as="p" variant="bodySm" tone="subdued">
+                {actif.hint}
+              </Text>
+            )}
+          </BlockStack>
 
-      <Box background="bg-surface-secondary" padding="300" borderRadius="200">
-        <BlockStack gap="150">
-          <Text as="p" variant="bodySm" fontWeight="semibold">
-            Blocs conditionnels
-          </Text>
-          <Text as="p" variant="bodySm">
-            Ce qui est entre <code>[[</code> et <code>]]</code> disparaît si l&apos;une des
-            variables du bloc est vide. Utile pour ne pas laisser un séparateur orphelin sur les
-            produits à une seule option.
-          </Text>
-          <Text as="p" variant="bodySm" tone="subdued">
-            Exemple : <code>{"{{product_title}} — {{option1}}[[ / {{option2}}]]"}</code>
-          </Text>
-        </BlockStack>
-      </Box>
+          <TextField
+            id={TITLE_FIELD_ID}
+            label="Modèle"
+            value={form.titleTemplate}
+            onChange={(v) => set("titleTemplate", v)}
+            autoComplete="off"
+            helpText="Les boutons ci-dessous insèrent à l'endroit de votre curseur."
+          />
 
-      <Banner tone="info">
-        <p>
-          Si le coloris figure déjà dans le nom de vos produits, un template
-          <code> {"{{product_title}} — {{variant_title}}"}</code> produira une répétition. Préférez
-          alors n&apos;ajouter que la taille, ou désactivez le titre dynamique.
-        </p>
-      </Banner>
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" tone="subdued">
+              Insérer une variable
+            </Text>
+            <InlineStack gap="150" wrap>
+              {TEMPLATE_VARIABLES.map((variable) => (
+                <Button key={variable.token} size="micro" onClick={() => insert(variable.token)}>
+                  {variable.label}
+                </Button>
+              ))}
+            </InlineStack>
+          </BlockStack>
 
-      <Advanced id="titre">
-        <Checkbox
-          label="Mettre aussi à jour le titre de l'onglet du navigateur"
-          helpText="Le suffixe de votre thème (« – Ma Boutique ») est conservé."
-          checked={form.updateDocumentTitle}
-          onChange={(v) => set("updateDocumentTitle", v)}
-          disabled={!form.updateTitle}
-        />
-        <TextField
-          label="Sélecteur CSS du titre"
-          value={form.titleSelectorCss}
-          onChange={(v) => set("titleSelectorCss", v)}
-          disabled={!form.updateTitle}
-          autoComplete="off"
-          placeholder="Laisser vide pour la détection automatique"
-          helpText="À renseigner uniquement si votre thème utilise un balisage inhabituel."
-        />
-      </Advanced>
+          <Box background="bg-surface-secondary" padding="300" borderRadius="200">
+            <BlockStack gap="300">
+              <Text as="p" variant="bodySm" fontWeight="semibold">
+                Ce que verront vos clients
+              </Text>
+              {TITLE_EXAMPLES.map((exemple) => {
+                const rendu = renderTemplate(form.titleTemplate, exemple.vars);
+                return (
+                  <BlockStack key={exemple.nom} gap="050">
+                    <Text as="p" variant="bodyXs" tone="subdued">
+                      {exemple.nom}
+                    </Text>
+                    <Text as="p" variant="bodyMd" fontWeight="medium">
+                      {rendu || "— (titre vide)"}
+                    </Text>
+                  </BlockStack>
+                );
+              })}
+            </BlockStack>
+          </Box>
+
+          <Box background="bg-surface-secondary" padding="300" borderRadius="200">
+            <BlockStack gap="150">
+              <Text as="p" variant="bodySm" fontWeight="semibold">
+                Faire disparaître un séparateur devenu inutile
+              </Text>
+              <Text as="p" variant="bodySm">
+                Ce qui est placé entre <code>[[</code> et <code>]]</code> s&apos;efface
+                entièrement dès qu&apos;une de ses variables est vide. Sans cela,
+                <code> {"{{option1}} / {{option2}}"}</code> laisse un « / » orphelin sur les
+                produits à une seule option — visible dans le second exemple ci-dessus.
+              </Text>
+            </BlockStack>
+          </Box>
+
+          <Advanced id="titre">
+            <Checkbox
+              label="Mettre aussi à jour le titre de l'onglet du navigateur"
+              helpText="Le suffixe de votre thème (« – Ma Boutique ») est conservé."
+              checked={form.updateDocumentTitle}
+              onChange={(v) => set("updateDocumentTitle", v)}
+            />
+            <TextField
+              label="Sélecteur CSS du titre"
+              value={form.titleSelectorCss}
+              onChange={(v) => set("titleSelectorCss", v)}
+              autoComplete="off"
+              placeholder="Laisser vide pour la détection automatique"
+              helpText="À renseigner uniquement si votre thème utilise un balisage inhabituel."
+            />
+          </Advanced>
+        </>
+      )}
     </BlockStack>
   );
 }

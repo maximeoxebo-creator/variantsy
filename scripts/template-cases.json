@@ -90,6 +90,26 @@
       "name": "séparateurs doublés collapsés",
       "template": "{{product_title}} — — {{option1}}",
       "expected": "Sweat en coton bio — Bleu marine"
+    },
+    {
+      "name": "modèle proposé : nom du produit seul",
+      "template": "{{product_title}}",
+      "expected": "Sweat en coton bio"
+    },
+    {
+      "name": "modèle proposé : nom — coloris",
+      "template": "{{product_title}} — {{option1}}",
+      "expected": "Sweat en coton bio — Bleu marine"
+    },
+    {
+      "name": "modèle proposé : nom — coloris / taille",
+      "template": "{{product_title}} — {{option1}}[[ / {{option2}}]]",
+      "expected": "Sweat en coton bio — Bleu marine / M"
+    },
+    {
+      "name": "modèle proposé : nom — référence",
+      "template": "{{product_title}}[[ — {{sku}}]]",
+      "expected": "Sweat en coton bio — SWT-BM-M"
     }
   ]
 }
