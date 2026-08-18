@@ -137,14 +137,17 @@ export default function SetupPage() {
   const { themeName, deepLink } = useLoaderData<typeof loader>();
 
   return (
-    <Page title="Installation" subtitle="Trois minutes, une seule fois.">
+    <Page
+      title="Installation"
+      subtitle="Trois minutes, une seule fois. Ensuite Variantsy travaille seul."
+    >
       <Layout>
         <Layout.Section>
-          <BlockStack gap="400">
+          <BlockStack gap="500">
             <Card>
               <BlockStack gap="300">
                 <InlineStack gap="200" blockAlign="center">
-                  <Badge tone="attention">Étape 1</Badge>
+                  <Badge tone="info">Étape 1</Badge>
                   <Text as="h2" variant="headingMd">
                     Activer le bloc dans votre thème
                   </Text>
@@ -180,7 +183,7 @@ export default function SetupPage() {
             <Card>
               <BlockStack gap="300">
                 <InlineStack gap="200" blockAlign="center">
-                  <Badge tone="attention">Étape 2</Badge>
+                  <Badge tone="info">Étape 2</Badge>
                   <Text as="h2" variant="headingMd">
                     Ranger vos photos dans l&apos;ordre
                   </Text>
@@ -263,7 +266,7 @@ export default function SetupPage() {
             <Card>
               <BlockStack gap="300">
                 <InlineStack gap="200" blockAlign="center">
-                  <Badge tone="attention">Étape 3</Badge>
+                  <Badge tone="info">Étape 3</Badge>
                   <Text as="h2" variant="headingMd">
                     Importer vos couleurs
                   </Text>
@@ -282,7 +285,7 @@ export default function SetupPage() {
             <Card>
               <BlockStack gap="300">
                 <InlineStack gap="200" blockAlign="center">
-                  <Badge tone="attention">Étape 4</Badge>
+                  <Badge tone="info">Étape 4</Badge>
                   <Text as="h2" variant="headingMd">
                     Ajuster le style
                   </Text>

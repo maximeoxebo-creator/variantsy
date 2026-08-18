@@ -145,7 +145,16 @@ export default function SettingsPage() {
             {/* L'interrupteur maître ne vit dans aucun onglet : c'est le seul
                 réglage dont la réponse change tout, et le chercher derrière un
                 onglet n'aurait aucun sens. */}
-            <Card>
+            <Card padding="0">
+              <div
+                style={{
+                  borderInlineStart: `4px solid ${
+                    form.enabled ? "var(--p-color-bg-fill-success)" : "var(--p-color-border)"
+                  }`,
+                  borderRadius: "inherit",
+                  padding: "var(--p-space-400) var(--p-space-500)",
+                }}
+              >
               <InlineStack align="space-between" blockAlign="center" gap="400">
                 <BlockStack gap="100">
                   <InlineStack gap="200" blockAlign="center">
@@ -169,11 +178,12 @@ export default function SettingsPage() {
                   {form.enabled ? "Désactiver" : "Activer"}
                 </Button>
               </InlineStack>
+              </div>
             </Card>
 
             <Card padding="0">
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
-                <Box padding="400">
+                <Box padding="500">
                   {tab === 0 && <ApparencePanel form={form} set={set} />}
                   {tab === 1 && <TitrePanel form={form} set={set} />}
                 </Box>
@@ -226,12 +236,40 @@ type PanelProps = {
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
 };
 
-function SectionTitle({ children, help }: { children: string; help?: string }) {
+/**
+ * Titre de section, avec un repère coloré.
+ *
+ * Un simple texte gras se perd dans une page qui en compte cinq. La pastille
+ * donne un point d'ancrage à l'œil quand on parcourt, et introduit la couleur
+ * de sélection du marchand dans l'interface plutôt que de la réserver aux
+ * aperçus.
+ */
+function SectionTitle({
+  children,
+  help,
+  accent,
+}: {
+  children: string;
+  help?: string;
+  accent?: string;
+}) {
   return (
-    <BlockStack gap="100">
-      <Text as="h3" variant="headingSm">
-        {children}
-      </Text>
+    <BlockStack gap="150">
+      <InlineStack gap="200" blockAlign="center">
+        <span
+          style={{
+            display: "block",
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: accent || "var(--p-color-bg-fill-brand)",
+            flex: "0 0 auto",
+          }}
+        />
+        <Text as="h3" variant="headingMd">
+          {children}
+        </Text>
+      </InlineStack>
       {help && (
         <Text as="p" variant="bodySm" tone="subdued">
           {help}
@@ -274,6 +312,12 @@ function Advanced({ id, children }: { id: string; children: React.ReactNode }) {
  * disent rien tant qu'on ne les a pas vus : le marchand devait essayer chaque
  * valeur pour comparer. Chaque option est donc dessinée avec les réglages en
  * cours, et le choix se fait à l'œil.
+ *
+ * Les cartes sont volontairement larges : ce sont les commandes principales de
+ * la page, et une cible de 100 px se vise sans effort, y compris sur un écran
+ * tactile. La sélection se signale par trois signaux redondants — bordure
+ * colorée, fond teinté, pastille de validation — pour rester lisible quelle
+ * que soit la couleur choisie par le marchand.
  */
 function ChoiceCards({
   label,
@@ -291,17 +335,10 @@ function ChoiceCards({
   onChange: (value: string) => void;
 }) {
   return (
-    <BlockStack gap="200">
-      <BlockStack gap="050">
-        <Text as="p" variant="bodyMd">
-          {label}
-        </Text>
-        {help && (
-          <Text as="p" variant="bodySm" tone="subdued">
-            {help}
-          </Text>
-        )}
-      </BlockStack>
+    <BlockStack gap="300">
+      <SectionTitle help={help} accent={accent}>
+        {label}
+      </SectionTitle>
       <InlineStack gap="300" wrap>
         {options.map((option) => {
           const active = value === option.id;
@@ -312,17 +349,26 @@ function ChoiceCards({
               onClick={() => onChange(option.id)}
               aria-pressed={active}
               style={{
+                position: "relative",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 10,
-                minWidth: 84,
-                padding: "14px 12px",
-                borderRadius: 10,
+                justifyContent: "space-between",
+                gap: 14,
+                minWidth: 108,
+                padding: "20px 16px 14px",
+                borderRadius: 14,
                 cursor: "pointer",
-                background: active ? "var(--p-color-bg-surface-selected)" : "transparent",
-                border: active ? `2px solid ${accent}` : "1px solid var(--p-color-border)",
+                background: active
+                  ? `color-mix(in srgb, ${accent} 7%, var(--p-color-bg-surface))`
+                  : "var(--p-color-bg-surface)",
+                border: active
+                  ? `2px solid ${accent}`
+                  : "1px solid var(--p-color-border-secondary)",
+                boxShadow: active
+                  ? `0 2px 10px color-mix(in srgb, ${accent} 18%, transparent)`
+                  : "0 1px 2px rgba(0,0,0,.04)",
+                transition: "border-color 120ms ease, box-shadow 120ms ease, background 120ms ease",
                 // PIÈGE N°5 : reset du chrome natif sur tout bouton custom.
                 WebkitAppearance: "none",
                 appearance: "none",
@@ -330,10 +376,38 @@ function ChoiceCards({
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              <span style={{ display: "flex", alignItems: "center", height: 44 }}>
+              {active && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: accent,
+                    color: "#fff",
+                    fontSize: 10,
+                    lineHeight: "16px",
+                    textAlign: "center",
+                    fontWeight: 700,
+                  }}
+                >
+                  ✓
+                </span>
+              )}
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 46,
+                }}
+              >
                 {option.preview}
               </span>
-              <Text as="span" variant="bodySm">
+              <Text as="span" variant="bodySm" fontWeight={active ? "semibold" : "regular"}>
                 {option.label}
               </Text>
             </button>
@@ -397,7 +471,7 @@ function ApparencePanel({ form, set }: PanelProps) {
   const accent = form.selectedColor;
 
   return (
-    <BlockStack gap="500">
+    <BlockStack gap="600">
       <ChoiceCards
         label="Comment s'affichent vos coloris"
         help="Ne concerne que les options de couleur. Les tailles restent des boutons texte dans tous les cas."
@@ -687,9 +761,9 @@ function ApparencePanel({ form, set }: PanelProps) {
       <Divider />
 
       <BlockStack gap="300">
-        <Text as="p" variant="bodyMd">
+        <SectionTitle accent={accent} help="Ce qui accompagne les pastilles, en toutes lettres.">
           Textes affichés
-        </Text>
+        </SectionTitle>
         <Checkbox
           label="Le nom de la couleur sous chaque pastille"
           checked={form.showLabels}
