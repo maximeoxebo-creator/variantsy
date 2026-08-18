@@ -40,12 +40,15 @@ export default function App() {
           onglets d'une page unique. Ne restent au menu que les deux OUTILS :
           une table de données et un inspecteur, qui ne se logent pas dans un
           onglet de réglages sans devenir illisibles. */}
+      {/* Une seule entrée : tout tient dans les onglets de la page.
+          L'inspecteur de produit et la bibliothèque de couleurs restent
+          accessibles par leur URL, mais ne s'imposent plus au menu — Shopify
+          fournissant désormais les couleurs de variantes nativement, la
+          bibliothèque ne sert plus qu'aux cas qu'il ne couvre pas. */}
       <NavMenu>
         <Link to="/app" rel="home">
           Variantsy
         </Link>
-        <Link to="/app/swatches">Bibliothèque de couleurs</Link>
-        <Link to="/app/images">Inspecteur de produit</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>

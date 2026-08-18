@@ -126,7 +126,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const TABS = [
   { id: "installation", content: "Installation", panelID: "panel-installation" },
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
-  { id: "galerie", content: "Galerie & titre", panelID: "panel-galerie" },
+  { id: "galerie", content: "Galerie", panelID: "panel-galerie" },
+  { id: "titre", content: "Titre", panelID: "panel-titre" },
 ];
 
 export default function SettingsPage() {
@@ -218,12 +219,10 @@ export default function SettingsPage() {
                       : "Rien ne s'affiche sur votre boutique tant que l'app est désactivée."}
                   </Text>
                 </BlockStack>
-                <Button
-                  variant={form.enabled ? undefined : "primary"}
-                  onClick={() => set("enabled", !form.enabled)}
-                >
-                  {form.enabled ? "Désactiver" : "Activer"}
-                </Button>
+                <Interrupteur
+                  actif={form.enabled}
+                  onChange={(v) => set("enabled", v)}
+                />
               </InlineStack>
               </div>
             </Card>
@@ -235,13 +234,8 @@ export default function SettingsPage() {
                     <InstallationPanel themeName={themeName} deepLink={deepLink} />
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
-                  {tab === 2 && (
-                    <BlockStack gap="600">
-                      <GaleriePanel form={form} set={set} />
-                      <Divider />
-                      <TitrePanel form={form} set={set} />
-                    </BlockStack>
-                  )}
+                  {tab === 2 && <GaleriePanel form={form} set={set} />}
+                  {tab === 3 && <TitrePanel form={form} set={set} />}
                 </Box>
               </Tabs>
             </Card>
@@ -295,6 +289,67 @@ type PanelProps = {
   form: Settings;
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
 };
+
+/**
+ * Interrupteur en capsule.
+ *
+ * Polaris n'expose pas de composant de bascule : son motif officiel est un
+ * bouton « Activer / Désactiver », qui oblige à lire le libellé pour connaître
+ * l'état — et un bouton disant « Activer » sur une app active prête à
+ * confusion. Une capsule montre l'état par sa position, ce qui se lit sans
+ * lire.
+ */
+function Interrupteur({
+  actif,
+  onChange,
+}: {
+  actif: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={actif}
+      aria-label={actif ? "Désactiver Variantsy" : "Activer Variantsy"}
+      onClick={() => onChange(!actif)}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        width: 52,
+        height: 30,
+        flex: "0 0 auto",
+        padding: 3,
+        borderRadius: 999,
+        cursor: "pointer",
+        background: actif
+          ? "var(--p-color-bg-fill-success)"
+          : "var(--p-color-bg-fill-tertiary)",
+        border: "none",
+        transition: "background 160ms ease",
+        // PIÈGE N°5 : reset du chrome natif sur tout bouton custom.
+        WebkitAppearance: "none",
+        appearance: "none",
+        outline: "none",
+        WebkitTapHighlightColor: "transparent",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 3px rgba(0,0,0,.28)",
+          transform: actif ? "translateX(22px)" : "translateX(0)",
+          transition: "transform 160ms ease",
+        }}
+      />
+    </button>
+  );
+}
 
 /**
  * Titre de section, avec un repère coloré.
@@ -708,10 +763,15 @@ function ApparencePanel({ form, set }: PanelProps) {
         </>
       )}
 
+      {/* Une seule couleur à découvert, et c'est celle qui se voit : le liseré
+          de sélection, ou l'ombre selon le style choisi. La bordure au repos
+          descend dans les avancés — elle reste utile, mais un gris discret
+          convient à presque tout le monde. */}
       <ColorField
-        label="Couleur de bordure"
-        value={form.borderColor}
-        onChange={(v) => set("borderColor", v)}
+        label="Couleur de sélection"
+        value={form.selectedColor}
+        onChange={(v) => set("selectedColor", v)}
+        help="Teinte du liseré, de la bordure épaisse ou de l'ombre, selon le style choisi ci-dessus."
       />
 
       {form.selectedStyle !== "shadow" && (
@@ -861,9 +921,9 @@ function ApparencePanel({ form, set }: PanelProps) {
           chose ne s&apos;affiche pas correctement.
         </Text>
         <ColorField
-          label="Couleur du trait de sélection"
-          value={form.selectedColor}
-          onChange={(v) => set("selectedColor", v)}
+          label="Couleur de bordure au repos"
+          value={form.borderColor}
+          onChange={(v) => set("borderColor", v)}
         />
         <Checkbox
           label="Précharger l'image au survol d'une pastille"
@@ -1135,16 +1195,19 @@ function ColorField({
   label,
   value,
   onChange,
+  help,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  help?: string;
 }) {
   return (
     <TextField
       label={label}
       value={value}
       onChange={onChange}
+      helpText={help}
       autoComplete="off"
       prefix={
         <input
