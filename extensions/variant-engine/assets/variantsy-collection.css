@@ -10,7 +10,9 @@
   flex-wrap: wrap;
   gap: var(--vtsy-gap, 6px);
   align-items: center;
-  margin-top: 8px;
+  /* Marges généreuses au-dessus, discrètes en dessous : la rangée appartient
+     visuellement à la vignette qu'elle surmonte, pas au bloc de texte. */
+  margin: 12px 0 4px;
 }
 
 .variantsy-collection__swatch {
@@ -55,8 +57,9 @@
 
 .variantsy-collection__swatch.is-selected .variantsy-collection__visual {
   box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 4px var(--vtsy-selected-color, #111111);
+    0 0 0 var(--vtsy-selected-gap, 1px) #fff,
+    0 0 0 calc(var(--vtsy-selected-gap, 1px) + var(--vtsy-selected-width, 1px))
+      var(--vtsy-selected-color, #111111);
 }
 
 /* Le focus clavier garde une épaisseur fixe : c'est un repère

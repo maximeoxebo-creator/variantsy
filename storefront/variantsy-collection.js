@@ -225,8 +225,21 @@
     var conteneur = document.createElement("div");
     conteneur.className = "variantsy-collection";
     conteneur.setAttribute("data-variantsy-collection", "");
-    conteneur.style.setProperty("--vtsy-size", (style.size || 40) * 0.6 + "px");
-    conteneur.style.setProperty("--vtsy-gap", (style.gap || 10) * 0.6 + "px");
+    // Une vignette de collection est petite : tout est réduit d'un même
+    // facteur, liseré compris. Le laisser à sa taille de page produit lui
+    // faisait occuper un sixième du diamètre de la pastille.
+    var echelle = 0.55;
+    var taille = Math.round((style.size || 40) * echelle);
+    conteneur.style.setProperty("--vtsy-size", taille + "px");
+    conteneur.style.setProperty("--vtsy-gap", Math.max(4, Math.round((style.gap || 10) * echelle)) + "px");
+    conteneur.style.setProperty(
+      "--vtsy-selected-width",
+      Math.max(1, Math.round((style.selectedWidth || 2) * echelle)) + "px",
+    );
+    conteneur.style.setProperty(
+      "--vtsy-selected-gap",
+      Math.max(1, Math.round((style.selectedGap || 2) * echelle)) + "px",
+    );
     conteneur.style.setProperty("--vtsy-selected-color", style.selectedColor || "#111111");
     conteneur.style.setProperty(
       "--vtsy-radius",

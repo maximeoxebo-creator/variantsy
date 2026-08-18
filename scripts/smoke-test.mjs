@@ -1528,6 +1528,23 @@ section("Pastilles en collection");
     JSON.stringify(rendu),
   );
 
+  // Le liseré doit rester proportionné : sur une pastille réduite, un anneau
+  // à sa taille de page produit occupe un sixième du diamètre.
+  const anneau = await page.evaluate(() => {
+    const v = document.querySelector(".variantsy-collection__swatch.is-selected .variantsy-collection__visual");
+    const conteneur = document.querySelector("[data-variantsy-collection]");
+    return {
+      taille: getComputedStyle(v).width,
+      trait: conteneur.style.getPropertyValue("--vtsy-selected-width"),
+      ecart: conteneur.style.getPropertyValue("--vtsy-selected-gap"),
+    };
+  });
+  check(
+    "Le liseré est mis à l'échelle avec la pastille",
+    anneau.trait === "1px" && anneau.ecart === "1px" && anneau.taille === "22px",
+    JSON.stringify(anneau),
+  );
+
   // Cliquer doit changer l'image ET pointer le lien vers la variante.
   await page.locator(".variantsy-collection__swatch").nth(1).click();
   await page.waitForTimeout(200);
