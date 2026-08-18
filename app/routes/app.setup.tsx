@@ -42,6 +42,31 @@ const PUBLISHED_THEME_QUERY = `#graphql
 const NAVY = "#1F3A5F";
 const BEIGE = "#D8C3A5";
 
+/** Pastille étoilée : marque une photo assignée à une variante. */
+function Etoile() {
+  return (
+    <span
+      style={{
+        position: "absolute",
+        top: -8,
+        right: -8,
+        width: 20,
+        height: 20,
+        borderRadius: "50%",
+        background: "#1A1A1A",
+        color: "#fff",
+        fontSize: 11,
+        lineHeight: "20px",
+        textAlign: "center",
+        fontWeight: 700,
+        boxShadow: "0 1px 3px rgba(0,0,0,.25)",
+      }}
+    >
+      ★
+    </span>
+  );
+}
+
 /** Silhouette de tee-shirt, lisible dès 30 px. Inline : rien à charger. */
 function Silhouette({ tint, large }: { tint: string; large?: boolean }) {
   const taille = large ? 76 : 40;
@@ -83,27 +108,7 @@ function Vignette({
         }}
       >
         <Silhouette tint={color} />
-        {pinned && (
-          <span
-            style={{
-              position: "absolute",
-              top: -8,
-              right: -8,
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              background: "#1A1A1A",
-              color: "#fff",
-              fontSize: 11,
-              lineHeight: "20px",
-              textAlign: "center",
-              fontWeight: 700,
-              boxShadow: "0 1px 3px rgba(0,0,0,.25)",
-            }}
-          >
-            ★
-          </span>
-        )}
+        {pinned && <Etoile />}
       </span>
       {legende && (
         <Text as="span" variant="bodyXs" tone="subdued">
@@ -207,6 +212,81 @@ function FicheMiniature({
 }
 
 /**
+ * Où déclarer les valeurs d'une option, dans l'admin Shopify.
+ *
+ * Shopify attache désormais une couleur à chaque valeur d'option, visible
+ * directement dans l'éditeur de variantes. Le marchand n'a donc pas besoin de
+ * ressaisir ses teintes ailleurs pour que le nuancier soit juste — c'est ce
+ * que ce schéma montre, avant même de parler de la Bibliothèque de swatches.
+ */
+function SchemaOptions() {
+  const valeurs = [
+    { nom: "Beige", couleur: BEIGE },
+    { nom: "Navy", couleur: NAVY },
+  ];
+
+  return (
+    <span
+      style={{
+        display: "block",
+        borderRadius: 14,
+        background: "#fff",
+        border: "1px solid var(--p-color-border-secondary)",
+        boxShadow: "0 1px 3px rgba(0,0,0,.06)",
+        overflow: "hidden",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          padding: "10px 14px",
+          background: "var(--p-color-bg-surface-secondary)",
+          borderBottom: "1px solid var(--p-color-border-secondary)",
+          fontSize: 12,
+          color: "var(--p-color-text-secondary)",
+        }}
+      >
+        Admin Shopify › Produits › votre produit › <strong>Variantes</strong>
+      </span>
+
+      <span style={{ display: "block", padding: "14px" }}>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+          Couleur
+        </span>
+        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {valeurs.map((v) => (
+            <span
+              key={v.nom}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 12px 6px 8px",
+                borderRadius: 8,
+                background: "var(--p-color-bg-surface-info)",
+                fontSize: 13,
+              }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                  background: v.couleur,
+                  border: "1px solid rgba(0,0,0,.12)",
+                }}
+              />
+              {v.nom}
+            </span>
+          ))}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/**
  * Où assigner une photo à une variante, dans l'admin Shopify.
  *
  * C'est le geste que l'app demande, et le seul qu'elle ne peut pas faire à la
@@ -217,8 +297,8 @@ function FicheMiniature({
  */
 function SchemaAssignation() {
   const lignes = [
-    { valeur: "Navy", couleur: NAVY, actif: true },
-    { valeur: "Beige", couleur: BEIGE, actif: false },
+    { valeur: "Navy", couleur: NAVY },
+    { valeur: "Beige", couleur: BEIGE },
   ];
 
   return (
@@ -258,23 +338,21 @@ function SchemaAssignation() {
         >
           <span
             style={{
+              position: "relative",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               borderRadius: 8,
               flex: "0 0 auto",
               background: `color-mix(in srgb, ${ligne.couleur} 22%, #fff)`,
-              border: ligne.actif
-                ? "2px solid var(--p-color-border-info)"
-                : "1px dashed var(--p-color-border)",
-              boxShadow: ligne.actif
-                ? "0 0 0 3px var(--p-color-bg-surface-info)"
-                : "none",
+              border: "2px solid var(--p-color-border-info)",
+              boxShadow: "0 0 0 3px var(--p-color-bg-surface-info)",
             }}
           >
             <Silhouette tint={ligne.couleur} />
+            <Etoile />
           </span>
           <span style={{ fontSize: 13, fontWeight: 600 }}>{ligne.valeur}</span>
           <span style={{ marginInlineStart: "auto", fontSize: 12, color: "#8A8A8A" }}>
@@ -383,7 +461,21 @@ export default function SetupPage() {
                 <Box background="bg-surface-secondary" padding="400" borderRadius="300">
                   <BlockStack gap="300">
                     <Text as="p" variant="bodySm" fontWeight="semibold">
-                      Où se fait l&apos;assignation
+                      1. Déclarez vos coloris et leur teinte
+                    </Text>
+                    <SchemaOptions />
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      Shopify attache une couleur à chaque valeur d&apos;option. Renseignez-la ici
+                      et votre nuancier sera juste sans autre saisie — Variantsy sait aussi
+                      deviner les noms courants, mais une teinte maison ne se devine pas.
+                    </Text>
+                  </BlockStack>
+                </Box>
+
+                <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                  <BlockStack gap="300">
+                    <Text as="p" variant="bodySm" fontWeight="semibold">
+                      2. Assignez une photo à chaque coloris
                     </Text>
                     <SchemaAssignation />
                     <Text as="p" variant="bodySm" tone="subdued">
@@ -397,6 +489,9 @@ export default function SetupPage() {
 
                 <Box background="bg-surface-secondary" padding="400" borderRadius="300">
                   <BlockStack gap="400">
+                    <Text as="p" variant="bodySm" fontWeight="semibold">
+                      3. Rangez les autres photos derrière
+                    </Text>
                     <InlineStack gap="300" blockAlign="start" wrap>
                       <Vignette color={NAVY} pinned legende="Navy" />
                       <Vignette color={NAVY} legende="Navy" />
@@ -436,7 +531,7 @@ export default function SetupPage() {
                     couleur={BEIGE}
                     pastilles={[NAVY, BEIGE]}
                     choisie={1}
-                    miniatures={1}
+                    miniatures={2}
                   />
                 </InlineGrid>
                 <Text as="p" variant="bodySm" tone="subdued">
