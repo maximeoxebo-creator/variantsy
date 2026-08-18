@@ -248,6 +248,28 @@ export default function SettingsPage() {
               </Banner>
             )}
 
+            {/* La barre d'enregistrement de Shopify vit tout en haut du cadre.
+                Sur une page longue, on règle en bas, on regarde l'aperçu, et
+                on quitte sans avoir enregistré — trois diagnostics ont été
+                lancés aujourd'hui sur des réglages jamais sauvegardés. */}
+            {dirty && (
+              <Banner
+                tone="warning"
+                title="Modifications non enregistrées"
+                action={{
+                  content: "Enregistrer",
+                  onAction: save,
+                  loading: fetcher.state !== "idle",
+                }}
+                secondaryAction={{ content: "Annuler", onAction: discard }}
+              >
+                <p>
+                  Vos changements sont visibles dans l&apos;aperçu, mais pas encore sur votre
+                  boutique.
+                </p>
+              </Banner>
+            )}
+
             <Card padding="0">
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="500">
@@ -738,29 +760,6 @@ function ApparencePanel({ form, set }: PanelProps) {
                       fontSize: 12,
                       borderRadius: form.controlRadius,
                       border: `2px solid ${accent}`,
-                      color: "#4A4A4A",
-                      background: "#fff",
-                    }}
-                  >
-                    M
-                  </span>
-                ),
-              },
-              {
-                id: "none",
-                label: "Aucun",
-                preview: (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minWidth: 46,
-                      height: 28,
-                      padding: "0 10px",
-                      fontSize: 12,
-                      borderRadius: form.controlRadius,
-                      border: `1px solid ${form.borderColor}`,
                       color: "#4A4A4A",
                       background: "#fff",
                     }}
