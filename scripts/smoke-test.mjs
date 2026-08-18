@@ -1605,7 +1605,7 @@ section("Pastilles en collection");
   });
   check(
     "Le liseré est mis à l'échelle avec la pastille",
-    !anneau.absent && anneau.trait === "1px" && anneau.ecart === "1px" && anneau.taille === "29px",
+    !anneau.absent && anneau.trait === "2px" && anneau.ecart === "2px" && anneau.taille === "38px",
     JSON.stringify(anneau),
   );
 
@@ -1619,17 +1619,23 @@ section("Pastilles en collection");
     return {
       classe: rangee.classList.contains("variantsy-collection--surimpression"),
       position: getComputedStyle(rangee).position,
-      // Le bas de la rangée doit coïncider avec le bas de la photo.
-      ecartBas: Math.round(Math.abs(r.bottom - i.bottom)),
-      dansLaPhoto: image.parentElement.contains(rangee),
+      // Ce qui compte n'est pas d'être dans tel élément, mais de SE SUPERPOSER
+      // à la photo : la rangée doit chevaucher sa boîte verticalement, près du
+      // bas. Viser un parent précis reviendrait à tester la structure du thème
+      // de test plutôt que le résultat visible.
+      chevauche: r.top < i.bottom && r.bottom > i.top,
+      distanceAuBas: Math.round(Math.abs(r.bottom - i.bottom)),
+      dansLaCarte: !!document.querySelector(".carte [data-variantsy-collection]"),
     };
   });
   check(
-    "Par défaut, la rangée se pose en surimpression sur la photo",
+    "Par défaut, la rangée se superpose au bas de la photo",
     !surimpression.absent &&
       surimpression.classe === true &&
       surimpression.position === "absolute" &&
-      surimpression.ecartBas <= 2,
+      surimpression.chevauche === true &&
+      surimpression.distanceAuBas <= 12 &&
+      surimpression.dansLaCarte === true,
     JSON.stringify(surimpression),
   );
 

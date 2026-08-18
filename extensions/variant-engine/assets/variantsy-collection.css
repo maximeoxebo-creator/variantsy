@@ -80,21 +80,48 @@
   inset-inline: 0;
   inset-block-end: 0;
   margin: 0;
-  padding: 24px 12px 10px;
+  padding: 14px 12px 12px;
   justify-content: center;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.22), transparent);
+  /* Aucun fond : la rangée flotte sur la photo. La lisibilité est assurée par
+     l'ombre portée de chaque pastille, pas par un voile qui salirait l'image. */
+  background: none;
   pointer-events: auto;
 }
 
 .variantsy-collection--surimpression .variantsy-collection__visual {
-  border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 .variantsy-collection--surimpression .variantsy-collection__swatch.is-selected .variantsy-collection__visual {
+  /* Le liseré prend directement la couleur de sélection, sans l'écart blanc
+     de la page produit : sur une photo, ce blanc lit comme une salissure. */
   box-shadow:
-    0 0 0 var(--vtsy-selected-gap, 1px) #fff,
     0 0 0 calc(var(--vtsy-selected-gap, 1px) + var(--vtsy-selected-width, 1px))
       var(--vtsy-selected-color, #111111),
-    0 1px 3px rgba(0, 0, 0, 0.25);
+    0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Apparition au survol -------------------------------------------------
+   Uniquement là où le survol existe. Sur un écran tactile il n'y en a pas :
+   masquer la rangée y reviendrait à supprimer la fonctionnalité pour la
+   moitié des visiteurs. `:focus-within` la rend au clavier, sans quoi elle
+   serait inatteignable autrement qu'à la souris.
+   -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .variantsy-collection--surimpression {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+
+  .variantsy-collection--surimpression:hover,
+  .variantsy-collection--surimpression:focus-within,
+  *:hover > .variantsy-collection--surimpression,
+  *:focus-within > .variantsy-collection--surimpression {
+    opacity: 1;
+    transform: none;
+  }
 }

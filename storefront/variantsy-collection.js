@@ -249,7 +249,7 @@
     // Une vignette de collection est petite : tout est réduit d'un même
     // facteur, liseré compris. Le laisser à sa taille de page produit lui
     // faisait occuper un sixième du diamètre de la pastille.
-    var echelle = 0.72;
+    var echelle = 0.95;
     var taille = Math.round((style.size || 40) * echelle);
     conteneur.style.setProperty("--vtsy-size", taille + "px");
     conteneur.style.setProperty("--vtsy-gap", Math.max(4, Math.round((style.gap || 10) * echelle)) + "px");
@@ -370,14 +370,23 @@
       return;
     }
 
+    // On cherche le conteneur qui donne sa hauteur à l'image, en écartant les
+    // éléments en ligne : un <a> non converti en bloc a une boîte qui ne suit
+    // pas son contenu, et la rangée s'y ancre de travers.
     var hote = image.parentElement;
-    // On cherche le conteneur qui donne à l'image sa hauteur : le parent
-    // direct est parfois un simple <a> collé à l'image.
-    for (var i = 0; i < 3 && hote && hote !== carte; i++) {
-      if (hote.getBoundingClientRect().height >= image.getBoundingClientRect().height - 2) break;
+    for (var i = 0; i < 4 && hote && hote !== carte.parentElement; i++) {
+      var boite = hote.getBoundingClientRect();
+      var affichage = "block";
+      try {
+        affichage = window.getComputedStyle(hote).display;
+      } catch (error) {
+        /* noop */
+      }
+      var enLigne = affichage === "inline";
+      if (!enLigne && boite.height >= image.getBoundingClientRect().height - 2) break;
       hote = hote.parentElement;
     }
-    if (!hote || hote === document.body) hote = carte;
+    if (!hote || hote === document.body || !carte.contains(hote)) hote = carte;
 
     // `position: static` empêcherait l'ancrage. On ne l'impose que si le thème
     // ne l'a pas déjà défini, pour ne pas casser une mise en page existante.
