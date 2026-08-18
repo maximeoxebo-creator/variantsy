@@ -120,6 +120,16 @@
       "name": "texte orphelin avec crochets : tout le bloc s'efface",
       "template": "{{option1}}[[ — Taille {{option3}}]]",
       "expected": "Bleu marine"
+    },
+    {
+      "name": "modèle affiché : mot orphelin sur produit sans seconde option",
+      "template": "{{product_title}} — {{option1}} — Taille {{option3}}",
+      "expected": "Sweat en coton bio — Bleu marine — Taille"
+    },
+    {
+      "name": "modèle affiché : le bloc facultatif s'efface entièrement",
+      "template": "{{product_title}} — {{option1}}[[ — Taille {{option3}}]]",
+      "expected": "Sweat en coton bio — Bleu marine"
     }
   ]
 }

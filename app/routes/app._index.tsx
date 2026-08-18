@@ -1085,29 +1085,6 @@ function ApparencePanel({ form, set }: PanelProps) {
 }
 
 
-const TITLE_PRESETS = [
-  {
-    label: "Nom du produit seul",
-    hint: "Le titre ne change jamais.",
-    value: "{{product_title}}",
-  },
-  {
-    label: "Nom — Coloris",
-    hint: "Pour un catalogue dont les noms ne mentionnent pas le coloris.",
-    value: "{{product_title}} — {{option1}}",
-  },
-  {
-    label: "Nom — Coloris / Taille",
-    hint: "La taille disparaît d'elle-même sur les produits qui n'en ont pas.",
-    value: "{{product_title}} — {{option1}}[[ / {{option2}}]]",
-  },
-  {
-    label: "Nom — Référence",
-    hint: "Affiche le SKU de la variante choisie.",
-    value: "{{product_title}}[[ — {{sku}}]]",
-  },
-];
-
 /** Deux produits fictifs : un à deux options, un à une seule. Leur intérêt est
  *  de rendre visible ce que font les blocs conditionnels — invisible sinon. */
 const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
@@ -1196,37 +1173,8 @@ function TitrePanel({ form, set }: PanelProps) {
 
       {form.updateTitle && (
         <>
-          {/* Les modèles se choisissent sur leur RÉSULTAT : « Nom — Coloris »
-              est un intitulé, « Sweat en coton bio — Bleu marine » est une
-              réponse. */}
-          <ChoiceCards
-            label="Partez d'un modèle"
-            help="Chaque carte montre ce que donnerait ce modèle sur un produit à deux options."
-            value={form.titleTemplate}
-            accent={accent}
-            onChange={(v) => set("titleTemplate", v)}
-            options={TITLE_PRESETS.map((preset) => ({
-              id: preset.value,
-              label: preset.label,
-              preview: (
-                <span
-                  style={{
-                    display: "block",
-                    maxWidth: 150,
-                    fontSize: 11,
-                    lineHeight: 1.35,
-                    textAlign: "center",
-                    color: "var(--p-color-text-secondary)",
-                  }}
-                >
-                  {renderTemplate(preset.value, TITLE_EXAMPLES[0].vars)}
-                </span>
-              ),
-            }))}
-          />
-
           <BlockStack gap="300">
-            <SectionTitle accent={accent} help="Modifiez librement, ou composez le vôtre.">
+            <SectionTitle accent={accent} help="Composez-le avec les variables ci-dessous.">
               Votre modèle
             </SectionTitle>
 
@@ -1321,45 +1269,114 @@ function TitrePanel({ form, set }: PanelProps) {
             </InlineGrid>
           </BlockStack>
 
-          {/* La démonstration vaut mieux que l'explication : le séparateur
-              orphelin ne se voit que sur un produit sans seconde option. */}
+          {/* Expliquer la syntaxe ne sert à rien tant que la SITUATION n'est
+              pas posée : le marchand ne se demande pas ce que font deux
+              crochets, il se demande pourquoi son titre est bancal sur
+              certains produits. */}
           <BlockStack gap="300">
-            <SectionTitle accent={accent} help="Sur un produit à une seule option, comparez.">
-              Faire disparaître un séparateur devenu inutile
+            <SectionTitle
+              accent={accent}
+              help="Vos produits n'ont pas tous le même nombre d'options. Un modèle qui mentionne la taille laisse un mot en trop sur un produit qui n'en a pas."
+            >
+              Un seul modèle pour tout votre catalogue
             </SectionTitle>
-            <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-              <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+
+            <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+              <BlockStack gap="400">
                 <BlockStack gap="200">
-                  <InlineStack>
-                    <Badge tone="critical">Sans crochets</Badge>
-                  </InlineStack>
                   <Text as="p" variant="bodyXs" tone="subdued">
-                    <code>{"{{option1}} — Taille {{option2}}"}</code>
+                    Le modèle
                   </Text>
-                  <Text as="p" variant="bodyMd" fontWeight="medium">
-                    {renderTemplate("{{option1}} — Taille {{option2}}", TITLE_EXAMPLES[1].vars)}
+                  <Text as="p" variant="bodyMd">
+                    <code>{"{{product_title}} — {{option1}} — Taille {{option2}}"}</code>
                   </Text>
                 </BlockStack>
-              </Box>
-              <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+
+                <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+                  <BlockStack gap="150">
+                    <InlineStack gap="150" blockAlign="center">
+                      <Badge tone="success">Sweat</Badge>
+                      <Text as="span" variant="bodyXs" tone="subdued">
+                        a une taille
+                      </Text>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" fontWeight="medium">
+                      {renderTemplate(
+                        "{{product_title}} — {{option1}} — Taille {{option2}}",
+                        TITLE_EXAMPLES[0].vars,
+                      )}
+                    </Text>
+                  </BlockStack>
+
+                  <BlockStack gap="150">
+                    <InlineStack gap="150" blockAlign="center">
+                      <Badge tone="critical">Cocotte</Badge>
+                      <Text as="span" variant="bodyXs" tone="subdued">
+                        n&apos;en a pas
+                      </Text>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" fontWeight="medium">
+                      {renderTemplate(
+                        "{{product_title}} — {{option1}} — Taille {{option2}}",
+                        TITLE_EXAMPLES[1].vars,
+                      )}
+                    </Text>
+                    <Text as="p" variant="bodyXs" tone="critical">
+                      Le mot « Taille » reste, sans rien derrière.
+                    </Text>
+                  </BlockStack>
+                </InlineGrid>
+              </BlockStack>
+            </Box>
+
+            <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+              <BlockStack gap="400">
                 <BlockStack gap="200">
-                  <InlineStack>
-                    <Badge tone="success">Avec crochets</Badge>
-                  </InlineStack>
                   <Text as="p" variant="bodyXs" tone="subdued">
-                    <code>{"{{option1}}[[ — Taille {{option2}}]]"}</code>
+                    La correction : encadrez la partie facultative
                   </Text>
-                  <Text as="p" variant="bodyMd" fontWeight="medium">
-                    {renderTemplate("{{option1}}[[ — Taille {{option2}}]]", TITLE_EXAMPLES[1].vars)}
+                  <Text as="p" variant="bodyMd">
+                    <code>
+                      {"{{product_title}} — {{option1}}[[ — Taille {{option2}}]]"}
+                    </code>
                   </Text>
                 </BlockStack>
-              </Box>
-            </InlineGrid>
+
+                <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+                  <BlockStack gap="150">
+                    <InlineStack gap="150" blockAlign="center">
+                      <Badge tone="success">Sweat</Badge>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" fontWeight="medium">
+                      {renderTemplate(
+                        "{{product_title}} — {{option1}}[[ — Taille {{option2}}]]",
+                        TITLE_EXAMPLES[0].vars,
+                      )}
+                    </Text>
+                  </BlockStack>
+
+                  <BlockStack gap="150">
+                    <InlineStack gap="150" blockAlign="center">
+                      <Badge tone="success">Cocotte</Badge>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" fontWeight="medium">
+                      {renderTemplate(
+                        "{{product_title}} — {{option1}}[[ — Taille {{option2}}]]",
+                        TITLE_EXAMPLES[1].vars,
+                      )}
+                    </Text>
+                    <Text as="p" variant="bodyXs" tone="success">
+                      Tout le passage entre crochets a disparu.
+                    </Text>
+                  </BlockStack>
+                </InlineGrid>
+              </BlockStack>
+            </Box>
+
             <Text as="p" variant="bodySm" tone="subdued">
-              Ce qui est entre <code>[[</code> et <code>]]</code> s&apos;efface entièrement dès
-              qu&apos;une de ses variables est vide. Les séparateurs isolés sont déjà nettoyés
-              tout seuls ; les crochets servent quand du <strong>texte</strong> accompagne la
-              variable — ici le mot « Taille », qui resterait orphelin.
+              Vous n&apos;en avez besoin que si votre modèle contient du <strong>texte</strong>
+              autour d&apos;une variable. Un tiret ou une barre oblique restés seuls sont
+              nettoyés automatiquement.
             </Text>
           </BlockStack>
 
