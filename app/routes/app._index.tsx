@@ -80,7 +80,6 @@ const TABS = [
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
   { id: "comportement", content: "Comportement", panelID: "panel-comportement" },
   { id: "titre", content: "Titre", panelID: "panel-titre" },
-  { id: "theme", content: "Thème", panelID: "panel-theme" },
 ];
 
 export default function SettingsPage() {
@@ -158,7 +157,6 @@ export default function SettingsPage() {
                   {tab === 0 && <ApparencePanel form={form} set={set} />}
                   {tab === 1 && <ComportementPanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
-                  {tab === 3 && <ThemePanel form={form} set={set} />}
                 </Box>
               </Tabs>
             </Card>
@@ -471,6 +469,44 @@ function ComportementPanel({ form, set }: PanelProps) {
           onChange={(v) => set("updateUrl", v)}
         />
       </BlockStack>
+
+      {/* Intégration au thème : replié par défaut. Ces réglages fonctionnent
+          d'eux-mêmes sur la quasi-totalité des thèmes, et les exposer laissait
+          croire qu'il fallait s'en occuper. */}
+      <Advanced id="theme">
+        <Text as="p" variant="bodySm" tone="subdued">
+          Variantsy détecte seul le sélecteur et la galerie de votre thème. Ne touchez à ces
+          réglages que si quelque chose ne s'affiche pas correctement.
+        </Text>
+        <Checkbox
+          label="Masquer le sélecteur de variantes natif du thème"
+          helpText="Variantsy continue de le piloter en arrière-plan : le panier reçoit toujours la bonne variante, même si un autre script l'écoute."
+          checked={form.hideNativeSelector}
+          onChange={(v) => set("hideNativeSelector", v)}
+        />
+        <Checkbox
+          label="Changer l'image principale à la sélection"
+          checked={form.swapImage}
+          onChange={(v) => set("swapImage", v)}
+        />
+        <TextField
+          label="Sélecteur CSS du bloc à masquer"
+          value={form.nativeSelectorCss}
+          onChange={(v) => set("nativeSelectorCss", v)}
+          disabled={!form.hideNativeSelector}
+          autoComplete="off"
+          placeholder="Laisser vide pour la détection automatique"
+          helpText="Utile sur un thème très personnalisé dont le sélecteur n'est pas reconnu."
+        />
+        <TextField
+          label="Sélecteur CSS de la galerie"
+          value={form.imageSelectorCss}
+          onChange={(v) => set("imageSelectorCss", v)}
+          disabled={!form.swapImage}
+          autoComplete="off"
+          placeholder="Laisser vide pour la détection automatique"
+        />
+      </Advanced>
     </BlockStack>
   );
 }
@@ -679,55 +715,6 @@ function TitrePanel({ form, set }: PanelProps) {
   );
 }
 
-function ThemePanel({ form, set }: PanelProps) {
-  return (
-    <BlockStack gap="400">
-      <SectionTitle help="Comment Variantsy s'entend avec le sélecteur et la galerie de votre thème.">
-        Intégration
-      </SectionTitle>
-
-      <Banner tone="info">
-        <p>
-          L&apos;affichage de <strong>plusieurs images par variante</strong> se configure dans
-          « Images par variante ». Les réglages ci-dessous ne concernent que le repli utilisé quand
-          le groupage ne s&apos;applique pas.
-        </p>
-      </Banner>
-
-      <Checkbox
-        label="Masquer le sélecteur de variantes natif du thème"
-        helpText="Variantsy continue de le piloter en arrière-plan : le panier reçoit toujours la bonne variante, même si un autre script l'écoute."
-        checked={form.hideNativeSelector}
-        onChange={(v) => set("hideNativeSelector", v)}
-      />
-      <Checkbox
-        label="Changer l'image principale à la sélection"
-        checked={form.swapImage}
-        onChange={(v) => set("swapImage", v)}
-      />
-
-      <Advanced id="theme">
-        <TextField
-          label="Sélecteur CSS du bloc à masquer"
-          value={form.nativeSelectorCss}
-          onChange={(v) => set("nativeSelectorCss", v)}
-          disabled={!form.hideNativeSelector}
-          autoComplete="off"
-          placeholder="Laisser vide pour la détection automatique"
-          helpText="Utile sur un thème très personnalisé dont le sélecteur n'est pas reconnu."
-        />
-        <TextField
-          label="Sélecteur CSS de la galerie"
-          value={form.imageSelectorCss}
-          onChange={(v) => set("imageSelectorCss", v)}
-          disabled={!form.swapImage}
-          autoComplete="off"
-          placeholder="Laisser vide pour la détection automatique"
-        />
-      </Advanced>
-    </BlockStack>
-  );
-}
 
 /** Champ couleur : input natif + saisie hex, gardés synchronisés. */
 function ColorField({
