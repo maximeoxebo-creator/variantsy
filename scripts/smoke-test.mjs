@@ -148,6 +148,7 @@ function groupHtml(option, selected) {
                 data-variantsy-value="${value}" data-option-position="${option.position}">
           <span class="variantsy__visual" aria-hidden="true"></span>
           <span class="variantsy__text">${value}</span>
+          <span class="variantsy__caption">${value}</span>
         </button>`,
     )
     .join("");
@@ -1079,6 +1080,31 @@ section("Modes d'affichage");
   );
   check("Mode texte : le nom de la valeur reste lisible", texte.libelle === "Noir", JSON.stringify(texte));
   await page.close();
+
+  // --- Libellés pilotés par l'app, plus par le bloc Liquid -----------------
+  const pageLibelles = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { showLabels: true, showOptionName: false },
+  });
+  const libelles = await pageLibelles.evaluate(() => {
+    const groupe = document.querySelector('.variantsy__group[data-option-position="1"]');
+    const label = groupe.querySelector(".variantsy__label");
+    const caption = groupe.querySelector(".variantsy__caption");
+    return {
+      nomOption: label ? getComputedStyle(label).display : null,
+      libelleValeur: caption ? getComputedStyle(caption).display : null,
+    };
+  });
+  check(
+    "Le nom d'option se masque depuis l'app",
+    libelles.nomOption === "none",
+    JSON.stringify(libelles),
+  );
+  check(
+    "Le nom de la valeur s'affiche depuis l'app",
+    libelles.libelleValeur !== null && libelles.libelleValeur !== "none",
+    JSON.stringify(libelles),
+  );
+  await pageLibelles.close();
 
   // --- Fond plein sur la case choisie --------------------------------------
   // Deux teintes volontairement opposées : le contraste du texte doit basculer

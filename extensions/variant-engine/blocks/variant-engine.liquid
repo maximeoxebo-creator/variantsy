@@ -18,9 +18,17 @@
       une vente.
 {% endcomment %}
 
+{%- comment -%}
+  Les réglages vivent UNIQUEMENT dans l'app. Ce bloc en exposait une copie
+  éditable dans l'éditeur de thème, que le JS écrasait dès son chargement : le
+  marchand modifiait une forme ou une couleur et ne voyait rien changer.
+
+  Ce qui suit ne sert donc qu'au tout premier rendu, avant que la config
+  n'arrive — valeurs neutres, remplacées en quelques millisecondes.
+{%- endcomment -%}
 {%- liquid
-  assign sp_enabled = block.settings.enabled
-  assign sp_color_names = block.settings.color_option_names | downcase | split: ','
+  assign sp_enabled = true
+  assign sp_color_names = 'color,colour,couleur,farbe,kleur,colore' | split: ','
 -%}
 
 {%- if sp_enabled and product and product.variants.size > 1 -%}
@@ -33,14 +41,11 @@
     data-section-id="{{ section.id | default: block.id }}"
     data-endpoint="/apps/variantsy/settings"
     data-current-variant="{{ product.selected_or_first_available_variant.id }}"
-    style="
-      --vtsy-size: {{ block.settings.size | default: 40 }}px;
-      --vtsy-gap: {{ block.settings.gap | default: 10 }}px;
-      --vtsy-border-width: {{ block.settings.border_width | default: 1 }}px;
-      --vtsy-border-color: {{ block.settings.border_color | default: '#D9D9D9' }};
-      --vtsy-selected-color: {{ block.settings.selected_color | default: '#111111' }};
-      --vtsy-radius: {% case block.settings.shape %}{% when 'square' %}0px{% when 'rounded' %}8px{% else %}50%{% endcase %};
-    "
+    {%- comment -%}
+      Valeurs de premier rendu. Le JS les remplace par celles de l'app dès que
+      la config est disponible — instantanément si elle est déjà en cache.
+    {%- endcomment -%}
+    style="--vtsy-size: 40px; --vtsy-gap: 10px; --vtsy-radius: 50%;"
   >
     {%- comment -%}
       Données produit sérialisées de façon compacte.
@@ -129,12 +134,14 @@
         data-option-position="{{ option.position }}"
         data-option-name="{{ option.name | escape }}"
       >
-        {%- if block.settings.show_option_name -%}
-          <div class="variantsy__label">
-            <span class="variantsy__label-name">{{ option.name }}</span>
-            <span class="variantsy__label-value" data-variantsy-current-value>{{ option.selected_value }}</span>
-          </div>
-        {%- endif -%}
+        {%- comment -%}
+          Toujours rendu ; c'est le JS qui masque selon le réglage de l'app.
+          L'inverse — ne pas rendre — interdirait de l'afficher sans recharger.
+        {%- endcomment -%}
+        <div class="variantsy__label">
+          <span class="variantsy__label-name">{{ option.name }}</span>
+          <span class="variantsy__label-value" data-variantsy-current-value>{{ option.selected_value }}</span>
+        </div>
 
         <div class="variantsy__options" role="radiogroup" aria-label="{{ option.name | escape }}">
           {%- for value in option.values -%}
@@ -155,7 +162,7 @@
               {%- unless is_color -%}
                 <span class="variantsy__text">{{ value }}</span>
               {%- endunless -%}
-              {%- if block.settings.show_labels and is_color -%}
+              {%- if is_color -%}
                 <span class="variantsy__caption">{{ value }}</span>
               {%- endif -%}
             </button>
@@ -176,86 +183,8 @@
   "javascript": "variantsy.js",
   "settings": [
     {
-      "type": "checkbox",
-      "id": "enabled",
-      "label": "Afficher les swatches",
-      "default": true
-    },
-    {
       "type": "paragraph",
-      "content": "L'apparence détaillée (couleurs, ruptures, titre dynamique) se règle dans l'app Variantsy. Les réglages ci-dessous ne servent qu'au rendu initial, avant chargement."
-    },
-    {
-      "type": "text",
-      "id": "color_option_names",
-      "label": "Options affichées en pastilles",
-      "default": "color,colour,couleur,farbe,kleur,colore",
-      "info": "Séparées par des virgules, en minuscules."
-    },
-    {
-      "type": "select",
-      "id": "shape",
-      "label": "Forme",
-      "options": [
-        { "value": "circle", "label": "Cercle" },
-        { "value": "rounded", "label": "Carré arrondi" },
-        { "value": "square", "label": "Carré" }
-      ],
-      "default": "circle"
-    },
-    {
-      "type": "range",
-      "id": "size",
-      "label": "Taille",
-      "min": 20,
-      "max": 96,
-      "step": 2,
-      "unit": "px",
-      "default": 40
-    },
-    {
-      "type": "range",
-      "id": "gap",
-      "label": "Espacement",
-      "min": 0,
-      "max": 40,
-      "step": 2,
-      "unit": "px",
-      "default": 10
-    },
-    {
-      "type": "range",
-      "id": "border_width",
-      "label": "Épaisseur de bordure",
-      "min": 0,
-      "max": 6,
-      "step": 1,
-      "unit": "px",
-      "default": 1
-    },
-    {
-      "type": "color",
-      "id": "border_color",
-      "label": "Couleur de bordure",
-      "default": "#D9D9D9"
-    },
-    {
-      "type": "color",
-      "id": "selected_color",
-      "label": "Couleur de sélection",
-      "default": "#111111"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_option_name",
-      "label": "Afficher le nom de l'option",
-      "default": true
-    },
-    {
-      "type": "checkbox",
-      "id": "show_labels",
-      "label": "Afficher le nom sous chaque pastille",
-      "default": false
+      "content": "Tous les réglages — forme, couleurs, galerie, titre — se font dans l'application Variantsy. Ce bloc n'a rien à configurer : placez-le simplement au-dessus du bouton d'ajout au panier."
     }
   ]
 }

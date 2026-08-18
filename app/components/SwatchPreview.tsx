@@ -125,7 +125,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
             width: "100%",
             maxWidth: settings.dropdownFullWidth ? "100%" : 320,
             minHeight: 44,
-            padding: "0 12px",
+            padding: "0 44px 0 14px",
             border: `${settings.borderWidth}px solid ${settings.borderColor}`,
             borderRadius: settings.controlRadius,
             background:

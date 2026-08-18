@@ -1278,6 +1278,11 @@
     this.root.style.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
     this.root.style.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
     this.root.setAttribute("data-control-selected", style.controlSelectedStyle || "outline");
+    // Ces deux affichages étaient pilotés par le bloc Liquid, donc figés au
+    // rendu et invisibles depuis l'app. Ils sont désormais rendus toujours et
+    // masqués ici : changer le réglage produit un effet immédiat.
+    this.root.setAttribute("data-show-labels", style.showLabels ? "true" : "false");
+    this.root.setAttribute("data-show-option-name", style.showOptionName ? "true" : "false");
     // Le texte doit rester lisible sur le fond plein, quelle que soit la teinte
     // choisie par le marchand : on la mesure au lieu de parier sur du blanc.
     this.root.style.setProperty(
