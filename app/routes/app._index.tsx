@@ -246,6 +246,174 @@ function Advanced({ id, children }: { id: string; children: React.ReactNode }) {
   );
 }
 
+/**
+ * Choix de la forme sur des formes réellement dessinées.
+ *
+ * Une liste déroulante « Cercle / Carré arrondi / Carré » oblige le marchand à
+ * se représenter le résultat, puis à essayer chaque valeur pour comparer. Les
+ * trois formes affichées côte à côte suppriment cet aller-retour.
+ */
+function ShapePicker({
+  value,
+  cornerRadius,
+  selectedColor,
+  onChange,
+}: {
+  value: string;
+  cornerRadius: number;
+  selectedColor: string;
+  onChange: (value: string) => void;
+}) {
+  const shapes = [
+    { id: "circle", label: "Cercle", radius: "50%" },
+    { id: "rounded", label: "Arrondi", radius: `${cornerRadius}px` },
+    { id: "square", label: "Carré", radius: "2px" },
+  ];
+
+  return (
+    <BlockStack gap="200">
+      <Text as="p" variant="bodyMd">
+        Forme
+      </Text>
+      <InlineStack gap="300">
+        {shapes.map((shape) => {
+          const active = value === shape.id;
+          return (
+            <button
+              key={shape.id}
+              type="button"
+              onClick={() => onChange(shape.id)}
+              aria-pressed={active}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8,
+                padding: "12px 16px",
+                borderRadius: 10,
+                cursor: "pointer",
+                background: active ? "var(--p-color-bg-surface-selected)" : "transparent",
+                border: active
+                  ? `2px solid ${selectedColor}`
+                  : "1px solid var(--p-color-border)",
+                // PIÈGE N°5 : reset du chrome natif sur tout bouton custom.
+                WebkitAppearance: "none",
+                appearance: "none",
+                outline: "none",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <span
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: shape.radius,
+                  background: "#C9CFD6",
+                  border: "1px solid #B0B7BF",
+                  display: "block",
+                }}
+              />
+              <Text as="span" variant="bodySm">
+                {shape.label}
+              </Text>
+            </button>
+          );
+        })}
+      </InlineStack>
+    </BlockStack>
+  );
+}
+
+/**
+ * Choix du style de sélection sur des pastilles réellement stylées.
+ *
+ * « Anneau extérieur », « Bordure épaisse » et « Ombre portée » sont trois
+ * intitulés qui ne disent rien tant qu'on ne les a pas vus. Chaque option est
+ * donc rendue avec ses propres réglages, dans son état sélectionné.
+ */
+function SelectionPicker({
+  value,
+  color,
+  width,
+  gap,
+  radius,
+  onChange,
+}: {
+  value: string;
+  color: string;
+  width: number;
+  gap: number;
+  radius: string;
+  onChange: (value: string) => void;
+}) {
+  const styles: { id: string; label: string; shadow: string; border: string }[] = [
+    {
+      id: "ring",
+      label: "Anneau",
+      shadow: `0 0 0 ${gap}px #fff, 0 0 0 ${gap + width}px ${color}`,
+      border: "1px solid #B0B7BF",
+    },
+    { id: "border", label: "Bordure", shadow: "none", border: `${width}px solid ${color}` },
+    {
+      id: "shadow",
+      label: "Ombre",
+      shadow: `0 2px 8px ${color}66`,
+      border: "1px solid #B0B7BF",
+    },
+  ];
+
+  return (
+    <BlockStack gap="200">
+      <Text as="p" variant="bodyMd">
+        Sélection
+      </Text>
+      <InlineStack gap="300">
+        {styles.map((style) => {
+          const active = value === style.id;
+          return (
+            <button
+              key={style.id}
+              type="button"
+              onClick={() => onChange(style.id)}
+              aria-pressed={active}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 10,
+                padding: "14px 18px",
+                borderRadius: 10,
+                cursor: "pointer",
+                background: active ? "var(--p-color-bg-surface-selected)" : "transparent",
+                border: active ? `2px solid ${color}` : "1px solid var(--p-color-border)",
+                WebkitAppearance: "none",
+                appearance: "none",
+                outline: "none",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <span
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: radius,
+                  background: "#C9CFD6",
+                  border: style.border,
+                  boxShadow: style.shadow,
+                  display: "block",
+                }}
+              />
+              <Text as="span" variant="bodySm">
+                {style.label}
+              </Text>
+            </button>
+          );
+        })}
+      </InlineStack>
+    </BlockStack>
+  );
+}
+
 function ApparencePanel({ form, set }: PanelProps) {
   return (
     <BlockStack gap="500">
@@ -253,30 +421,22 @@ function ApparencePanel({ form, set }: PanelProps) {
         <SectionTitle help="La forme et la taille des pastilles telles que vos clients les verront.">
           Forme
         </SectionTitle>
-        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-          <Select
-            label="Forme"
-            options={[
-              { label: "Cercle", value: "circle" },
-              { label: "Carré arrondi", value: "rounded" },
-              { label: "Carré", value: "square" },
-            ]}
-            value={form.shape}
-            onChange={(v) => set("shape", v)}
+        <ShapePicker
+          value={form.shape}
+          cornerRadius={form.cornerRadius}
+          selectedColor={form.selectedColor}
+          onChange={(v) => set("shape", v)}
+        />
+        {form.shape === "rounded" && (
+          <RangeSlider
+            label={`Arrondi — ${form.cornerRadius} px`}
+            min={0}
+            max={24}
+            value={form.cornerRadius}
+            onChange={(v) => set("cornerRadius", Number(v))}
+            output
           />
-          {form.shape === "rounded" ? (
-            <RangeSlider
-              label={`Arrondi — ${form.cornerRadius} px`}
-              min={0}
-              max={24}
-              value={form.cornerRadius}
-              onChange={(v) => set("cornerRadius", Number(v))}
-              output
-            />
-          ) : (
-            <Box />
-          )}
-        </InlineGrid>
+        )}
 
         <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
           <RangeSlider
@@ -305,23 +465,25 @@ function ApparencePanel({ form, set }: PanelProps) {
         <SectionTitle help="Comment on distingue la pastille choisie des autres.">
           Sélection
         </SectionTitle>
-        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-          <Select
-            label="Style"
-            options={[
-              { label: "Anneau extérieur", value: "ring" },
-              { label: "Bordure épaisse", value: "border" },
-              { label: "Ombre portée", value: "shadow" },
-            ]}
-            value={form.selectedStyle}
-            onChange={(v) => set("selectedStyle", v)}
-          />
-          <ColorField
-            label="Couleur de sélection"
-            value={form.selectedColor}
-            onChange={(v) => set("selectedColor", v)}
-          />
-        </InlineGrid>
+        <SelectionPicker
+          value={form.selectedStyle}
+          color={form.selectedColor}
+          width={form.selectedWidth}
+          gap={form.selectedGap}
+          radius={
+            form.shape === "circle"
+              ? "50%"
+              : form.shape === "rounded"
+                ? `${form.cornerRadius}px`
+                : "2px"
+          }
+          onChange={(v) => set("selectedStyle", v)}
+        />
+        <ColorField
+          label="Couleur de sélection"
+          value={form.selectedColor}
+          onChange={(v) => set("selectedColor", v)}
+        />
 
         {form.selectedStyle !== "shadow" && (
           <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
