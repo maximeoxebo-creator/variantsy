@@ -108,8 +108,7 @@
    */
   function trouverCartes(racine) {
     var liens = racine.querySelectorAll('a[href*="/products/"]');
-    var cartes = [];
-    var vues = [];
+    var candidats = [];
 
     Array.prototype.forEach.call(liens, function (lien) {
       var handle = (lien.getAttribute("href") || "").match(/\/products\/([^/?#]+)/);
@@ -124,14 +123,32 @@
           break;
         }
       }
-      if (!carte || vues.indexOf(carte) !== -1) return;
-      // Une carte déjà traitée, ou la fiche produit elle-même, sont ignorées.
-      if (carte.querySelector("[data-variantsy-collection]")) return;
-      vues.push(carte);
-      cartes.push({ carte: carte, lien: lien, handle: handle[1] });
+      if (!carte) return;
+      candidats.push({ carte: carte, lien: lien, handle: handle[1] });
     });
 
-    return cartes;
+    // Une carte porte plusieurs liens — l'image, le titre — et chacun remonte
+    // vers un ancêtre différent. Sans ce tri, la même vignette recevait trois
+    // rangées de pastilles. On ne garde que le conteneur le plus INTERNE de
+    // chaque famille, et un seul par produit.
+    var retenus = [];
+    candidats.forEach(function (candidat) {
+      var remplace = false;
+      for (var i = 0; i < retenus.length; i++) {
+        var deja = retenus[i];
+        if (deja.carte === candidat.carte) return;
+        if (deja.carte.contains(candidat.carte)) {
+          // Le nouveau est plus interne : il prend la place de l'ancien.
+          retenus[i] = candidat;
+          remplace = true;
+          break;
+        }
+        if (candidat.carte.contains(deja.carte)) return; // l'ancien est meilleur
+      }
+      if (!remplace) retenus.push(candidat);
+    });
+
+    return retenus;
   }
 
   function chargerProduit(handle) {
@@ -149,6 +166,16 @@
   /* ---------------------------------------------------------------------- */
   /* Rendu                                                                  */
   /* ---------------------------------------------------------------------- */
+
+  /** Photo de la première variante portant cette valeur. */
+  function photoPour(produit, index, valeur) {
+    for (var i = 0; i < produit.variants.length; i++) {
+      var v = produit.variants[i];
+      if (v.options[index] === valeur && v.featured_image && v.featured_image.src)
+        return v.featured_image.src;
+    }
+    return null;
+  }
 
   function couleurPour(config, nomOption, valeur) {
     var cle = normalize(nomOption) + "::" + normalize(valeur);
@@ -216,6 +243,12 @@
       var visuel = document.createElement("span");
       visuel.className = "variantsy-collection__visual";
       var rendu = couleurPour(config, nomOption, valeur);
+      // Aucune couleur connue : on retombe sur la photo de la variante, comme
+      // le fait la page produit. Une vignette vaut mieux qu'un rond gris.
+      if (!rendu) {
+        var photo = photoPour(produit, index, valeur);
+        if (photo) rendu = { image: photo };
+      }
       if (rendu && rendu.image) visuel.style.backgroundImage = 'url("' + rendu.image + '")';
       else if (rendu && rendu.degrade)
         visuel.style.backgroundImage =
@@ -233,6 +266,10 @@
       conteneur.appendChild(bouton);
     });
 
+    // Dernier contrôle avant greffe : le repérage est synchrone, l'injection
+    // ne l'est pas. Deux cartes imbriquées ayant échappé au tri produiraient
+    // sinon deux rangées.
+    if (entree.carte.querySelector("[data-variantsy-collection]")) return;
     entree.carte.appendChild(conteneur);
   }
 

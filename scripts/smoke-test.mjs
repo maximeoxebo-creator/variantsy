@@ -1475,10 +1475,18 @@ section("Pastilles en collection");
   await page.setContent(`<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><style>${cssCollection}</style></head>
 <body>
+  <!-- Structure imbriquée d'un vrai thème : plusieurs liens vers le même
+       produit, à des profondeurs différentes. C'est ce qui produisait trois
+       rangées de pastilles par vignette. -->
   <ul class="grille">
     <li class="carte">
-      <a href="/products/sweat"><img src="https://example.com/carte.jpg" alt="Sweat"></a>
-      <a href="/products/sweat" class="titre">Sweat en coton bio</a>
+      <div class="carte__media">
+        <a href="/products/sweat"><img src="https://example.com/carte.jpg" alt="Sweat"></a>
+      </div>
+      <div class="carte__infos">
+        <a href="/products/sweat" class="titre">Sweat en coton bio</a>
+        <a href="/products/sweat" class="prix">59,00 €</a>
+      </div>
     </li>
   </ul>
   <div data-variantsy-collection-root data-endpoint="/apps/variantsy/settings" hidden></div>
@@ -1495,12 +1503,18 @@ section("Pastilles en collection");
       nbPastilles: visuels.length,
       premiereCouleur: getComputedStyle(visuels[0]).backgroundColor,
       dansLaCarte: !!document.querySelector(".carte [data-variantsy-collection]"),
+      nbRangees: document.querySelectorAll("[data-variantsy-collection]").length,
     };
   });
 
   check(
     "Une rangée de pastilles est greffée dans la carte produit",
     rendu.present === true && rendu.dansLaCarte === true,
+    JSON.stringify(rendu),
+  );
+  check(
+    "Une seule rangée, malgré plusieurs liens vers le même produit",
+    rendu.nbRangees === 1,
     JSON.stringify(rendu),
   );
   check(
