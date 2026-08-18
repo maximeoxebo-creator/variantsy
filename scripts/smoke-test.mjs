@@ -1143,6 +1143,43 @@ section("Modes d'affichage");
   );
   await pageClair.close();
 
+  // --- Le liseré doit agir sur la liste, pas seulement sur les boutons ------
+  const pageLisere = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: {
+      displayMode: "dropdown",
+      controlSelectedStyle: "outline",
+      selectedColor: "#C1614B",
+      borderColor: "#D9D9D9",
+    },
+  });
+  const bordure = await pageLisere
+    .locator(".variantsy__select")
+    .evaluate((el) => getComputedStyle(el).borderTopColor);
+  check(
+    "Liseré : la liste déroulante prend la couleur de sélection",
+    bordure === "rgb(193, 97, 75)",
+    bordure,
+  );
+  await pageLisere.close();
+
+  const pageAucun = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: {
+      displayMode: "dropdown",
+      controlSelectedStyle: "none",
+      selectedColor: "#C1614B",
+      borderColor: "#D9D9D9",
+    },
+  });
+  const neutre = await pageAucun
+    .locator(".variantsy__select")
+    .evaluate((el) => getComputedStyle(el).borderTopColor);
+  check(
+    "Aucun accent : la liste garde la bordure neutre",
+    neutre === "rgb(217, 217, 217)",
+    neutre,
+  );
+  await pageAucun.close();
+
   // --- Liste déroulante ----------------------------------------------------
   const page2 = await openPage(PRODUCT, PRODUCT.variants[1], {
     style: { displayMode: "dropdown" },

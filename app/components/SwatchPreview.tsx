@@ -126,7 +126,11 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
             maxWidth: settings.dropdownFullWidth ? "100%" : 320,
             minHeight: 44,
             padding: "0 44px 0 14px",
-            border: `${settings.borderWidth}px solid ${settings.borderColor}`,
+            border: `${settings.borderWidth}px solid ${
+              settings.controlSelectedStyle === "none"
+                ? settings.borderColor
+                : settings.selectedColor
+            }`,
             borderRadius: settings.controlRadius,
             background:
               settings.controlSelectedStyle === "fill" ? settings.selectedColor : "#fff",
@@ -136,6 +140,16 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                 ? contrasteSur(settings.selectedColor)
                 : "#1A1A1A",
             cursor: "pointer",
+            // La flèche native du navigateur se place où elle veut : l'aperçu
+            // montrait donc un espacement différent du storefront. On dessine
+            // la même que variantsy.css, aux mêmes coordonnées.
+            WebkitAppearance: "none",
+            appearance: "none",
+            backgroundImage:
+              "linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)",
+            backgroundPosition: "calc(100% - 22px) center, calc(100% - 17px) center",
+            backgroundSize: "5px 5px, 5px 5px",
+            backgroundRepeat: "no-repeat",
           }}
         >
           {DEMO_VALUES.filter((v) => v.available || settings.soldOutStyle !== "hide").map((v) => (

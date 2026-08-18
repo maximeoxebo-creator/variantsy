@@ -747,6 +747,29 @@ function ApparencePanel({ form, set }: PanelProps) {
                 ),
               },
               {
+                id: "none",
+                label: "Aucun",
+                preview: (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 46,
+                      height: 28,
+                      padding: "0 10px",
+                      fontSize: 12,
+                      borderRadius: form.controlRadius,
+                      border: `1px solid ${form.borderColor}`,
+                      color: "#4A4A4A",
+                      background: "#fff",
+                    }}
+                  >
+                    M
+                  </span>
+                ),
+              },
+              {
                 id: "fill",
                 label: "Fond plein",
                 preview: (
@@ -1109,19 +1132,19 @@ const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
   {
     nom: "Produit à une seule option",
     vars: {
-      product_title: "Cocotte en fonte",
-      variant_title: "Navy",
-      option1: "Navy",
+      product_title: "Tee-shirt en lin",
+      variant_title: "Écru",
+      option1: "Écru",
       option2: "",
       option3: "",
-      "option:couleur": "Navy",
+      "option:couleur": "Écru",
       "option:taille": "",
-      price: "129,00 €",
+      price: "39,00 €",
       compare_at_price: "",
-      sku: "ALMA25-NV",
+      sku: "TSH-EC",
       barcode: "",
-      vendor: "La Fonderie",
-      product_type: "Cocotte",
+      vendor: "Atelier Nord",
+      product_type: "Tee-shirt",
     },
   },
 ];
@@ -1310,7 +1333,7 @@ function TitrePanel({ form, set }: PanelProps) {
 
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="critical">Cocotte</Badge>
+                      <Badge tone="critical">Tee-shirt</Badge>
                       <Text as="span" variant="bodyXs" tone="subdued">
                         n&apos;en a pas
                       </Text>
@@ -1357,7 +1380,7 @@ function TitrePanel({ form, set }: PanelProps) {
 
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="success">Cocotte</Badge>
+                      <Badge tone="success">Tee-shirt</Badge>
                     </InlineStack>
                     <Text as="p" variant="bodyMd" fontWeight="medium">
                       {renderTemplate(
@@ -1382,7 +1405,7 @@ function TitrePanel({ form, set }: PanelProps) {
 
           <Banner tone="info">
             <p>
-              Si le coloris figure déjà dans le nom de vos produits — « Cocotte bleu marine » —
+              Si le coloris figure déjà dans le nom de vos produits — « Sweat bleu marine » —
               un modèle qui l&apos;ajoute produira une répétition. Préférez alors « Nom du
               produit seul », ou n&apos;ajoutez que la taille.
             </p>

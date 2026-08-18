@@ -79,6 +79,7 @@ model ShopSettings {
   /// Aspect de la case choisie, hors mode pastilles :
   /// "outline" → liseré coloré (défaut)
   /// "fill"    → fond plein, texte contrasté automatiquement
+  /// "none"    → aucun accent, la liste garde la bordure neutre du thème
   controlSelectedStyle String @default("outline")
   /// La liste déroulante occupe toute la largeur disponible.
   dropdownFullWidth Boolean @default(false)

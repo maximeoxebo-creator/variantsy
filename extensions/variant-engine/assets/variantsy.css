@@ -303,6 +303,18 @@
   box-shadow: none;
 }
 
+/* Le liseré n'avait aucune règle pour la liste : seul le mode « fond plein »
+   en portait une, et choisir « liseré » ne produisait donc aucun effet. */
+.variantsy[data-control-selected="outline"] .variantsy__select {
+  border-color: var(--vtsy-selected-color);
+}
+
+/* Mode « aucun » : la liste garde la bordure neutre du thème, sans accent. */
+.variantsy[data-control-selected="none"] .variantsy__group--text .variantsy__swatch.is-selected {
+  border-color: var(--vtsy-selected-color);
+  box-shadow: none;
+}
+
 .variantsy[data-control-selected="fill"] .variantsy__select {
   background-color: var(--vtsy-selected-color);
   border-color: var(--vtsy-selected-color);
