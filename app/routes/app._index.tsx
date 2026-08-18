@@ -1151,9 +1151,23 @@ const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
 
 const TITLE_FIELD_ID = "variantsy-title-template";
 
+/** Groupes de variables, pour ne pas jeter douze boutons d'un coup. */
+const VARIABLE_GROUPS: { titre: string; teinte: string; tokens: string[] }[] = [
+  { titre: "Produit", teinte: "#1F3A5F", tokens: ["{{product_title}}", "{{vendor}}", "{{product_type}}"] },
+  {
+    titre: "Variante",
+    teinte: "#2E7D32",
+    tokens: ["{{variant_title}}", "{{option1}}", "{{option2}}", "{{option3}}", "{{option:Couleur}}"],
+  },
+  { titre: "Prix", teinte: "#C1614B", tokens: ["{{price}}", "{{compare_at_price}}"] },
+  { titre: "Références", teinte: "#6D5B8E", tokens: ["{{sku}}", "{{barcode}}"] },
+];
+
 function TitrePanel({ form, set }: PanelProps) {
+  const accent = form.selectedColor;
+
   // Insertion à la position du curseur, et non en fin de champ : ajouter
-  // aveuglement à la fin produisait des templates que le marchand n'avait pas
+  // aveuglement à la fin produisait des modèles que le marchand n'avait pas
   // voulus — c'est ainsi qu'un « {{price}} » s'est retrouvé collé à un titre.
   const insert = (token: string) => {
     const field = document.getElementById(TITLE_FIELD_ID) as HTMLInputElement | null;
@@ -1171,114 +1185,196 @@ function TitrePanel({ form, set }: PanelProps) {
     });
   };
 
-  const actif = TITLE_PRESETS.find((p) => p.value === form.titleTemplate);
-
   return (
-    <BlockStack gap="400">
-      <SectionTitle help="Réécrit le titre affiché sur la page produit selon la variante choisie.">
-        Titre dynamique
-      </SectionTitle>
-
+    <BlockStack gap="600">
       <Checkbox
-        label="Mettre à jour le titre du produit à la sélection"
+        label="Réécrire le titre du produit selon la variante choisie"
+        helpText="Le titre de votre page produit suit alors le coloris ou la taille sélectionnés."
         checked={form.updateTitle}
         onChange={(v) => set("updateTitle", v)}
       />
 
       {form.updateTitle && (
         <>
-          <BlockStack gap="200">
-            <Text as="p" variant="bodySm" fontWeight="semibold">
-              Modèles prêts à l&apos;emploi
-            </Text>
-            <InlineStack gap="200" wrap>
-              {TITLE_PRESETS.map((preset) => (
-                <Button
-                  key={preset.label}
-                  size="slim"
-                  pressed={preset.value === form.titleTemplate}
-                  onClick={() => set("titleTemplate", preset.value)}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </InlineStack>
-            {actif && (
-              <Text as="p" variant="bodySm" tone="subdued">
-                {actif.hint}
-              </Text>
-            )}
-          </BlockStack>
-
-          <TextField
-            id={TITLE_FIELD_ID}
-            label="Modèle"
+          {/* Les modèles se choisissent sur leur RÉSULTAT : « Nom — Coloris »
+              est un intitulé, « Sweat en coton bio — Bleu marine » est une
+              réponse. */}
+          <ChoiceCards
+            label="Partez d'un modèle"
+            help="Chaque carte montre ce que donnerait ce modèle sur un produit à deux options."
             value={form.titleTemplate}
+            accent={accent}
             onChange={(v) => set("titleTemplate", v)}
-            autoComplete="off"
-            helpText="Les boutons ci-dessous insèrent à l'endroit de votre curseur."
+            options={TITLE_PRESETS.map((preset) => ({
+              id: preset.value,
+              label: preset.label,
+              preview: (
+                <span
+                  style={{
+                    display: "block",
+                    maxWidth: 150,
+                    fontSize: 11,
+                    lineHeight: 1.35,
+                    textAlign: "center",
+                    color: "var(--p-color-text-secondary)",
+                  }}
+                >
+                  {renderTemplate(preset.value, TITLE_EXAMPLES[0].vars)}
+                </span>
+              ),
+            }))}
           />
 
-          <BlockStack gap="200">
-            <Text as="p" variant="bodySm" tone="subdued">
-              Insérer une variable
-            </Text>
-            <InlineStack gap="150" wrap>
-              {TEMPLATE_VARIABLES.map((variable) => (
-                <Button key={variable.token} size="micro" onClick={() => insert(variable.token)}>
-                  {variable.label}
-                </Button>
-              ))}
-            </InlineStack>
+          <BlockStack gap="300">
+            <SectionTitle accent={accent} help="Modifiez librement, ou composez le vôtre.">
+              Votre modèle
+            </SectionTitle>
+
+            <TextField
+              id={TITLE_FIELD_ID}
+              label=""
+              labelHidden
+              value={form.titleTemplate}
+              onChange={(v) => set("titleTemplate", v)}
+              autoComplete="off"
+            />
+
+            {VARIABLE_GROUPS.map((groupe) => (
+              <InlineStack key={groupe.titre} gap="200" blockAlign="center" wrap>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    minWidth: 92,
+                    fontSize: 12,
+                    color: "var(--p-color-text-secondary)",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "block",
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: groupe.teinte,
+                    }}
+                  />
+                  {groupe.titre}
+                </span>
+                {groupe.tokens.map((token) => {
+                  const variable = TEMPLATE_VARIABLES.find((v) => v.token === token);
+                  return (
+                    <Button key={token} size="micro" onClick={() => insert(token)}>
+                      {variable ? variable.label : token}
+                    </Button>
+                  );
+                })}
+              </InlineStack>
+            ))}
           </BlockStack>
 
-          <Box background="bg-surface-secondary" padding="300" borderRadius="200">
-            <BlockStack gap="300">
-              <Text as="p" variant="bodySm" fontWeight="semibold">
-                Ce que verront vos clients
-              </Text>
-              {TITLE_EXAMPLES.map((exemple) => {
+          {/* Le résultat, rendu comme un vrai titre de fiche produit : c'est la
+              seule façon de juger une longueur et une ponctuation. */}
+          <BlockStack gap="300">
+            <SectionTitle accent={accent}>Ce que verront vos clients</SectionTitle>
+            <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+              {TITLE_EXAMPLES.map((exemple, index) => {
                 const rendu = renderTemplate(form.titleTemplate, exemple.vars);
                 return (
-                  <BlockStack key={exemple.nom} gap="050">
-                    <Text as="p" variant="bodyXs" tone="subdued">
-                      {exemple.nom}
-                    </Text>
-                    <Text as="p" variant="bodyMd" fontWeight="medium">
-                      {rendu || "— (titre vide)"}
-                    </Text>
-                  </BlockStack>
+                  <Box
+                    key={exemple.nom}
+                    background="bg-surface-secondary"
+                    padding="400"
+                    borderRadius="300"
+                  >
+                    <BlockStack gap="200">
+                      <InlineStack gap="150" blockAlign="center">
+                        <span
+                          style={{
+                            display: "block",
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: index === 0 ? "#2E7D32" : "#C1614B",
+                          }}
+                        />
+                        <Text as="span" variant="bodyXs" tone="subdued">
+                          {exemple.nom}
+                        </Text>
+                      </InlineStack>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 17,
+                          fontWeight: 650,
+                          lineHeight: 1.3,
+                          color: rendu ? "var(--p-color-text)" : "var(--p-color-text-critical)",
+                        }}
+                      >
+                        {rendu || "Titre vide"}
+                      </span>
+                    </BlockStack>
+                  </Box>
                 );
               })}
-            </BlockStack>
-          </Box>
+            </InlineGrid>
+          </BlockStack>
+
+          {/* La démonstration vaut mieux que l'explication : le séparateur
+              orphelin ne se voit que sur un produit sans seconde option. */}
+          <BlockStack gap="300">
+            <SectionTitle accent={accent} help="Sur un produit à une seule option, comparez.">
+              Faire disparaître un séparateur devenu inutile
+            </SectionTitle>
+            <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+              <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                <BlockStack gap="200">
+                  <InlineStack>
+                    <Badge tone="critical">Sans crochets</Badge>
+                  </InlineStack>
+                  <Text as="p" variant="bodyXs" tone="subdued">
+                    <code>{"{{option1}} — Taille {{option2}}"}</code>
+                  </Text>
+                  <Text as="p" variant="bodyMd" fontWeight="medium">
+                    {renderTemplate("{{option1}} — Taille {{option2}}", TITLE_EXAMPLES[1].vars)}
+                  </Text>
+                </BlockStack>
+              </Box>
+              <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                <BlockStack gap="200">
+                  <InlineStack>
+                    <Badge tone="success">Avec crochets</Badge>
+                  </InlineStack>
+                  <Text as="p" variant="bodyXs" tone="subdued">
+                    <code>{"{{option1}}[[ — Taille {{option2}}]]"}</code>
+                  </Text>
+                  <Text as="p" variant="bodyMd" fontWeight="medium">
+                    {renderTemplate("{{option1}}[[ — Taille {{option2}}]]", TITLE_EXAMPLES[1].vars)}
+                  </Text>
+                </BlockStack>
+              </Box>
+            </InlineGrid>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Ce qui est entre <code>[[</code> et <code>]]</code> s&apos;efface entièrement dès
+              qu&apos;une de ses variables est vide. Les séparateurs isolés sont déjà nettoyés
+              tout seuls ; les crochets servent quand du <strong>texte</strong> accompagne la
+              variable — ici le mot « Taille », qui resterait orphelin.
+            </Text>
+          </BlockStack>
 
           <Banner tone="info">
             <p>
               Si le coloris figure déjà dans le nom de vos produits — « Cocotte bleu marine » —
-              un modèle qui ajoute le coloris produira une répétition. Préférez alors le modèle
-              « Nom du produit seul », ou n&apos;ajoutez que la taille.
+              un modèle qui l&apos;ajoute produira une répétition. Préférez alors « Nom du
+              produit seul », ou n&apos;ajoutez que la taille.
             </p>
           </Banner>
-
-          <Box background="bg-surface-secondary" padding="300" borderRadius="200">
-            <BlockStack gap="150">
-              <Text as="p" variant="bodySm" fontWeight="semibold">
-                Faire disparaître un séparateur devenu inutile
-              </Text>
-              <Text as="p" variant="bodySm">
-                Ce qui est placé entre <code>[[</code> et <code>]]</code> s&apos;efface
-                entièrement dès qu&apos;une de ses variables est vide. Sans cela,
-                <code> {"{{option1}} / {{option2}}"}</code> laisse un « / » orphelin sur les
-                produits à une seule option — visible dans le second exemple ci-dessus.
-              </Text>
-            </BlockStack>
-          </Box>
 
           <Advanced id="titre">
             <Checkbox
               label="Mettre aussi à jour le titre de l'onglet du navigateur"
-              helpText="Le suffixe de votre thème (« – Ma Boutique ») est conservé."
+              helpText="Shopify y place déjà le nom de la variante : activer ceci peut donc le faire apparaître deux fois."
               checked={form.updateDocumentTitle}
               onChange={(v) => set("updateDocumentTitle", v)}
             />
@@ -1296,7 +1392,6 @@ function TitrePanel({ form, set }: PanelProps) {
     </BlockStack>
   );
 }
-
 
 /**
  * Noir ou blanc, selon ce qui se lit le mieux sur la couleur donnée.

@@ -110,6 +110,16 @@
       "name": "modèle proposé : nom — référence",
       "template": "{{product_title}}[[ — {{sku}}]]",
       "expected": "Sweat en coton bio — SWT-BM-M"
+    },
+    {
+      "name": "texte orphelin sans crochets : le mot reste",
+      "template": "{{option1}} — Taille {{option3}}",
+      "expected": "Bleu marine — Taille"
+    },
+    {
+      "name": "texte orphelin avec crochets : tout le bloc s'efface",
+      "template": "{{option1}}[[ — Taille {{option3}}]]",
+      "expected": "Bleu marine"
     }
   ]
 }
