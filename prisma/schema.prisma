@@ -88,6 +88,10 @@ model ShopSettings {
   /// "color"   → rester en pastille de couleur, devinée depuis le nom
   /// "neutral" → rester en pastille, toujours de la teinte neutre
   swatchFallback String @default("image")
+  /// Où poser la rangée de pastilles sur une vignette de collection :
+  /// "overlay" → en surimpression sur la photo (défaut)
+  /// "below"   → sous le bloc de texte
+  collectionPlacement String @default("overlay")
   /// Agrandissement des pastilles qui affichent une photo, en pourcentage.
   /// Une photo a besoin de plus de place qu'un aplat pour être reconnaissable.
   photoScale     Int     @default(100)

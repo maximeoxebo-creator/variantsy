@@ -69,3 +69,32 @@
     0 0 0 2px #fff,
     0 0 0 4px var(--vtsy-selected-color, #111111);
 }
+
+/* --- Rangée en surimpression sur la photo ---------------------------------
+   Placement par défaut : la rangée se voit immédiatement et n'allonge pas la
+   carte. Le voile dégradé garantit la lisibilité des pastilles claires sur une
+   photo claire — sans lui, une pastille blanche disparaît sur un fond blanc.
+   -------------------------------------------------------------------------- */
+.variantsy-collection--surimpression {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  margin: 0;
+  padding: 24px 12px 10px;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.22), transparent);
+  pointer-events: auto;
+}
+
+.variantsy-collection--surimpression .variantsy-collection__visual {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.variantsy-collection--surimpression .variantsy-collection__swatch.is-selected .variantsy-collection__visual {
+  box-shadow:
+    0 0 0 var(--vtsy-selected-gap, 1px) #fff,
+    0 0 0 calc(var(--vtsy-selected-gap, 1px) + var(--vtsy-selected-width, 1px))
+      var(--vtsy-selected-color, #111111),
+    0 1px 3px rgba(0, 0, 0, 0.25);
+}

@@ -304,8 +304,13 @@
     // ne l'est pas. Deux cartes imbriquées ayant échappé au tri produiraient
     // sinon deux rangées.
     if (entree.carte.querySelector("[data-variantsy-collection]")) return;
-    entree.carte.appendChild(conteneur);
-    aligner(entree.carte, conteneur);
+
+    if ((style.collectionPlacement || "overlay") === "overlay") {
+      poserSurLaPhoto(entree.carte, conteneur);
+    } else {
+      entree.carte.appendChild(conteneur);
+      aligner(entree.carte, conteneur);
+    }
   }
 
   /**
@@ -345,6 +350,48 @@
     }
   }
 
+
+  /**
+   * Pose la rangée en surimpression, au bas de la photo.
+   *
+   * C'est le placement retenu par la plupart des apps de ce marché, et pour
+   * une raison simple : sous le bloc de texte, les pastilles allongent la
+   * carte et se noient dans le reste. Sur la photo, elles se voient sans rien
+   * déplacer.
+   *
+   * On remonte de l'image jusqu'à son conteneur direct plutôt que d'utiliser
+   * la carte entière : ancrer au bas de la carte poserait la rangée sous le
+   * prix, ce qui est justement ce qu'on veut éviter.
+   */
+  function poserSurLaPhoto(carte, conteneur) {
+    var image = carte.querySelector("img");
+    if (!image) {
+      carte.appendChild(conteneur);
+      return;
+    }
+
+    var hote = image.parentElement;
+    // On cherche le conteneur qui donne à l'image sa hauteur : le parent
+    // direct est parfois un simple <a> collé à l'image.
+    for (var i = 0; i < 3 && hote && hote !== carte; i++) {
+      if (hote.getBoundingClientRect().height >= image.getBoundingClientRect().height - 2) break;
+      hote = hote.parentElement;
+    }
+    if (!hote || hote === document.body) hote = carte;
+
+    // `position: static` empêcherait l'ancrage. On ne l'impose que si le thème
+    // ne l'a pas déjà défini, pour ne pas casser une mise en page existante.
+    try {
+      if (window.getComputedStyle(hote).position === "static") {
+        hote.style.position = "relative";
+      }
+    } catch (error) {
+      /* noop */
+    }
+
+    conteneur.classList.add("variantsy-collection--surimpression");
+    hote.appendChild(conteneur);
+  }
 
   /**
    * Aligne la rangée sur le texte de la vignette.

@@ -101,6 +101,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     photoScale: Math.min(220, Math.max(100, int("photoScale", DEFAULT_SETTINGS.photoScale))),
+    collectionPlacement: str("collectionPlacement", DEFAULT_SETTINGS.collectionPlacement),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
@@ -1000,6 +1001,93 @@ function ApparencePanel({ form, set }: PanelProps) {
       )}
         </>
       )}
+
+      <Divider />
+
+      {/* Vignettes de collection : réglage à part, car il ne concerne pas la
+          page produit. Il vit ici plutôt que dans un onglet dédié — un seul
+          choix ne justifie pas un volet. */}
+      <ChoiceCards
+        label="Sur les pages de collection"
+        help="Où poser la rangée de coloris sur chaque vignette."
+        value={form.collectionPlacement}
+        accent={accent}
+        onChange={(v) => set("collectionPlacement", v)}
+        options={[
+          {
+            id: "overlay",
+            label: "Sur la photo",
+            preview: (
+              <span
+                style={{
+                  position: "relative",
+                  display: "block",
+                  width: 54,
+                  height: 44,
+                  borderRadius: 6,
+                  background: "linear-gradient(160deg,#DFE4EA,#C3CBD4)",
+                  overflow: "hidden",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: "auto 0 0 0",
+                    display: "flex",
+                    gap: 3,
+                    justifyContent: "center",
+                    padding: "8px 0 4px",
+                    background: "linear-gradient(to top,rgba(0,0,0,.25),transparent)",
+                  }}
+                >
+                  {["#1F3A5F", "#D8C3A5"].map((c) => (
+                    <span
+                      key={c}
+                      style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: "50%",
+                        background: c,
+                        border: "1px solid rgba(255,255,255,.85)",
+                      }}
+                    />
+                  ))}
+                </span>
+              </span>
+            ),
+          },
+          {
+            id: "below",
+            label: "Sous la carte",
+            preview: (
+              <span style={{ display: "block", width: 54 }}>
+                <span
+                  style={{
+                    display: "block",
+                    height: 30,
+                    borderRadius: 6,
+                    background: "linear-gradient(160deg,#DFE4EA,#C3CBD4)",
+                  }}
+                />
+                <span style={{ display: "flex", gap: 3, paddingTop: 6 }}>
+                  {["#1F3A5F", "#D8C3A5"].map((c) => (
+                    <span
+                      key={c}
+                      style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: "50%",
+                        background: c,
+                        border: "1px solid rgba(0,0,0,.12)",
+                      }}
+                    />
+                  ))}
+                </span>
+              </span>
+            ),
+          },
+        ]}
+      />
 
       <Divider />
 

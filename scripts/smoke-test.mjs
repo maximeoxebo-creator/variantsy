@@ -1436,8 +1436,11 @@ section("Couleurs natives Shopify");
 /* sa boucle. On repère donc les cartes après coup, et on greffe les pastilles.*/
 /* ========================================================================== */
 
-section("Pastilles en collection");
-{
+/**
+ * Ouvre une page de collection gréée comme un vrai thème : deux vignettes, des
+ * liens répétés hors carte, et un texte retiré du bord.
+ */
+async function ouvrirCollection(styleOverrides = {}) {
   const page = await browser.newPage();
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
   page.on("pageerror", (e) => consoleErrors.push(String(e)));
@@ -1447,7 +1450,11 @@ section("Pastilles en collection");
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ...BASE_CONFIG, colors: { noir: "#111111" } }),
+      body: JSON.stringify({
+        ...BASE_CONFIG,
+        colors: { noir: "#111111" },
+        style: { ...BASE_CONFIG.style, ...styleOverrides },
+      }),
     }),
   );
   // Shopify sert les données produit sur /products/<handle>.js
@@ -1494,6 +1501,12 @@ section("Pastilles en collection");
     /* Un thème réel retire son texte du bord : sans ce décalage, le test
        d'alignement passerait même sans alignement. */
     .carte__infos { padding-inline: 16px; }
+    /* Les images de test n'ont pas de fichier : sans dimensions explicites,
+       leur conteneur est plat et la rangée en surimpression atterrit hors
+       cadre. Un vrai thème leur donne toujours une hauteur. */
+    .carte { list-style: none; }
+    .carte__media { display: block; }
+    .carte img { display: block; width: 200px; height: 160px; background: #ccc; }
   </style>
   <!-- Structure imbriquée d'un vrai thème : plusieurs liens vers le même
        produit, à des profondeurs différentes. C'est ce qui produisait trois
@@ -1528,6 +1541,13 @@ section("Pastilles en collection");
 </body></html>`);
   await page.addScriptTag({ content: jsCollection });
   await page.waitForTimeout(600);
+
+  return page;
+}
+
+section("Pastilles en collection");
+{
+  const page = await ouvrirCollection();
 
   const rendu = await page.evaluate(() => {
     const bloc = document.querySelector("[data-variantsy-collection]");
@@ -1589,24 +1609,53 @@ section("Pastilles en collection");
     JSON.stringify(anneau),
   );
 
-  // La rangée doit s'aligner sur le texte de la vignette, pas coller au bord.
-  const alignement = await page.evaluate(() => {
-    const carte = document.querySelector(".carte");
+  // Placement par défaut : en surimpression, ancré au bas de la photo.
+  const surimpression = await page.evaluate(() => {
+    const rangee = document.querySelector("[data-variantsy-collection]");
+    const image = document.querySelector(".carte img");
+    if (!rangee || !image) return { absent: true };
+    const r = rangee.getBoundingClientRect();
+    const i = image.getBoundingClientRect();
+    return {
+      classe: rangee.classList.contains("variantsy-collection--surimpression"),
+      position: getComputedStyle(rangee).position,
+      // Le bas de la rangée doit coïncider avec le bas de la photo.
+      ecartBas: Math.round(Math.abs(r.bottom - i.bottom)),
+      dansLaPhoto: image.parentElement.contains(rangee),
+    };
+  });
+  check(
+    "Par défaut, la rangée se pose en surimpression sur la photo",
+    !surimpression.absent &&
+      surimpression.classe === true &&
+      surimpression.position === "absolute" &&
+      surimpression.ecartBas <= 2,
+    JSON.stringify(surimpression),
+  );
+
+  // --- Placement « sous la carte » : la rangée s'aligne sur le titre --------
+  // Page distincte : le placement est un réglage, et les deux valeurs doivent
+  // être exercées.
+  const pageSous = await ouvrirCollection({ collectionPlacement: "below" });
+  const alignementSous = await pageSous.evaluate(() => {
     const rangee = document.querySelector("[data-variantsy-collection]");
     const titre = document.querySelector(".titre");
     if (!rangee || !titre) return { absent: true };
     const gauche = (el) => Math.round(el.getBoundingClientRect().left);
     return {
-      bordCarte: gauche(carte),
       premierePastille: gauche(rangee.querySelector(".variantsy-collection__swatch")),
       titre: gauche(titre),
+      surimpression: rangee.classList.contains("variantsy-collection--surimpression"),
     };
   });
   check(
-    "La rangée s'aligne sur le titre de la vignette",
-    !alignement.absent && Math.abs(alignement.premierePastille - alignement.titre) <= 2,
-    JSON.stringify(alignement),
+    "En placement sous la carte, la rangée s'aligne sur le titre",
+    !alignementSous.absent &&
+      alignementSous.surimpression === false &&
+      Math.abs(alignementSous.premierePastille - alignementSous.titre) <= 2,
+    JSON.stringify(alignementSous),
   );
+  await pageSous.close();
 
   // Cliquer doit changer l'image ET pointer le lien vers la variante.
   await page.locator(".variantsy-collection__swatch").nth(1).click();
