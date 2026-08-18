@@ -41,7 +41,19 @@ const PUBLISHED_THEME_QUERY = `#graphql
 
 const NAVY = "#1F3A5F";
 const BEIGE = "#D8C3A5";
-const GRIS = "#C9CFD6";
+
+/** Silhouette de tee-shirt, lisible dès 30 px. Inline : rien à charger. */
+function Silhouette({ tint, large }: { tint: string; large?: boolean }) {
+  const taille = large ? 76 : 40;
+  return (
+    <svg viewBox="0 0 48 48" width={taille} height={taille} aria-hidden="true">
+      <path
+        d="M18 7 L24 10.5 L30 7 L42 13 L37.5 22.5 L33.5 20 L33.5 41.5 Q24 43.5 14.5 41.5 L14.5 20 L10.5 22.5 L6 13 Z"
+        fill={tint}
+      />
+    </svg>
+  );
+}
 
 function Vignette({
   color,
@@ -99,24 +111,6 @@ function Vignette({
         </Text>
       )}
     </BlockStack>
-  );
-}
-
-/** Silhouette de cocotte, lisible à 40 px. Inline : rien à charger. */
-function Silhouette({ tint, large }: { tint: string; large?: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 48 40"
-      width={large ? 76 : 46}
-      height={large ? 63 : 38}
-      aria-hidden="true"
-    >
-      <rect x="9" y="14" width="30" height="20" rx="5" fill={tint} opacity="0.95" />
-      <rect x="6" y="10" width="36" height="6" rx="3" fill={tint} />
-      <rect x="21" y="5" width="6" height="6" rx="3" fill={tint} />
-      <rect x="2" y="18" width="6" height="8" rx="3" fill={tint} opacity="0.8" />
-      <rect x="40" y="18" width="6" height="8" rx="3" fill={tint} opacity="0.8" />
-    </svg>
   );
 }
 
@@ -206,27 +200,88 @@ function FicheMiniature({
               }}
             />
           ))}
-          {/* La photo commune : même traitement pour les deux coloris, d'où le
-              cadre distinct. C'est elle qui répond à « et mon guide des
-              tailles, il disparaît ? ». */}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Où assigner une photo à une variante, dans l'admin Shopify.
+ *
+ * C'est le geste que l'app demande, et le seul qu'elle ne peut pas faire à la
+ * place du marchand. Le décrire en mots — « ouvrez la variante, section
+ * Médias » — suppose qu'il sache déjà à quoi ressemble l'écran. Une maquette
+ * du tableau des variantes, avec l'emplacement d'image mis en évidence, le
+ * dispense de chercher.
+ */
+function SchemaAssignation() {
+  const lignes = [
+    { valeur: "Navy", couleur: NAVY, actif: true },
+    { valeur: "Beige", couleur: BEIGE, actif: false },
+  ];
+
+  return (
+    <span
+      style={{
+        display: "block",
+        borderRadius: 14,
+        background: "#fff",
+        border: "1px solid var(--p-color-border-secondary)",
+        boxShadow: "0 1px 3px rgba(0,0,0,.06)",
+        overflow: "hidden",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          padding: "10px 14px",
+          background: "var(--p-color-bg-surface-secondary)",
+          borderBottom: "1px solid var(--p-color-border-secondary)",
+          fontSize: 12,
+          color: "var(--p-color-text-secondary)",
+        }}
+      >
+        Admin Shopify › Produits › votre produit › <strong>Variantes</strong>
+      </span>
+
+      {lignes.map((ligne) => (
+        <span
+          key={ligne.valeur}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 14px",
+            borderTop: "1px solid var(--p-color-border-secondary)",
+          }}
+        >
           <span
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 30,
-              height: 30,
-              borderRadius: 7,
-              background: "var(--p-color-bg-surface-info)",
-              border: "1.5px solid var(--p-color-border-info)",
-              fontSize: 13,
-              lineHeight: 1,
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              flex: "0 0 auto",
+              background: `color-mix(in srgb, ${ligne.couleur} 22%, #fff)`,
+              border: ligne.actif
+                ? "2px solid var(--p-color-border-info)"
+                : "1px dashed var(--p-color-border)",
+              boxShadow: ligne.actif
+                ? "0 0 0 3px var(--p-color-bg-surface-info)"
+                : "none",
             }}
           >
-            ▤
+            <Silhouette tint={ligne.couleur} />
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{ligne.valeur}</span>
+          <span style={{ marginInlineStart: "auto", fontSize: 12, color: "#8A8A8A" }}>
+            129,00 €
           </span>
         </span>
-      </span>
+      ))}
     </span>
   );
 }
@@ -326,9 +381,23 @@ export default function SetupPage() {
                 </Text>
 
                 <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                  <BlockStack gap="300">
+                    <Text as="p" variant="bodySm" fontWeight="semibold">
+                      Où se fait l&apos;assignation
+                    </Text>
+                    <SchemaAssignation />
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      Dans la fiche produit, section <strong>Variantes</strong> : cliquez sur
+                      l&apos;emplacement d&apos;image à gauche de la ligne, et choisissez la
+                      photo. C&apos;est le seul geste que Variantsy ne peut pas faire à votre
+                      place.
+                    </Text>
+                  </BlockStack>
+                </Box>
+
+                <Box background="bg-surface-secondary" padding="400" borderRadius="300">
                   <BlockStack gap="400">
                     <InlineStack gap="300" blockAlign="start" wrap>
-                      <Vignette color={GRIS} legende="Commune" />
                       <Vignette color={NAVY} pinned legende="Navy" />
                       <Vignette color={NAVY} legende="Navy" />
                       <Vignette color={NAVY} legende="Navy" />
@@ -343,8 +412,7 @@ export default function SetupPage() {
                       </Text>
                       <Text as="p" variant="bodySm" tone="subdued">
                         Vous n&apos;assignez donc qu&apos;une seule photo par coloris, pas les
-                        quatre. Celles placées avant la première assignée — guide des tailles,
-                        vidéo de marque — restent visibles pour tous les coloris.
+                        quatre.
                       </Text>
                     </BlockStack>
                   </BlockStack>
@@ -372,9 +440,7 @@ export default function SetupPage() {
                   />
                 </InlineGrid>
                 <Text as="p" variant="bodySm" tone="subdued">
-                  Même produit, deux coloris : chaque client ne voit que les photos du sien. La
-                  vignette encadrée est la <strong>photo commune</strong> — guide des tailles,
-                  vidéo de marque — qui reste visible dans tous les coloris.
+                  Même produit, deux coloris : chaque client ne voit que les photos du sien.
                 </Text>
 
                 <InlineStack>
