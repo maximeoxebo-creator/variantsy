@@ -78,7 +78,17 @@
             {
               "name": {{ option.name | json }},
               "position": {{ option.position }},
-              "values": [{% for value in option.values %}{{ value | json }}{% unless forloop.last %},{% endunless %}{% endfor %}]
+              "values": [{% for value in option.values %}{{ value | json }}{% unless forloop.last %},{% endunless %}{% endfor %}],
+              {%- comment -%}
+                Couleurs natives des valeurs d'option, telles que le marchand
+                les a renseignées dans l'admin Shopify. C'est la source la plus
+                fiable qui soit — elle vient de lui, pas d'un dictionnaire — et
+                elle est disponible ici sans le moindre appel réseau.
+                `swatch` n'existe que sur les versions récentes de l'API : on
+                émet null quand il est absent, et le JS retombe sur ses autres
+                sources.
+              {%- endcomment -%}
+              "sw": [{% for value in option.values %}{% if value.swatch and value.swatch.color %}{{ value.swatch.color | append: '' | json }}{% else %}null{% endif %}{% unless forloop.last %},{% endunless %}{% endfor %}]
             }{% unless forloop.last %},{% endunless %}
           {%- endfor -%}
         ],

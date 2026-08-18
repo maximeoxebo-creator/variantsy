@@ -456,6 +456,27 @@
     this.knownMedia = {};
     for (var i = 0; i < this.media.length; i++) this.knownMedia[String(this.media[i].id)] = true;
 
+    /**
+     * Couleurs natives des valeurs d'option, telles que le marchand les a
+     * renseignées dans l'admin Shopify. Source la plus fiable dont on dispose :
+     * elle vient de lui, pas d'une devinette, et elle arrive avec la page — ni
+     * requête, ni latence, ni dépendance à l'API Admin.
+     *
+     * Clé : `${nom d'option normalisé}::${valeur normalisée}`, exactement comme
+     * la bibliothèque du marchand, pour que les deux se consultent pareil.
+     */
+    this.nativeSwatches = {};
+    var instance = this;
+    (this.product.options || []).forEach(function (option) {
+      var couleurs = option.sw;
+      if (!couleurs) return;
+      (option.values || []).forEach(function (value, index) {
+        var couleur = couleurs[index];
+        if (!couleur) return;
+        instance.nativeSwatches[normalize(option.name) + "::" + normalize(value)] = couleur;
+      });
+    });
+
     this.optionNames = this.product.options.map(function (option) {
       return option.name;
     });
@@ -764,6 +785,9 @@
       var value = normalize(buttons[i].getAttribute("data-variantsy-value"));
       if (!value) continue;
       if (swatches[optionName + "::" + value]) return true;
+      // Une valeur à laquelle Shopify attache une couleur EST une couleur :
+      // c'est le signal le plus fort qui soit, le marchand l'a saisi lui-même.
+      if (this.nativeSwatches[optionName + "::" + value]) return true;
       // La valeur EST un code couleur (« #1F3A5F »).
       if (/^#[0-9a-f]{3,8}$/i.test(value)) return true;
       if (dictionary && guessColorFrom(dictionary, value)) return true;
@@ -1265,6 +1289,18 @@
   Variantsy.prototype.applyVisual = function (visual, optionName, value) {
     var key = optionName + "::" + normalize(value);
     var swatch = this.config.swatches[key];
+
+    // Couleur native Shopify : renseignée par le marchand lui-même dans son
+    // admin, donc plus fiable que n'importe quelle devinette. Elle ne passe
+    // toutefois PAS devant la bibliothèque de l'app : celle-ci est une
+    // correction explicite, et corriger doit rester possible.
+    var native = this.nativeSwatches[optionName + "::" + normalize(value)];
+
+    if (!swatch && native) {
+      visual.style.backgroundImage = "none";
+      visual.style.backgroundColor = native;
+      return;
+    }
 
     if (!swatch) {
       var style = this.config.style || {};

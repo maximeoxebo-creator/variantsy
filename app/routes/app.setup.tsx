@@ -465,9 +465,10 @@ export default function SetupPage() {
                     </Text>
                     <SchemaOptions />
                     <Text as="p" variant="bodySm" tone="subdued">
-                      Shopify attache une couleur à chaque valeur d&apos;option. Renseignez-la ici
-                      et votre nuancier sera juste sans autre saisie — Variantsy sait aussi
-                      deviner les noms courants, mais une teinte maison ne se devine pas.
+                      Shopify attache une couleur à chaque valeur d&apos;option.{" "}
+                      <strong>Variantsy la lit directement</strong> : renseignez-la ici et votre
+                      nuancier est juste, sans aucune autre saisie. Même une teinte maison
+                      qu&apos;aucun dictionnaire ne connaît.
                     </Text>
                   </BlockStack>
                 </Box>

@@ -1122,6 +1122,83 @@ section("Modes d'affichage");
 }
 
 /* ========================================================================== */
+/* Scénario — couleurs natives des valeurs d'option (admin Shopify)           */
+/*                                                                            */
+/* Shopify attache une couleur à chaque valeur d'option. Elle vient du         */
+/* marchand lui-même : elle doit primer sur toute devinette, mais céder devant */
+/* la bibliothèque de l'app, qui est une correction explicite.                 */
+/* ========================================================================== */
+
+section("Couleurs natives Shopify");
+{
+  const AVEC_NATIF = {
+    ...PRODUCT,
+    options: [
+      {
+        name: "Couleur",
+        position: 1,
+        values: ["Noir", "Bleu marine", "Terracotta"],
+        // « Noir » reçoit une teinte native volontairement différente du
+        // dictionnaire (#111111) pour que la priorité soit observable.
+        sw: ["#445566", null, null],
+      },
+      { name: "Taille", position: 2, values: ["S", "M", "L"] },
+    ],
+  };
+
+  // Bibliothèque vide : la couleur native doit s'appliquer.
+  const page = await openPage(AVEC_NATIF, AVEC_NATIF.variants[1], {
+    swatches: {},
+    style: { swatchFallback: "color" },
+    colors: { noir: "#111111" },
+  });
+  const natif = await page
+    .locator('.variantsy__swatch[data-variantsy-value="Noir"] .variantsy__visual')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  check(
+    "La couleur native Shopify prime sur la devinette par le nom",
+    natif === "rgb(68, 85, 102)",
+    natif,
+  );
+  await page.close();
+
+  // Bibliothèque renseignée : elle doit reprendre la main.
+  const page2 = await openPage(AVEC_NATIF, AVEC_NATIF.variants[1], {
+    swatches: { "couleur::noir": { kind: "color", c1: "#00FF00" } },
+    style: { swatchFallback: "color" },
+  });
+  const biblio = await page2
+    .locator('.variantsy__swatch[data-variantsy-value="Noir"] .variantsy__visual')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  check(
+    "La bibliothèque du marchand reste prioritaire sur la couleur native",
+    biblio === "rgb(0, 255, 0)",
+    biblio,
+  );
+  await page2.close();
+
+  // Une option dont les valeurs portent une couleur native EST une option couleur.
+  const AUTRE_NOM = {
+    ...AVEC_NATIF,
+    options: [
+      { name: "Finition", position: 1, values: ["Noir", "Bleu marine", "Terracotta"], sw: ["#445566", null, null] },
+      { name: "Taille", position: 2, values: ["S", "M", "L"] },
+    ],
+  };
+  const page3 = await openPage(AUTRE_NOM, AUTRE_NOM.variants[1], { swatches: {} });
+  const detecte = await page3.evaluate(() => {
+    const g = document.querySelector('.variantsy__group[data-option-position="1"]');
+    return g.classList.contains("variantsy__group--color");
+  });
+  check(
+    "Une option nommée « Finition » est reconnue grâce à ses couleurs natives",
+    detecte === true,
+    String(detecte),
+  );
+  await page3.close();
+}
+
+/* ========================================================================== */
 /* Bilan                                                                      */
 /* ========================================================================== */
 
