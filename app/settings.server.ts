@@ -24,6 +24,7 @@ export type SettingsInput = {
   selectedWidth: number;
   selectedGap: number;
   cornerRadius: number;
+  displayMode: string;
   swatchFallback: string;
   neutralColor: string;
   showLabels: boolean;
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   selectedWidth: 2,
   selectedGap: 2,
   cornerRadius: 8,
+  displayMode: "swatch",
   swatchFallback: "image",
   neutralColor: "#ECECEC",
   showLabels: false,
@@ -178,6 +180,7 @@ export type StorefrontConfig = {
     selectedWidth: number;
     selectedGap: number;
     cornerRadius: number;
+    displayMode: string;
     swatchFallback: string;
     neutralColor: string;
     showLabels: boolean;
@@ -246,6 +249,7 @@ export function toStorefrontConfig(
       selectedWidth: settings.selectedWidth,
       selectedGap: settings.selectedGap,
       cornerRadius: settings.cornerRadius,
+      displayMode: settings.displayMode,
       swatchFallback: settings.swatchFallback,
       neutralColor: settings.neutralColor,
       showLabels: settings.showLabels,

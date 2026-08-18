@@ -48,6 +48,7 @@
       selectedWidth: 2,
       selectedGap: 2,
       cornerRadius: 8,
+      displayMode: "swatch",
       swatchFallback: "image",
       neutralColor: "#ECECEC",
       showLabels: false,
@@ -770,6 +771,46 @@
     return false;
   };
 
+  /**
+   * Construit une liste déroulante à partir des boutons déjà rendus.
+   *
+   * Le Liquid produit toujours des boutons — c'est ce qui garantit un contenu
+   * lisible sans JavaScript, et le repli si notre script échoue. Le <select>
+   * est donc fabriqué ici, à côté, et les boutons sont masqués en CSS. On ne
+   * remplace jamais le balisage d'origine : une vente ne doit pas dépendre de
+   * la réussite de ce code.
+   */
+  Variantsy.prototype.buildDropdown = function (group, position) {
+    var self = this;
+    var existing = group.querySelector(".variantsy__select");
+    var buttons = group.querySelectorAll(".variantsy__swatch");
+    var current = this.selection[position - 1];
+
+    if (!existing) {
+      existing = document.createElement("select");
+      existing.className = "variantsy__select";
+      existing.setAttribute("aria-label", group.getAttribute("data-option-name") || "");
+      existing.addEventListener("change", function () {
+        self.select(position, existing.value);
+      });
+      var host = group.querySelector(".variantsy__options") || group;
+      host.parentNode.insertBefore(existing, host.nextSibling);
+    }
+
+    // On reconstruit les options à chaque passage : la disponibilité change
+    // avec les autres sélections, et un choix devenu impossible doit le dire.
+    existing.innerHTML = "";
+    Array.prototype.forEach.call(buttons, function (button) {
+      var value = button.getAttribute("data-variantsy-value");
+      var option = document.createElement("option");
+      option.value = value;
+      var unavailable = button.getAttribute("data-unavailable") === "true";
+      option.textContent = unavailable ? value + " — indisponible" : value;
+      if (value === current) option.selected = true;
+      existing.appendChild(option);
+    });
+  };
+
   Variantsy.prototype.applyGallery = function (variant) {
     if (!this.groups) return;
 
@@ -1181,10 +1222,18 @@
     Array.prototype.forEach.call(groups, function (group) {
       var position = Number(group.getAttribute("data-option-position"));
       var optionName = normalize(group.getAttribute("data-option-name"));
+      // Le mode d'affichage ne s'applique qu'aux options de COULEUR : une
+      // taille n'a jamais été une pastille, la forcer en liste déroulante
+      // parce que le marchand a choisi ce mode pour ses coloris n'aurait
+      // aucun sens.
+      var mode = style.displayMode || "swatch";
       var isColor = self.looksLikeColorOption(group, optionName);
+      var asSwatch = isColor && mode === "swatch";
 
-      group.classList.toggle("variantsy__group--color", isColor);
-      group.classList.toggle("variantsy__group--text", !isColor);
+      group.classList.toggle("variantsy__group--color", asSwatch);
+      group.classList.toggle("variantsy__group--text", !asSwatch);
+      group.classList.toggle("variantsy__group--dropdown", isColor && mode === "dropdown");
+      if (isColor && mode === "dropdown") self.buildDropdown(group, position);
 
       var labelValue = group.querySelector("[data-variantsy-current-value]");
       if (labelValue) labelValue.textContent = self.selection[position - 1] || "";

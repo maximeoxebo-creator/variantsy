@@ -55,6 +55,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     selectedWidth: Math.min(8, Math.max(1, int("selectedWidth", DEFAULT_SETTINGS.selectedWidth))),
     selectedGap: Math.min(8, Math.max(0, int("selectedGap", DEFAULT_SETTINGS.selectedGap))),
     cornerRadius: Math.min(24, Math.max(0, int("cornerRadius", DEFAULT_SETTINGS.cornerRadius))),
+    displayMode: str("displayMode", DEFAULT_SETTINGS.displayMode),
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     showLabels: bool("showLabels"),
@@ -400,6 +401,77 @@ function ApparencePanel({ form, set }: PanelProps) {
   return (
     <BlockStack gap="500">
       <ChoiceCards
+        label="Comment s'affichent vos coloris"
+        help="Ne concerne que les options de couleur. Les tailles restent des boutons texte dans tous les cas."
+        value={form.displayMode}
+        accent={accent}
+        onChange={(v) => set("displayMode", v)}
+        options={[
+          {
+            id: "swatch",
+            label: "Pastilles",
+            preview: (
+              <span style={{ display: "flex", gap: 4 }}>
+                <Chip radius={radius} background="#1F3A5F" size={20} />
+                <Chip radius={radius} background="#D8C3A5" size={20} />
+                <Chip radius={radius} background="#C1614B" size={20} />
+              </span>
+            ),
+          },
+          {
+            id: "text",
+            label: "Boutons texte",
+            preview: (
+              <span style={{ display: "flex", gap: 4 }}>
+                {["S", "M", "L"].map((t) => (
+                  <span
+                    key={t}
+                    style={{
+                      minWidth: 22,
+                      height: 22,
+                      lineHeight: "20px",
+                      textAlign: "center",
+                      fontSize: 11,
+                      borderRadius: 4,
+                      border: "1px solid #B0B7BF",
+                      color: "#4A4A4A",
+                    }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </span>
+            ),
+          },
+          {
+            id: "dropdown",
+            label: "Liste déroulante",
+            preview: (
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: 76,
+                  height: 24,
+                  padding: "0 7px",
+                  fontSize: 11,
+                  color: "#4A4A4A",
+                  borderRadius: 4,
+                  border: "1px solid #B0B7BF",
+                }}
+              >
+                Navy
+                <span style={{ fontSize: 8 }}>▼</span>
+              </span>
+            ),
+          },
+        ]}
+      />
+
+      <Divider />
+
+      <ChoiceCards
         label="Forme des pastilles"
         value={form.shape}
         accent={accent}
@@ -576,48 +648,9 @@ function ApparencePanel({ form, set }: PanelProps) {
               </span>
             ),
           },
-          {
-            id: "neutral",
-            label: "Aucune couleur",
-            preview: (
-              <span style={{ display: "flex", gap: 4 }}>
-                <Chip radius={radius} background={form.neutralColor} size={20} />
-                <Chip radius={radius} background={form.neutralColor} size={20} />
-                <Chip radius={radius} background={form.neutralColor} size={20} />
-              </span>
-            ),
-          },
         ]}
       />
 
-      {form.swatchFallback !== "image" && (
-        <ColorField
-          label="Teinte utilisée"
-          value={form.neutralColor}
-          onChange={(v) => set("neutralColor", v)}
-        />
-      )}
-
-      {/* Piège réel : toutes les valeurs non renseignées prennent la MÊME
-          teinte. Sans leur nom affiché, le client voit des pastilles
-          identiques et ne peut pas choisir. Le mode reste légitime — c'est le
-          seul qui n'invente rien — mais il exige les libellés. */}
-      {form.swatchFallback === "neutral" && !form.showLabels && (
-        <Banner
-          tone="warning"
-          title="Vos clients ne pourront pas distinguer les coloris"
-          action={{
-            content: "Afficher les noms",
-            onAction: () => set("showLabels", true),
-          }}
-        >
-          <p>
-            Toutes les valeurs non renseignées prennent la même teinte. Sans leur nom sous la
-            pastille, le client voit des ronds identiques. Affichez les noms, ou renseignez vos
-            couleurs dans la Bibliothèque de swatches.
-          </p>
-        </Banner>
-      )}
 
       <Divider />
 
@@ -898,6 +931,14 @@ function TitrePanel({ form, set }: PanelProps) {
               })}
             </BlockStack>
           </Box>
+
+          <Banner tone="info">
+            <p>
+              Si le coloris figure déjà dans le nom de vos produits — « Cocotte bleu marine » —
+              un modèle qui ajoute le coloris produira une répétition. Préférez alors le modèle
+              « Nom du produit seul », ou n&apos;ajoutez que la taille.
+            </p>
+          </Banner>
 
           <Box background="bg-surface-secondary" padding="300" borderRadius="200">
             <BlockStack gap="150">

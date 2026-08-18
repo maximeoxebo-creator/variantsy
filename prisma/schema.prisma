@@ -68,6 +68,11 @@ model ShopSettings {
   selectedGap    Int     @default(2)
   /// Rayon des coins quand shape = "rounded", en px. Ignoré sinon.
   cornerRadius   Int     @default(8)
+  /// Rendu des options de couleur côté storefront :
+  /// "swatch"   → pastilles (défaut)
+  /// "text"     → boutons texte, sans pastille
+  /// "dropdown" → liste déroulante
+  displayMode    String  @default("swatch")
   /// Que faire d'une valeur sans couleur associée dans la bibliothèque :
   /// "image"   → afficher la photo de la variante (défaut historique)
   /// "color"   → rester en pastille de couleur, devinée depuis le nom

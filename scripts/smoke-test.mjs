@@ -1053,6 +1053,75 @@ section("Détection d'une option de couleur");
 }
 
 /* ========================================================================== */
+/* Scénario — modes d'affichage des options de couleur                        */
+/* ========================================================================== */
+
+section("Modes d'affichage");
+{
+  // --- Boutons texte : la pastille disparaît, le libellé reste -------------
+  const page = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { displayMode: "text" },
+  });
+  const texte = await page.evaluate(() => {
+    const g = document.querySelector('.variantsy__group[data-option-position="1"]');
+    const visual = g.querySelector(".variantsy__visual");
+    return {
+      classeTexte: g.classList.contains("variantsy__group--text"),
+      classeCouleur: g.classList.contains("variantsy__group--color"),
+      pastilleVisible: visual ? getComputedStyle(visual).display !== "none" : null,
+      libelle: g.querySelector(".variantsy__text")?.textContent?.trim(),
+    };
+  });
+  check(
+    "Mode texte : l'option couleur passe en boutons, sans pastille",
+    texte.classeTexte === true && texte.classeCouleur === false && texte.pastilleVisible === false,
+    JSON.stringify(texte),
+  );
+  check("Mode texte : le nom de la valeur reste lisible", texte.libelle === "Noir", JSON.stringify(texte));
+  await page.close();
+
+  // --- Liste déroulante ----------------------------------------------------
+  const page2 = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { displayMode: "dropdown" },
+  });
+  const liste = await page2.evaluate(() => {
+    const g = document.querySelector('.variantsy__group[data-option-position="1"]');
+    const select = g.querySelector(".variantsy__select");
+    const options = g.querySelector(".variantsy__options");
+    return {
+      selectPresent: !!select,
+      valeurs: select ? Array.from(select.options).map((o) => o.value) : [],
+      selection: select ? select.value : null,
+      boutonsMasques: options ? getComputedStyle(options).display === "none" : null,
+      // La taille ne doit PAS devenir une liste : le mode ne vise que les couleurs.
+      tailleIntacte: !document
+        .querySelector('.variantsy__group[data-option-position="2"]')
+        .querySelector(".variantsy__select"),
+    };
+  });
+  check(
+    "Mode liste : un select est construit pour l'option couleur",
+    liste.selectPresent === true && liste.valeurs.length === 3 && liste.selection === "Noir",
+    JSON.stringify(liste),
+  );
+  check("Mode liste : les boutons d'origine sont masqués", liste.boutonsMasques === true, JSON.stringify(liste));
+  check("Mode liste : l'option Taille n'est pas transformée", liste.tailleIntacte === true, JSON.stringify(liste));
+
+  // Le select doit réellement changer de variante.
+  await page2.selectOption(".variantsy__select", "Bleu marine");
+  await page2.waitForTimeout(200);
+  const apres = await page2.evaluate(() => ({
+    formulaire: document.querySelector('form[action="/cart/add"] input[name="id"]').value,
+  }));
+  check(
+    "Mode liste : choisir dans la liste écrit la bonne variante au panier",
+    apres.formulaire === "202",
+    JSON.stringify(apres),
+  );
+  await page2.close();
+}
+
+/* ========================================================================== */
 /* Bilan                                                                      */
 /* ========================================================================== */
 
