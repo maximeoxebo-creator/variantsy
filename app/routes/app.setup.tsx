@@ -59,16 +59,18 @@ function Vignette({
       <span
         style={{
           position: "relative",
-          display: "block",
-          width: 46,
-          height: 56,
-          borderRadius: 8,
-          background: color,
-          opacity: faded ? 0.2 : 1,
-          border: "1px solid rgba(0,0,0,.08)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 54,
+          height: 54,
+          borderRadius: 10,
+          background: `color-mix(in srgb, ${color} 24%, #fff)`,
+          opacity: faded ? 0.25 : 1,
           boxShadow: faded ? "none" : "0 1px 2px rgba(0,0,0,.06)",
         }}
       >
+        <Silhouette tint={color} />
         {pinned && (
           <span
             style={{
@@ -97,6 +99,135 @@ function Vignette({
         </Text>
       )}
     </BlockStack>
+  );
+}
+
+/** Silhouette de cocotte, lisible à 40 px. Inline : rien à charger. */
+function Silhouette({ tint, large }: { tint: string; large?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 48 40"
+      width={large ? 76 : 46}
+      height={large ? 63 : 38}
+      aria-hidden="true"
+    >
+      <rect x="9" y="14" width="30" height="20" rx="5" fill={tint} opacity="0.95" />
+      <rect x="6" y="10" width="36" height="6" rx="3" fill={tint} />
+      <rect x="21" y="5" width="6" height="6" rx="3" fill={tint} />
+      <rect x="2" y="18" width="6" height="8" rx="3" fill={tint} opacity="0.8" />
+      <rect x="40" y="18" width="6" height="8" rx="3" fill={tint} opacity="0.8" />
+    </svg>
+  );
+}
+
+/**
+ * Fiche produit miniature : image principale, pastilles, miniatures.
+ *
+ * Deux fiches côte à côte montrent le même produit dans deux coloris, chacune
+ * avec SES miniatures — plus la photo commune, mise en évidence. Un avant/après
+ * n'expliquait que le filtrage ; ceci explique aussi pourquoi certaines photos
+ * survivent à tous les coloris, ce qui est la question suivante du marchand.
+ */
+function FicheMiniature({
+  titre,
+  couleur,
+  pastilles,
+  choisie,
+  miniatures,
+}: {
+  titre: string;
+  couleur: string;
+  pastilles: string[];
+  choisie: number;
+  miniatures: number;
+}) {
+  return (
+    <span
+      style={{
+        display: "flex",
+        gap: 14,
+        padding: 14,
+        borderRadius: 16,
+        background: "#fff",
+        border: "1px solid var(--p-color-border-secondary)",
+        boxShadow: "0 2px 8px rgba(0,0,0,.06)",
+      }}
+    >
+      <span style={{ flex: "0 0 108px" }}>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 108,
+            height: 108,
+            borderRadius: 12,
+            background: `color-mix(in srgb, ${couleur} 24%, #fff)`,
+          }}
+        >
+          <Silhouette tint={couleur} large />
+        </span>
+      </span>
+
+      <span style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+        <Text as="span" variant="headingSm">
+          {titre}
+        </Text>
+
+        <span style={{ display: "flex", gap: 8 }}>
+          {pastilles.map((c, i) => (
+            <span
+              key={i}
+              style={{
+                display: "block",
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                background: c,
+                boxShadow:
+                  i === choisie
+                    ? `0 0 0 2px #fff, 0 0 0 4px ${c}`
+                    : "inset 0 0 0 1px rgba(0,0,0,.14)",
+              }}
+            />
+          ))}
+        </span>
+
+        <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {Array.from({ length: miniatures }).map((_, i) => (
+            <span
+              key={i}
+              style={{
+                display: "block",
+                width: 30,
+                height: 30,
+                borderRadius: 7,
+                background: `color-mix(in srgb, ${couleur} 24%, #fff)`,
+              }}
+            />
+          ))}
+          {/* La photo commune : même traitement pour les deux coloris, d'où le
+              cadre distinct. C'est elle qui répond à « et mon guide des
+              tailles, il disparaît ? ». */}
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 30,
+              height: 30,
+              borderRadius: 7,
+              background: "var(--p-color-bg-surface-info)",
+              border: "1.5px solid var(--p-color-border-info)",
+              fontSize: 13,
+              lineHeight: 1,
+            }}
+          >
+            ▤
+          </span>
+        </span>
+      </span>
+    </span>
   );
 }
 
@@ -222,40 +353,29 @@ export default function SetupPage() {
                 <Divider />
 
                 <Text as="p" variant="headingSm">
-                  Ce que ça change pour vos clients
+                  Ce que voit votre client
                 </Text>
-                <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-                  <Box background="bg-surface-secondary" padding="400" borderRadius="300">
-                    <BlockStack gap="300">
-                      <Badge tone="critical">Sans Variantsy</Badge>
-                      <InlineStack gap="200" wrap>
-                        <Vignette color={GRIS} />
-                        <Vignette color={NAVY} />
-                        <Vignette color={NAVY} />
-                        <Vignette color={BEIGE} />
-                        <Vignette color={BEIGE} />
-                      </InlineStack>
-                      <Text as="p" variant="bodySm" tone="subdued">
-                        Le client choisit Navy et voit encore du beige.
-                      </Text>
-                    </BlockStack>
-                  </Box>
-                  <Box background="bg-surface-secondary" padding="400" borderRadius="300">
-                    <BlockStack gap="300">
-                      <Badge tone="success">Avec Variantsy</Badge>
-                      <InlineStack gap="200" wrap>
-                        <Vignette color={GRIS} />
-                        <Vignette color={NAVY} />
-                        <Vignette color={NAVY} />
-                        <Vignette color={BEIGE} faded />
-                        <Vignette color={BEIGE} faded />
-                      </InlineStack>
-                      <Text as="p" variant="bodySm" tone="subdued">
-                        Seules les photos du coloris choisi restent, plus les communes.
-                      </Text>
-                    </BlockStack>
-                  </Box>
+                <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+                  <FicheMiniature
+                    titre="Cocotte · Navy"
+                    couleur={NAVY}
+                    pastilles={[NAVY, BEIGE]}
+                    choisie={0}
+                    miniatures={2}
+                  />
+                  <FicheMiniature
+                    titre="Cocotte · Beige"
+                    couleur={BEIGE}
+                    pastilles={[NAVY, BEIGE]}
+                    choisie={1}
+                    miniatures={1}
+                  />
                 </InlineGrid>
+                <Text as="p" variant="bodySm" tone="subdued">
+                  Même produit, deux coloris : chaque client ne voit que les photos du sien. La
+                  vignette encadrée est la <strong>photo commune</strong> — guide des tailles,
+                  vidéo de marque — qui reste visible dans tous les coloris.
+                </Text>
 
                 <InlineStack>
                   <Button url="/app/images">Vérifier un produit</Button>
