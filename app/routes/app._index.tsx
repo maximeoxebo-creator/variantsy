@@ -1018,23 +1018,26 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <Divider />
 
-      <BlockStack gap="300">
-        <SectionTitle accent={accent} help="Ce qui accompagne les pastilles, en toutes lettres.">
-          Textes affichés
-        </SectionTitle>
-        {enPastilles && (
+      {/* Ces deux réglages ne parlent que de pastilles : le nom SOUS la
+          pastille n'existe pas ailleurs, et la ligne au-dessus fait doublon
+          avec une liste déroulante qui affiche déjà sa valeur. */}
+      {enPastilles && (
+        <BlockStack gap="300">
+          <SectionTitle accent={accent} help="Ce qui accompagne les pastilles, en toutes lettres.">
+            Textes affichés
+          </SectionTitle>
           <Checkbox
             label="Le nom de la couleur sous chaque pastille"
             checked={form.showLabels}
             onChange={(v) => set("showLabels", v)}
           />
-        )}
-        <Checkbox
-          label="La ligne « Couleur : Bleu marine » au-dessus des pastilles"
-          checked={form.showOptionName}
-          onChange={(v) => set("showOptionName", v)}
-        />
-      </BlockStack>
+          <Checkbox
+            label="La ligne « Couleur : Bleu marine » au-dessus des pastilles"
+            checked={form.showOptionName}
+            onChange={(v) => set("showOptionName", v)}
+          />
+        </BlockStack>
+      )}
 
       {/* Tout ce qui suit fonctionne d'emblée sur la quasi-totalité des thèmes.
           L'exposer laissait croire qu'il fallait s'en occuper — et allongeait
