@@ -1177,6 +1177,29 @@ section("Couleurs natives Shopify");
   );
   await page2.close();
 
+  // Une couleur native inexploitable ne doit pas court-circuiter la cascade.
+  const INVALIDE = {
+    ...AVEC_NATIF,
+    options: [
+      { name: "Couleur", position: 1, values: ["Noir", "Bleu marine", "Terracotta"], sw: ["ColorDrop", null, null] },
+      { name: "Taille", position: 2, values: ["S", "M", "L"] },
+    ],
+  };
+  const pageInv = await openPage(INVALIDE, INVALIDE.variants[1], {
+    swatches: {},
+    style: { swatchFallback: "color" },
+    colors: { noir: "#111111" },
+  });
+  const repli = await pageInv
+    .locator('.variantsy__swatch[data-variantsy-value="Noir"] .variantsy__visual')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  check(
+    "Une couleur native inexploitable laisse la cascade se poursuivre",
+    repli === "rgb(17, 17, 17)",
+    repli,
+  );
+  await pageInv.close();
+
   // Une option dont les valeurs portent une couleur native EST une option couleur.
   const AUTRE_NOM = {
     ...AVEC_NATIF,

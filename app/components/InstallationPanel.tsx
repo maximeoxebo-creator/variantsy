@@ -344,6 +344,133 @@ function SchemaAssignation() {
   );
 }
 
+/**
+ * L'éditeur de thème, tel qu'on le voit au moment d'ajouter le bloc.
+ *
+ * Le geste se décrivait en cinq puces, ce qui suppose de savoir à quoi
+ * ressemble l'écran. Reproduire l'arborescence et le sélecteur de blocs permet
+ * de reconnaître au lieu de chercher — et l'onglet « Applis », que presque tout
+ * le monde manque parce qu'il n'est pas ouvert par défaut, saute aux yeux.
+ */
+function SchemaEditeurTheme() {
+  const arbre = [
+    { texte: "Informations sur le produit", niveau: 0, actif: false },
+    { texte: "Support multimédia", niveau: 1, actif: false },
+    { texte: "Détails", niveau: 1, actif: false },
+    { texte: "Ajouter un bloc", niveau: 2, actif: true },
+    { texte: "Titre", niveau: 2, actif: false },
+    { texte: "Prix", niveau: 2, actif: false },
+  ];
+
+  return (
+    <span
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
+        gap: 12,
+        alignItems: "start",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          borderRadius: 12,
+          background: "#fff",
+          border: "1px solid var(--p-color-border-secondary)",
+          padding: "10px 12px",
+          fontSize: 12,
+        }}
+      >
+        <span style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>Modèle</span>
+        {arbre.map((ligne) => (
+          <span
+            key={ligne.texte}
+            style={{
+              display: "block",
+              padding: "5px 8px",
+              marginInlineStart: ligne.niveau * 12,
+              borderRadius: 6,
+              background: ligne.actif ? "var(--p-color-bg-surface-info)" : "transparent",
+              border: ligne.actif
+                ? "1.5px solid var(--p-color-border-info)"
+                : "1.5px solid transparent",
+              color: ligne.actif
+                ? "var(--p-color-text-info)"
+                : "var(--p-color-text-secondary)",
+              fontWeight: ligne.actif ? 600 : 400,
+            }}
+          >
+            {ligne.actif ? "⊕ " : ""}
+            {ligne.texte}
+          </span>
+        ))}
+      </span>
+
+      <span
+        style={{
+          display: "block",
+          borderRadius: 12,
+          background: "#fff",
+          border: "1px solid var(--p-color-border-secondary)",
+          padding: 12,
+          fontSize: 12,
+        }}
+      >
+        <span
+          style={{
+            display: "flex",
+            borderRadius: 8,
+            background: "var(--p-color-bg-surface-secondary)",
+            padding: 3,
+            marginBottom: 10,
+          }}
+        >
+          <span style={{ flex: 1, textAlign: "center", padding: "5px 0", color: "#8A8A8A" }}>
+            Blocs
+          </span>
+          <span
+            style={{
+              flex: 1,
+              textAlign: "center",
+              padding: "5px 0",
+              borderRadius: 6,
+              background: "#fff",
+              fontWeight: 700,
+              boxShadow: "0 1px 2px rgba(0,0,0,.12)",
+            }}
+          >
+            Applis
+          </span>
+        </span>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 10px",
+            borderRadius: 8,
+            background: "var(--p-color-bg-surface-info)",
+            border: "1.5px solid var(--p-color-border-info)",
+            fontWeight: 600,
+          }}
+        >
+          <span
+            style={{
+              display: "block",
+              width: 18,
+              height: 18,
+              borderRadius: 4,
+              background: NAVY,
+              flex: "0 0 auto",
+            }}
+          />
+          Variantsy
+        </span>
+      </span>
+    </span>
+  );
+}
+
 export function InstallationPanel({
   themeName,
   deepLink,
@@ -374,6 +501,17 @@ export function InstallationPanel({
         </Button>
       </InlineStack>
     )}
+    <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+      <BlockStack gap="300">
+        <SchemaEditeurTheme />
+        <Text as="p" variant="bodySm" tone="subdued">
+          Dans la section <strong>Détails</strong>, cliquez sur « Ajouter un bloc », puis
+          ouvrez l&apos;onglet <strong>Applis</strong> — ce n&apos;est pas celui affiché par
+          défaut, et c&apos;est là que presque tout le monde bloque.
+        </Text>
+      </BlockStack>
+    </Box>
+
     <List type="number">
       <List.Item>
         En haut de l&apos;éditeur, basculez sur le modèle <strong>Produit</strong> —
@@ -495,25 +633,6 @@ export function InstallationPanel({
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
       <Badge tone="info">Étape 3</Badge>
-      <Text as="h2" variant="headingMd">
-        Importer vos couleurs
-      </Text>
-    </InlineStack>
-    <Text as="p">
-      Dans « Bibliothèque de swatches », lancez l&apos;import : Variantsy parcourt votre
-      catalogue et reconnaît automatiquement les noms de couleurs courants (français et
-      anglais). Vous n&apos;avez plus qu&apos;à corriger les teintes maison.
-    </Text>
-    <InlineStack>
-      <Button url="/app/swatches">Aller à la bibliothèque</Button>
-    </InlineStack>
-  </BlockStack>
-</Card>
-
-<Card>
-  <BlockStack gap="300">
-    <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Étape 4</Badge>
       <Text as="h2" variant="headingMd">
         Ajuster le style
       </Text>

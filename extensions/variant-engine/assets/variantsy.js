@@ -109,6 +109,25 @@
   }
 
   /**
+   * La valeur est-elle une couleur que le navigateur saura appliquer ?
+   *
+   * Ce garde-fou existe parce que son absence a coûté cher : la couleur native
+   * de Shopify était appliquée sans contrôle, et la fonction s'arrêtait là.
+   * Une valeur inexploitable donnait donc une pastille grise ET privait la
+   * suite de la cascade — ni devinette, ni photo de variante. Une source de
+   * données qu'on ne contrôle pas doit être validée avant d'être crue.
+   */
+  function estCouleurCss(value) {
+    if (!value) return null;
+    var texte = String(value).trim();
+    if (/^#[0-9a-f]{3,8}$/i.test(texte)) return texte;
+    if (/^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\)$/i.test(texte))
+      return texte;
+    if (/^hsla?\(/i.test(texte) && texte.indexOf(")") !== -1) return texte;
+    return null;
+  }
+
+  /**
    * Devine une couleur d'après le nom de la valeur.
    *
    * Miroir exact de `guessColor()` dans app/colors.ts — la duplication est
@@ -787,7 +806,7 @@
       if (swatches[optionName + "::" + value]) return true;
       // Une valeur à laquelle Shopify attache une couleur EST une couleur :
       // c'est le signal le plus fort qui soit, le marchand l'a saisi lui-même.
-      if (this.nativeSwatches[optionName + "::" + value]) return true;
+      if (estCouleurCss(this.nativeSwatches[optionName + "::" + value])) return true;
       // La valeur EST un code couleur (« #1F3A5F »).
       if (/^#[0-9a-f]{3,8}$/i.test(value)) return true;
       if (dictionary && guessColorFrom(dictionary, value)) return true;
@@ -1294,7 +1313,7 @@
     // admin, donc plus fiable que n'importe quelle devinette. Elle ne passe
     // toutefois PAS devant la bibliothèque de l'app : celle-ci est une
     // correction explicite, et corriger doit rester possible.
-    var native = this.nativeSwatches[optionName + "::" + normalize(value)];
+    var native = estCouleurCss(this.nativeSwatches[optionName + "::" + normalize(value)]);
 
     if (!swatch && native) {
       visual.style.backgroundImage = "none";
