@@ -13,6 +13,8 @@ export type PreviewSettings = {
   selectedGap: number;
   cornerRadius: number;
   displayMode: string;
+  controlRadius: number;
+  dropdownFullWidth: boolean;
   showLabels: boolean;
   showOptionName: boolean;
   soldOutStyle: string;
@@ -102,11 +104,11 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
           style={{
             display: "block",
             width: "100%",
-            maxWidth: 320,
+            maxWidth: settings.dropdownFullWidth ? "100%" : 320,
             minHeight: 44,
             padding: "0 12px",
             border: `${settings.borderWidth}px solid ${settings.borderColor}`,
-            borderRadius: 6,
+            borderRadius: settings.controlRadius,
             background: "#fff",
             font: "inherit",
             color: "#1A1A1A",
@@ -134,7 +136,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                   minWidth: 44,
                   minHeight: 44,
                   padding: "0 14px",
-                  borderRadius: 6,
+                  borderRadius: settings.controlRadius,
                   background: "#fff",
                   border: isSelected
                     ? `${settings.selectedWidth}px solid ${settings.selectedColor}`

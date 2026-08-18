@@ -49,6 +49,8 @@
       selectedGap: 2,
       cornerRadius: 8,
       displayMode: "swatch",
+      controlRadius: 6,
+      dropdownFullWidth: false,
       swatchFallback: "image",
       neutralColor: "#ECECEC",
       showLabels: false,
@@ -1252,6 +1254,11 @@
       num(style.selectedWidth, 2) + "px",
     );
     this.root.style.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
+    this.root.style.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
+    this.root.style.setProperty(
+      "--vtsy-control-width",
+      style.dropdownFullWidth ? "100%" : "320px",
+    );
     this.root.style.setProperty(
       "--vtsy-radius",
       style.shape === "square"

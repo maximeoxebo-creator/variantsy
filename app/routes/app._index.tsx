@@ -26,7 +26,6 @@ import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
-import { GaleriePanel } from "../components/GaleriePanel";
 
 /** Thème publié : sert au lien direct vers l'éditeur, dans l'onglet Installation. */
 const PUBLISHED_THEME_QUERY = `#graphql
@@ -95,6 +94,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     selectedGap: Math.min(8, Math.max(0, int("selectedGap", DEFAULT_SETTINGS.selectedGap))),
     cornerRadius: Math.min(24, Math.max(0, int("cornerRadius", DEFAULT_SETTINGS.cornerRadius))),
     displayMode: str("displayMode", DEFAULT_SETTINGS.displayMode),
+    controlRadius: Math.min(20, Math.max(0, int("controlRadius", DEFAULT_SETTINGS.controlRadius))),
+    dropdownFullWidth: bool("dropdownFullWidth"),
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     showLabels: bool("showLabels"),
@@ -126,7 +127,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const TABS = [
   { id: "installation", content: "Installation", panelID: "panel-installation" },
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
-  { id: "galerie", content: "Galerie", panelID: "panel-galerie" },
   { id: "titre", content: "Titre", panelID: "panel-titre" },
 ];
 
@@ -234,8 +234,7 @@ export default function SettingsPage() {
                     <InstallationPanel themeName={themeName} deepLink={deepLink} />
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
-                  {tab === 2 && <GaleriePanel form={form} set={set} />}
-                  {tab === 3 && <TitrePanel form={form} set={set} />}
+                  {tab === 2 && <TitrePanel form={form} set={set} />}
                 </Box>
               </Tabs>
             </Card>
@@ -693,6 +692,34 @@ function ApparencePanel({ form, set }: PanelProps) {
         </>
       )}
 
+      {/* Réglages propres aux deux autres modes : jusqu'ici ils héritaient d'un
+          arrondi figé et d'une largeur maximale codée en dur, sans recours. */}
+      {!enPastilles && (
+        <BlockStack gap="400">
+          <RangeSlider
+            label={`Arrondi des angles — ${form.controlRadius} px`}
+            min={0}
+            max={20}
+            value={form.controlRadius}
+            onChange={(v) => set("controlRadius", Number(v))}
+            output
+            helpText={
+              form.displayMode === "dropdown"
+                ? "Angles de la liste déroulante."
+                : "Angles des boutons."
+            }
+          />
+          {form.displayMode === "dropdown" && (
+            <Checkbox
+              label="La liste occupe toute la largeur disponible"
+              helpText="Sinon elle s'arrête à 320 px, ce qui convient à la plupart des fiches produit."
+              checked={form.dropdownFullWidth}
+              onChange={(v) => set("dropdownFullWidth", v)}
+            />
+          )}
+        </BlockStack>
+      )}
+
       {form.displayMode !== "dropdown" && (
         <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
           {enPastilles ? (
@@ -924,6 +951,12 @@ function ApparencePanel({ form, set }: PanelProps) {
           label="Couleur de bordure au repos"
           value={form.borderColor}
           onChange={(v) => set("borderColor", v)}
+        />
+        <Checkbox
+          label="Filtrer la galerie selon le coloris choisi"
+          helpText="C'est la fonctionnalité principale de Variantsy. Décochez pour revenir au comportement natif de Shopify — une seule image par variante. Le regroupement lui-même est entièrement automatique."
+          checked={form.galleryEnabled}
+          onChange={(v) => set("galleryEnabled", v)}
         />
         <Checkbox
           label="Précharger l'image au survol d'une pastille"

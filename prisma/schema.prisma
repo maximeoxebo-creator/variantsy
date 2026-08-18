@@ -73,6 +73,11 @@ model ShopSettings {
   /// "text"     → boutons texte, sans pastille
   /// "dropdown" → liste déroulante
   displayMode    String  @default("swatch")
+  /// Arrondi des boutons texte et de la liste déroulante, en px.
+  /// Sans objet en mode pastilles, où `cornerRadius` fait ce travail.
+  controlRadius  Int     @default(6)
+  /// La liste déroulante occupe toute la largeur disponible.
+  dropdownFullWidth Boolean @default(false)
   /// Que faire d'une valeur sans couleur associée dans la bibliothèque :
   /// "image"   → afficher la photo de la variante (défaut historique)
   /// "color"   → rester en pastille de couleur, devinée depuis le nom
