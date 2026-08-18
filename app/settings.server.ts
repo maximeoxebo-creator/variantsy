@@ -29,6 +29,7 @@ export type SettingsInput = {
   controlSelectedStyle: string;
   dropdownFullWidth: boolean;
   swatchFallback: string;
+  photoScale: number;
   neutralColor: string;
   showLabels: boolean;
   showOptionName: boolean;
@@ -72,6 +73,7 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   controlSelectedStyle: "outline",
   dropdownFullWidth: false,
   swatchFallback: "image",
+  photoScale: 100,
   neutralColor: "#ECECEC",
   showLabels: false,
   showOptionName: true,
@@ -191,6 +193,7 @@ export type StorefrontConfig = {
     controlSelectedStyle: string;
     dropdownFullWidth: boolean;
     swatchFallback: string;
+    photoScale: number;
     neutralColor: string;
     showLabels: boolean;
     showOptionName: boolean;
@@ -263,6 +266,7 @@ export function toStorefrontConfig(
       controlSelectedStyle: settings.controlSelectedStyle,
       dropdownFullWidth: settings.dropdownFullWidth,
       swatchFallback: settings.swatchFallback,
+      photoScale: settings.photoScale,
       neutralColor: settings.neutralColor,
       showLabels: settings.showLabels,
       showOptionName: settings.showOptionName,

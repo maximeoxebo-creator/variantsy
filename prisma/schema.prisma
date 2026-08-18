@@ -88,6 +88,9 @@ model ShopSettings {
   /// "color"   → rester en pastille de couleur, devinée depuis le nom
   /// "neutral" → rester en pastille, toujours de la teinte neutre
   swatchFallback String @default("image")
+  /// Agrandissement des pastilles qui affichent une photo, en pourcentage.
+  /// Une photo a besoin de plus de place qu'un aplat pour être reconnaissable.
+  photoScale     Int     @default(100)
   /// Teinte servie quand aucune couleur n'a pu être déterminée.
   neutralColor   String  @default("#ECECEC")
   /// Afficher le libellé de la valeur sous le swatch

@@ -99,6 +99,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     dropdownFullWidth: bool("dropdownFullWidth"),
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
+    photoScale: Math.min(220, Math.max(100, int("photoScale", DEFAULT_SETTINGS.photoScale))),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
@@ -979,6 +980,21 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
         ]}
       />
+
+      {form.swatchFallback === "image" && (
+        <RangeSlider
+          label={`Taille des pastilles photo — ${form.photoScale} %`}
+          min={100}
+          max={220}
+          step={10}
+          value={form.photoScale}
+          onChange={(v) => set("photoScale", Number(v))}
+          output
+          helpText={`Une photo réduite à ${form.size} px n'est pas reconnaissable, là où un aplat de couleur l'est. Seules les pastilles portant une photo sont agrandies — ${Math.round(
+            (form.size * form.photoScale) / 100,
+          )} px ici.`}
+        />
+      )}
         </>
       )}
 
@@ -1018,26 +1034,25 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <Divider />
 
-      {/* Ces deux réglages ne parlent que de pastilles : le nom SOUS la
-          pastille n'existe pas ailleurs, et la ligne au-dessus fait doublon
-          avec une liste déroulante qui affiche déjà sa valeur. */}
-      {enPastilles && (
-        <BlockStack gap="300">
-          <SectionTitle accent={accent} help="Ce qui accompagne les pastilles, en toutes lettres.">
-            Textes affichés
-          </SectionTitle>
+      <BlockStack gap="300">
+        <SectionTitle accent={accent} help="Ce qui accompagne le sélecteur, en toutes lettres.">
+          Textes affichés
+        </SectionTitle>
+        {/* Le nom SOUS la pastille n'a pas d'équivalent ailleurs : en boutons
+            texte le nom EST le bouton, et une liste affiche déjà sa valeur. */}
+        {enPastilles && (
           <Checkbox
             label="Le nom de la couleur sous chaque pastille"
             checked={form.showLabels}
             onChange={(v) => set("showLabels", v)}
           />
-          <Checkbox
-            label="La ligne « Couleur : Bleu marine » au-dessus des pastilles"
-            checked={form.showOptionName}
-            onChange={(v) => set("showOptionName", v)}
-          />
-        </BlockStack>
-      )}
+        )}
+        <Checkbox
+          label="La ligne « Couleur : Bleu marine » au-dessus du sélecteur"
+          checked={form.showOptionName}
+          onChange={(v) => set("showOptionName", v)}
+        />
+      </BlockStack>
 
       {/* Tout ce qui suit fonctionne d'emblée sur la quasi-totalité des thèmes.
           L'exposer laissait croire qu'il fallait s'en occuper — et allongeait

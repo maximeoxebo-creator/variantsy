@@ -15,6 +15,8 @@ export type PreviewSettings = {
   displayMode: string;
   controlRadius: number;
   controlSelectedStyle: string;
+  swatchFallback: string;
+  photoScale: number;
   dropdownFullWidth: boolean;
   showLabels: boolean;
   showOptionName: boolean;
@@ -237,8 +239,17 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                 aria-pressed={isSelected}
                 aria-label={value.label}
                 style={{
-                  width: settings.size,
-                  height: settings.size,
+                  // L'aperçu doit refléter l'agrandissement des photos : en
+                  // mode « photo du produit », les pastilles sont plus grandes
+                  // sur la boutique qu'ici sans cet ajustement.
+                  width:
+                    settings.swatchFallback === "image"
+                      ? Math.round((settings.size * settings.photoScale) / 100)
+                      : settings.size,
+                  height:
+                    settings.swatchFallback === "image"
+                      ? Math.round((settings.size * settings.photoScale) / 100)
+                      : settings.size,
                   borderRadius: radius,
                   background: value.color,
                   border:

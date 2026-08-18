@@ -53,6 +53,7 @@
       controlSelectedStyle: "outline",
       dropdownFullWidth: false,
       swatchFallback: "image",
+      photoScale: 100,
       neutralColor: "#ECECEC",
       showLabels: false,
       showOptionName: true,
@@ -1277,6 +1278,12 @@
     );
     this.root.style.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
     this.root.style.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
+    // Taille des seules pastilles qui portent une photo : un aplat de couleur
+    // reste lisible à 40 px, une photo de produit non.
+    this.root.style.setProperty(
+      "--vtsy-photo-size",
+      Math.round((num(style.size, 40) * num(style.photoScale, 100)) / 100) + "px",
+    );
     this.root.setAttribute("data-control-selected", style.controlSelectedStyle || "outline");
     // Ces deux affichages étaient pilotés par le bloc Liquid, donc figés au
     // rendu et invisibles depuis l'app. Ils sont désormais rendus toujours et
@@ -1359,6 +1366,7 @@
     var native = estCouleurCss(this.nativeSwatches[optionName + "::" + normalize(value)]);
 
     if (!swatch && native) {
+      visual.classList.remove("is-photo");
       visual.style.backgroundImage = "none";
       visual.style.backgroundColor = native;
       return;
@@ -1380,6 +1388,7 @@
       // pas ce fichier — et le marchand n'a rien eu à saisir.
       if (mode === "color") {
         var guessed = guessColorFrom(this.config.colors, value);
+        visual.classList.remove("is-photo");
         visual.style.backgroundImage = "none";
         visual.style.backgroundColor = guessed || neutral;
         return;
@@ -1393,6 +1402,7 @@
         if (fallback) {
           visual.style.backgroundImage = 'url("' + fallback + '")';
           visual.style.backgroundColor = "transparent";
+          visual.classList.add("is-photo");
           return;
         }
       }
@@ -1405,10 +1415,13 @@
     if (swatch.kind === "image" && swatch.img) {
       visual.style.backgroundImage = 'url("' + swatch.img + '")';
       visual.style.backgroundColor = "transparent";
+      visual.classList.add("is-photo");
     } else if (swatch.kind === "gradient" && swatch.c1 && swatch.c2) {
+      visual.classList.remove("is-photo");
       visual.style.backgroundImage =
         "linear-gradient(135deg, " + swatch.c1 + " 0 50%, " + swatch.c2 + " 50% 100%)";
     } else if (swatch.c1) {
+      visual.classList.remove("is-photo");
       visual.style.backgroundImage = "none";
       visual.style.backgroundColor = swatch.c1;
     }

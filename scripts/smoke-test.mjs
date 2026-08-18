@@ -854,6 +854,34 @@ section("Repli des pastilles");
   );
   await page2.close();
 
+  // Les pastilles photo s'agrandissent, les autres non.
+  const pageEchelle = await openPage(PRODUCT, PRODUCT.variants[1], {
+    swatches: { "couleur::noir": { kind: "color", c1: "#111111" } },
+    style: { swatchFallback: "image", size: 40, photoScale: 200 },
+  });
+  const tailles = await pageEchelle.evaluate(() => {
+    const lire = (valeur) => {
+      const v = document.querySelector(
+        `.variantsy__swatch[data-variantsy-value="${valeur}"] .variantsy__visual`,
+      );
+      // Largeur calculée et non boîte englobante : celle-ci ajoute la bordure
+      // de chaque côté, ce qui masquerait un écart réel derrière deux pixels.
+      return v ? getComputedStyle(v).width : null;
+    };
+    return { couleurMappee: lire("Noir"), photo: lire("Terracotta") };
+  });
+  check(
+    "Une pastille photo suit l'échelle demandée",
+    tailles.photo === "80px",
+    JSON.stringify(tailles),
+  );
+  check(
+    "Une pastille de couleur unie garde sa taille",
+    tailles.couleurMappee === "40px",
+    JSON.stringify(tailles),
+  );
+  await pageEchelle.close();
+
   // Mode « image » : comportement historique préservé.
   const page3 = await openPage(PRODUCT, PRODUCT.variants[1], {
     swatches: {},

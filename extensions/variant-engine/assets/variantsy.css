@@ -353,3 +353,14 @@
 .variantsy__group--color .variantsy__text {
   display: none;
 }
+
+
+/* --- Pastilles portant une photo ------------------------------------------
+   Un aplat de couleur reste lisible à 40 px ; une photo de produit non. Seules
+   celles qui en portent une sont agrandies, pour ne pas gonfler tout le
+   nuancier au passage.
+   -------------------------------------------------------------------------- */
+.variantsy__visual.is-photo {
+  width: var(--vtsy-photo-size, var(--vtsy-size));
+  height: var(--vtsy-photo-size, var(--vtsy-size));
+}
