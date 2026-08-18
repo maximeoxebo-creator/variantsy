@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import {
+  Badge,
   BlockStack,
   Box,
   Button,
@@ -77,8 +78,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const TABS = [
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
-  { id: "reglages", content: "Réglages", panelID: "panel-reglages" },
   { id: "titre", content: "Titre", panelID: "panel-titre" },
+  { id: "aide", content: "Aide", panelID: "panel-aide" },
 ];
 
 export default function SettingsPage() {
@@ -141,21 +142,41 @@ export default function SettingsPage() {
       <Layout>
         <Layout.Section>
           <BlockStack gap="400">
-            {!form.enabled && (
-              <Banner tone="warning" title="Variantsy est désactivé">
-                <p>
-                  Rien ne s&apos;affiche sur votre boutique tant que cette option est désactivée.
-                  Réactivez-la dans l&apos;onglet « Réglages ».
-                </p>
-              </Banner>
-            )}
+            {/* L'interrupteur maître ne vit dans aucun onglet : c'est le seul
+                réglage dont la réponse change tout, et le chercher derrière un
+                onglet n'aurait aucun sens. */}
+            <Card>
+              <InlineStack align="space-between" blockAlign="center" gap="400">
+                <BlockStack gap="100">
+                  <InlineStack gap="200" blockAlign="center">
+                    <Text as="h2" variant="headingMd">
+                      Variantsy
+                    </Text>
+                    <Badge tone={form.enabled ? "success" : undefined}>
+                      {form.enabled ? "Actif" : "Inactif"}
+                    </Badge>
+                  </InlineStack>
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    {form.enabled
+                      ? "Vos pastilles et vos galeries par coloris sont en ligne."
+                      : "Rien ne s'affiche sur votre boutique tant que l'app est désactivée."}
+                  </Text>
+                </BlockStack>
+                <Button
+                  variant={form.enabled ? undefined : "primary"}
+                  onClick={() => set("enabled", !form.enabled)}
+                >
+                  {form.enabled ? "Désactiver" : "Activer"}
+                </Button>
+              </InlineStack>
+            </Card>
 
             <Card padding="0">
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="400">
                   {tab === 0 && <ApparencePanel form={form} set={set} />}
-                  {tab === 1 && <ReglagesPanel form={form} set={set} />}
-                  {tab === 2 && <TitrePanel form={form} set={set} />}
+                  {tab === 1 && <TitrePanel form={form} set={set} />}
+                  {tab === 2 && <AidePanel />}
                 </Box>
               </Tabs>
             </Card>
@@ -516,30 +537,55 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <ChoiceCards
         label="Quand une couleur n'est pas renseignée"
-        help="Vous n'avez rien saisi dans la Bibliothèque de swatches pour cette valeur : voici ce que verra le client."
+        help="Ce que verra le client pour une valeur absente de votre Bibliothèque de swatches. Chaque aperçu montre trois valeurs : Navy, Beige, Terracotta."
         value={form.swatchFallback}
         accent={accent}
         onChange={(v) => set("swatchFallback", v)}
         options={[
           {
             id: "color",
-            label: "Deviner",
-            preview: <Chip radius={radius} background="#1F3A5F" />,
+            label: "Une couleur par nom",
+            preview: (
+              <span style={{ display: "flex", gap: 4 }}>
+                <Chip radius={radius} background="#1F3A5F" size={20} />
+                <Chip radius={radius} background="#D8C3A5" size={20} />
+                <Chip radius={radius} background="#C1614B" size={20} />
+              </span>
+            ),
           },
           {
             id: "image",
-            label: "Photo",
+            label: "La photo du produit",
             preview: (
-              <Chip
-                radius={radius}
-                background="linear-gradient(135deg,#B9C6D2 0 40%,#8FA3B5 40% 70%,#6E8296 70% 100%)"
-              />
+              <span style={{ display: "flex", gap: 4 }}>
+                <Chip
+                  radius={radius}
+                  background="linear-gradient(135deg,#8FA3B5 0 50%,#6E8296 50%)"
+                  size={20}
+                />
+                <Chip
+                  radius={radius}
+                  background="linear-gradient(135deg,#D6CCBB 0 50%,#B8AB94 50%)"
+                  size={20}
+                />
+                <Chip
+                  radius={radius}
+                  background="linear-gradient(135deg,#C79A88 0 50%,#A97462 50%)"
+                  size={20}
+                />
+              </span>
             ),
           },
           {
             id: "neutral",
-            label: "Teinte unie",
-            preview: <Chip radius={radius} background={form.neutralColor} />,
+            label: "La même pour toutes",
+            preview: (
+              <span style={{ display: "flex", gap: 4 }}>
+                <Chip radius={radius} background={form.neutralColor} size={20} />
+                <Chip radius={radius} background={form.neutralColor} size={20} />
+                <Chip radius={radius} background={form.neutralColor} size={20} />
+              </span>
+            ),
           },
         ]}
       />
@@ -603,30 +649,15 @@ function ApparencePanel({ form, set }: PanelProps) {
           onChange={(v) => set("showOptionName", v)}
         />
       </BlockStack>
-    </BlockStack>
-  );
-}
 
-
-function ReglagesPanel({ form, set }: PanelProps) {
-  return (
-    <BlockStack gap="500">
-      <BlockStack gap="400">
-        <SectionTitle>Général</SectionTitle>
-        <Checkbox
-          label="Activer Variantsy sur la boutique"
-          helpText="Coupe l'affichage partout sans avoir à retirer le bloc du thème."
-          checked={form.enabled}
-          onChange={(v) => set("enabled", v)}
-        />
-
-      </BlockStack>
-
-
-      <Divider />
-
-      <BlockStack gap="400">
-        <SectionTitle help="Détails qui rendent la sélection plus fluide.">Confort</SectionTitle>
+      {/* Tout ce qui suit fonctionne d'emblée sur la quasi-totalité des thèmes.
+          L'exposer laissait croire qu'il fallait s'en occuper — et allongeait
+          une page que le marchand traverse pour arrondir ses pastilles. */}
+      <Advanced id="avances">
+        <Text as="p" variant="bodySm" tone="subdued">
+          Ces réglages sont déjà actifs et se règlent seuls. N&apos;y touchez que si quelque
+          chose ne s&apos;affiche pas correctement.
+        </Text>
         <Checkbox
           label="Précharger l'image au survol d'une pastille"
           helpText="Le changement d'image paraît instantané au clic."
@@ -638,23 +669,6 @@ function ReglagesPanel({ form, set }: PanelProps) {
           helpText="Permet de partager un lien qui ouvre directement le bon coloris."
           checked={form.updateUrl}
           onChange={(v) => set("updateUrl", v)}
-        />
-      </BlockStack>
-
-      {/* Intégration au thème : replié par défaut. Ces réglages fonctionnent
-          d'eux-mêmes sur la quasi-totalité des thèmes, et les exposer laissait
-          croire qu'il fallait s'en occuper. */}
-      <Advanced id="theme">
-        <Text as="p" variant="bodySm" tone="subdued">
-          Variantsy détecte seul vos options de couleur, le sélecteur et la galerie de votre
-          thème. Ne touchez à ces réglages que si quelque chose ne s'affiche pas correctement.
-        </Text>
-        <TextField
-          label="Forcer certaines options en pastilles"
-          helpText="Variantsy reconnaît une option de couleur à ses valeurs, quel que soit son nom. Ne remplissez ceci que pour un nuancier composé uniquement de teintes maison qu'aucun dictionnaire ne connaît. Séparez par des virgules."
-          value={form.colorOptionNames}
-          onChange={(v) => set("colorOptionNames", v)}
-          autoComplete="off"
         />
         <Checkbox
           label="Masquer le sélecteur de variantes natif du thème"
@@ -668,13 +682,19 @@ function ReglagesPanel({ form, set }: PanelProps) {
           onChange={(v) => set("swapImage", v)}
         />
         <TextField
+          label="Forcer certaines options en pastilles"
+          helpText="Variantsy reconnaît une option de couleur à ses valeurs, quel que soit son nom. Ne remplissez ceci que pour un nuancier composé uniquement de teintes maison. Séparez par des virgules."
+          value={form.colorOptionNames}
+          onChange={(v) => set("colorOptionNames", v)}
+          autoComplete="off"
+        />
+        <TextField
           label="Sélecteur CSS du bloc à masquer"
           value={form.nativeSelectorCss}
           onChange={(v) => set("nativeSelectorCss", v)}
           disabled={!form.hideNativeSelector}
           autoComplete="off"
           placeholder="Laisser vide pour la détection automatique"
-          helpText="Utile sur un thème très personnalisé dont le sélecteur n'est pas reconnu."
         />
         <TextField
           label="Sélecteur CSS de la galerie"
@@ -688,6 +708,7 @@ function ReglagesPanel({ form, set }: PanelProps) {
     </BlockStack>
   );
 }
+
 
 const TITLE_PRESETS = [
   {
@@ -931,5 +952,192 @@ function ColorField({
         />
       }
     />
+  );
+}
+
+/* ========================================================================== */
+/* Volet Aide                                                                 */
+/*                                                                            */
+/* La règle de groupage des photos est LA chose qu'un marchand doit           */
+/* comprendre, et la seule qu'aucune phrase n'explique bien : « le média      */
+/* assigné ouvre son groupe, les suivants le rejoignent » demande trois       */
+/* lectures. Un schéma la rend évidente en un regard.                         */
+/* ========================================================================== */
+
+/** Vignette de schéma : un rectangle coloré, éventuellement épinglé. */
+function Vignette({
+  color,
+  pinned,
+  faded,
+  legende,
+}: {
+  color: string;
+  pinned?: boolean;
+  faded?: boolean;
+  legende?: string;
+}) {
+  return (
+    <BlockStack gap="100" inlineAlign="center">
+      <span
+        style={{
+          position: "relative",
+          display: "block",
+          width: 46,
+          height: 56,
+          borderRadius: 6,
+          background: color,
+          opacity: faded ? 0.25 : 1,
+          border: "1px solid rgba(0,0,0,.08)",
+        }}
+      >
+        {pinned && (
+          <span
+            style={{
+              position: "absolute",
+              top: -7,
+              right: -7,
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              background: "#1A1A1A",
+              color: "#fff",
+              fontSize: 11,
+              lineHeight: "18px",
+              textAlign: "center",
+              fontWeight: 700,
+            }}
+          >
+            ★
+          </span>
+        )}
+      </span>
+      {legende && (
+        <Text as="span" variant="bodyXs" tone="subdued">
+          {legende}
+        </Text>
+      )}
+    </BlockStack>
+  );
+}
+
+const NAVY = "#1F3A5F";
+const BEIGE = "#D8C3A5";
+const GRIS = "#C9CFD6";
+
+function AidePanel() {
+  return (
+    <BlockStack gap="500">
+      {/* ---------------------------------------------------------------- */}
+      <BlockStack gap="300">
+        <SectionTitle help="Une seule règle à retenir, et aucun réglage produit par produit.">
+          1. Rangez vos photos par coloris
+        </SectionTitle>
+
+        <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+          <BlockStack gap="400">
+            <InlineStack gap="200" blockAlign="start" wrap>
+              <Vignette color={GRIS} legende="Guide" />
+              <Vignette color={NAVY} pinned legende="Navy" />
+              <Vignette color={NAVY} legende="Navy" />
+              <Vignette color={NAVY} legende="Navy" />
+              <Vignette color={BEIGE} pinned legende="Beige" />
+              <Vignette color={BEIGE} legende="Beige" />
+            </InlineStack>
+
+            <BlockStack gap="150">
+              <Text as="p" variant="bodySm">
+                <strong>★ = la photo que vous avez assignée à la variante</strong> dans
+                l&apos;admin Shopify. Elle <strong>ouvre</strong> le groupe de son coloris.
+              </Text>
+              <Text as="p" variant="bodySm">
+                Les photos qui la suivent <strong>rejoignent ce groupe</strong>, jusqu&apos;à la
+                prochaine photo assignée. Vous n&apos;avez donc à assigner qu&apos;une seule
+                photo par coloris — pas les quatre.
+              </Text>
+              <Text as="p" variant="bodySm" tone="subdued">
+                Les photos placées <strong>avant</strong> la première assignée (guide des
+                tailles, vidéo de marque) restent visibles pour tous les coloris.
+              </Text>
+            </BlockStack>
+          </BlockStack>
+        </Box>
+      </BlockStack>
+
+      <Divider />
+
+      {/* ---------------------------------------------------------------- */}
+      <BlockStack gap="300">
+        <SectionTitle help="Le client ne voit plus que les photos du coloris qu'il a choisi.">
+          2. Ce que ça change pour vos clients
+        </SectionTitle>
+
+        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+          <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+            <BlockStack gap="300">
+              <Badge tone="critical">Sans Variantsy</Badge>
+              <InlineStack gap="150" wrap>
+                <Vignette color={GRIS} />
+                <Vignette color={NAVY} />
+                <Vignette color={NAVY} />
+                <Vignette color={NAVY} />
+                <Vignette color={BEIGE} />
+                <Vignette color={BEIGE} />
+              </InlineStack>
+              <Text as="p" variant="bodySm" tone="subdued">
+                Toutes les photos, tout le temps. Le client choisit Navy et voit encore du beige.
+              </Text>
+            </BlockStack>
+          </Box>
+
+          <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+            <BlockStack gap="300">
+              <Badge tone="success">Avec Variantsy</Badge>
+              <InlineStack gap="150" wrap>
+                <Vignette color={GRIS} />
+                <Vignette color={NAVY} />
+                <Vignette color={NAVY} />
+                <Vignette color={NAVY} />
+                <Vignette color={BEIGE} faded />
+                <Vignette color={BEIGE} faded />
+              </InlineStack>
+              <Text as="p" variant="bodySm" tone="subdued">
+                Coloris Navy choisi : seules ses photos restent, plus les photos communes.
+              </Text>
+            </BlockStack>
+          </Box>
+        </InlineGrid>
+      </BlockStack>
+
+      <Divider />
+
+      {/* ---------------------------------------------------------------- */}
+      <BlockStack gap="300">
+        <SectionTitle help="Trois vérifications qui règlent la quasi-totalité des cas.">
+          3. Rien ne s&apos;affiche ?
+        </SectionTitle>
+
+        <BlockStack gap="200">
+          <Text as="p" variant="bodySm">
+            <strong>Le bloc n&apos;est pas dans votre thème.</strong> Il ne s&apos;ajoute jamais
+            tout seul : éditeur de thème, modèle <em>Produit</em>, « Ajouter un bloc », onglet
+            <em> Apps</em>, « Variantsy ».
+          </Text>
+          <Text as="p" variant="bodySm">
+            <strong>Le produit n&apos;a qu&apos;une seule variante.</strong> Un sélecteur à un
+            seul choix n&apos;a pas de sens : Variantsy ne rend rien, volontairement.
+          </Text>
+          <Text as="p" variant="bodySm">
+            <strong>Aucune photo n&apos;est assignée à une variante.</strong> Sans point de
+            départ, le groupage est impossible — Variantsy laisse alors la galerie entière
+            plutôt que de la découper au hasard.
+          </Text>
+        </BlockStack>
+
+        <InlineStack gap="200">
+          <Button url="/app/setup">Guide d&apos;installation</Button>
+          <Button url="/app/images">Vérifier un produit</Button>
+        </InlineStack>
+      </BlockStack>
+    </BlockStack>
   );
 }
