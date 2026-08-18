@@ -122,11 +122,12 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
           }
           style={{
             display: "block",
-            width: "100%",
-            maxWidth: settings.dropdownFullWidth ? "100%" : 320,
+            width: settings.dropdownFullWidth ? "100%" : "auto",
+            minWidth: 140,
+            maxWidth: "100%",
             minHeight: 44,
             padding: "0 44px 0 14px",
-            border: `${settings.borderWidth}px solid ${
+            border: `${Math.max(1, settings.borderWidth)}px solid ${
               settings.controlSelectedStyle === "none"
                 ? settings.borderColor
                 : settings.selectedColor

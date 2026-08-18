@@ -1201,6 +1201,20 @@ section("Modes d'affichage");
   );
   await pageSansAccent.close();
 
+  // --- La liste garde une bordure même à épaisseur nulle -------------------
+  const pageSansBordure = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: { displayMode: "dropdown", borderWidth: 0, controlSelectedStyle: "outline" },
+  });
+  const trait = await pageSansBordure
+    .locator(".variantsy__select")
+    .evaluate((el) => getComputedStyle(el).borderTopWidth);
+  check(
+    "La liste conserve un trait visible même à épaisseur 0",
+    trait === "1px",
+    trait,
+  );
+  await pageSansBordure.close();
+
   // --- Le liseré doit agir sur la liste, pas seulement sur les boutons ------
   const pageLisere = await openPage(PRODUCT, PRODUCT.variants[1], {
     style: {

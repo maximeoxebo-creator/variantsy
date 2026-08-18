@@ -1289,9 +1289,11 @@
       "--vtsy-selected-contrast",
       contrasteSur(style.selectedColor) ,
     );
+    // « auto » laisse la liste se dimensionner sur son contenu ; « 100% »
+    // l'étend à la largeur disponible.
     this.root.style.setProperty(
       "--vtsy-control-width",
-      style.dropdownFullWidth ? "100%" : "320px",
+      style.dropdownFullWidth ? "100%" : "auto",
     );
     this.root.style.setProperty(
       "--vtsy-radius",
