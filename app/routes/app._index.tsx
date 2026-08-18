@@ -206,24 +206,24 @@ export default function SettingsPage() {
               >
               <InlineStack align="space-between" blockAlign="center" gap="400">
                 <BlockStack gap="100">
-                  <InlineStack gap="200" blockAlign="center">
-                    <Text as="h2" variant="headingMd">
-                      Variantsy
-                    </Text>
-                    <Badge tone={form.enabled ? "success" : undefined}>
-                      {form.enabled ? "Actif" : "Inactif"}
-                    </Badge>
-                  </InlineStack>
+                  <Text as="h2" variant="headingMd">
+                    Variantsy
+                  </Text>
                   <Text as="p" variant="bodySm" tone="subdued">
                     {form.enabled
                       ? "Vos pastilles et vos galeries par coloris sont en ligne."
                       : "Rien ne s'affiche sur votre boutique tant que l'app est désactivée."}
                   </Text>
                 </BlockStack>
-                <Interrupteur
-                  actif={form.enabled}
-                  onChange={(v) => set("enabled", v)}
-                />
+                {/* L'état et son interrupteur voyagent ensemble : le badge
+                    nomme ce que la capsule montre, les séparer obligeait à
+                    traverser la carte pour relier les deux. */}
+                <InlineStack gap="300" blockAlign="center" wrap={false}>
+                  <Badge tone={form.enabled ? "success" : undefined}>
+                    {form.enabled ? "Actif" : "Inactif"}
+                  </Badge>
+                  <Interrupteur actif={form.enabled} onChange={(v) => set("enabled", v)} />
+                </InlineStack>
               </InlineStack>
               </div>
             </Card>
