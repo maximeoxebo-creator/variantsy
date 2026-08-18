@@ -619,13 +619,7 @@ function ReglagesPanel({ form, set }: PanelProps) {
           checked={form.enabled}
           onChange={(v) => set("enabled", v)}
         />
-        <TextField
-          label="Options traitées comme des couleurs"
-          helpText="Ces options s'affichent en pastilles. Les autres (Taille, Matière…) s'affichent en boutons texte. Séparez par des virgules."
-          value={form.colorOptionNames}
-          onChange={(v) => set("colorOptionNames", v)}
-          autoComplete="off"
-        />
+
       </BlockStack>
 
 
@@ -652,9 +646,16 @@ function ReglagesPanel({ form, set }: PanelProps) {
           croire qu'il fallait s'en occuper. */}
       <Advanced id="theme">
         <Text as="p" variant="bodySm" tone="subdued">
-          Variantsy détecte seul le sélecteur et la galerie de votre thème. Ne touchez à ces
-          réglages que si quelque chose ne s'affiche pas correctement.
+          Variantsy détecte seul vos options de couleur, le sélecteur et la galerie de votre
+          thème. Ne touchez à ces réglages que si quelque chose ne s'affiche pas correctement.
         </Text>
+        <TextField
+          label="Forcer certaines options en pastilles"
+          helpText="Variantsy reconnaît une option de couleur à ses valeurs, quel que soit son nom. Ne remplissez ceci que pour un nuancier composé uniquement de teintes maison qu'aucun dictionnaire ne connaît. Séparez par des virgules."
+          value={form.colorOptionNames}
+          onChange={(v) => set("colorOptionNames", v)}
+          autoComplete="off"
+        />
         <Checkbox
           label="Masquer le sélecteur de variantes natif du thème"
           helpText="Variantsy continue de le piloter en arrière-plan : le panier reçoit toujours la bonne variante, même si un autre script l'écoute."

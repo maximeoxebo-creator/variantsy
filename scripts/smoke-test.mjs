@@ -1001,6 +1001,58 @@ section("Grille à vignettes composites");
 }
 
 /* ========================================================================== */
+/* Scénario — option de couleur nommée autrement que « Couleur »              */
+/*                                                                            */
+/* La détection reposait sur le seul nom de l'option. Une boutique française   */
+/* nommant la sienne « Coloris » — absent de la liste par défaut — obtenait    */
+/* des boutons texte au lieu de son nuancier, sans indice sur la cause.        */
+/* ========================================================================== */
+
+section("Détection d'une option de couleur");
+{
+  const PRODUIT_COLORIS = {
+    ...PRODUCT,
+    options: [
+      { name: "Coloris", position: 1, values: ["Noir", "Bleu marine", "Terracotta"] },
+      { name: "Taille", position: 2, values: ["S", "M", "L"] },
+    ],
+  };
+
+  // Bibliothèque renseignée sous la clé « coloris » : c'est le signal le plus
+  // fort, et il est disponible quel que soit le mode de repli.
+  const page = await openPage(PRODUIT_COLORIS, PRODUIT_COLORIS.variants[1], {
+    swatches: {
+      "coloris::noir": { kind: "color", c1: "#111111" },
+      "coloris::bleu marine": { kind: "color", c1: "#1F3A5F" },
+    },
+  });
+
+  const classes = await page.evaluate(() => {
+    const groups = Array.from(document.querySelectorAll(".variantsy__group"));
+    return groups.map((g) => ({
+      option: g.getAttribute("data-option-name"),
+      couleur: g.classList.contains("variantsy__group--color"),
+      texte: g.classList.contains("variantsy__group--text"),
+    }));
+  });
+
+  const coloris = classes.find((c) => c.option === "Coloris");
+  const taille = classes.find((c) => c.option === "Taille");
+
+  check(
+    "« Coloris » est reconnu comme une option de couleur",
+    coloris?.couleur === true,
+    JSON.stringify(classes),
+  );
+  check(
+    "« Taille » reste en boutons texte",
+    taille?.texte === true && taille?.couleur === false,
+    JSON.stringify(classes),
+  );
+  await page.close();
+}
+
+/* ========================================================================== */
 /* Bilan                                                                      */
 /* ========================================================================== */
 

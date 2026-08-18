@@ -736,6 +736,40 @@
    * On masque en CSS (classe dédiée) plutôt que de retirer les nœuds : le zoom,
    * la lightbox, les vidéos et les modèles 3D du thème restent intacts.
    */
+  /**
+   * Cette option doit-elle s'afficher en pastilles plutôt qu'en boutons texte ?
+   *
+   * La détection reposait uniquement sur le nom de l'option, comparé à une
+   * liste. Une boutique dont l'option s'appelle « Coloris » — courant en
+   * français, et absent de la liste — obtenait des boutons texte à la place de
+   * son nuancier, sans le moindre indice sur la cause.
+   *
+   * On regarde donc d'abord les VALEURS, qui ne mentent pas : si l'une d'elles
+   * a une entrée dans la bibliothèque du marchand, ou se reconnaît dans le
+   * dictionnaire de couleurs, l'option est une option de couleur quel que soit
+   * son intitulé. « S / M / L » ne déclenchera jamais ce test.
+   *
+   * Le nom reste un signal secondaire : il rattrape le cas d'un nuancier
+   * entièrement composé de teintes maison qu'aucun dictionnaire ne connaît.
+   */
+  Variantsy.prototype.looksLikeColorOption = function (group, optionName) {
+    if (this.config.colorOptions.indexOf(optionName) !== -1) return true;
+
+    var swatches = this.config.swatches || {};
+    var dictionary = this.config.colors;
+    var buttons = group.querySelectorAll(".variantsy__swatch");
+
+    for (var i = 0; i < buttons.length; i++) {
+      var value = normalize(buttons[i].getAttribute("data-variantsy-value"));
+      if (!value) continue;
+      if (swatches[optionName + "::" + value]) return true;
+      // La valeur EST un code couleur (« #1F3A5F »).
+      if (/^#[0-9a-f]{3,8}$/i.test(value)) return true;
+      if (dictionary && guessColorFrom(dictionary, value)) return true;
+    }
+    return false;
+  };
+
   Variantsy.prototype.applyGallery = function (variant) {
     if (!this.groups) return;
 
@@ -1147,7 +1181,7 @@
     Array.prototype.forEach.call(groups, function (group) {
       var position = Number(group.getAttribute("data-option-position"));
       var optionName = normalize(group.getAttribute("data-option-name"));
-      var isColor = self.config.colorOptions.indexOf(optionName) !== -1;
+      var isColor = self.looksLikeColorOption(group, optionName);
 
       group.classList.toggle("variantsy__group--color", isColor);
       group.classList.toggle("variantsy__group--text", !isColor);
