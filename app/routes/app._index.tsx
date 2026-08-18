@@ -25,11 +25,50 @@ import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
 import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { SwatchPreview } from "../components/SwatchPreview";
+import { InstallationPanel } from "../components/InstallationPanel";
+import { GaleriePanel } from "../components/GaleriePanel";
+
+/** Thème publié : sert au lien direct vers l'éditeur, dans l'onglet Installation. */
+const PUBLISHED_THEME_QUERY = `#graphql
+  query VariantsyPublishedTheme {
+    themes(first: 1, roles: [MAIN]) {
+      nodes { id name }
+    }
+  }
+`;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const settings = await getSettings(session.shop);
-  return { settings };
+
+  let themeId: string | null = null;
+  let themeName: string | null = null;
+  try {
+    const response = await admin.graphql(PUBLISHED_THEME_QUERY);
+    const body = (await response.json()) as {
+      data?: { themes?: { nodes: { id: string; name: string }[] } };
+    };
+    const theme = body?.data?.themes?.nodes?.[0];
+    if (theme) {
+      themeId = theme.id.split("/").pop() ?? null;
+      themeName = theme.name;
+    }
+  } catch (error) {
+    // L'onglet Installation reste utile sans le lien direct : on n'échoue pas
+    // la page entière parce que l'API Admin est indisponible.
+    console.error("[setup] thème publié introuvable", error);
+  }
+
+  const shopHandle = session.shop.replace(/\.myshopify\.com$/, "");
+  const extensionUuid = process.env.SHOPIFY_VARIANT_ENGINE_ID || "";
+  const deepLink =
+    themeId && extensionUuid
+      ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?template=product&addAppBlockId=${extensionUuid}/variant-engine&target=mainSection`
+      : themeId
+        ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?template=product`
+        : null;
+
+  return { settings, themeName, deepLink };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -72,18 +111,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     titleSelectorCss: str("titleSelectorCss", ""),
     updateDocumentTitle: bool("updateDocumentTitle"),
     colorOptionNames: str("colorOptionNames", DEFAULT_SETTINGS.colorOptionNames),
+    galleryEnabled: bool("galleryEnabled"),
+    groupBy: str("groupBy", DEFAULT_SETTINGS.groupBy),
+    commonMediaMode: str("commonMediaMode", DEFAULT_SETTINGS.commonMediaMode),
+    altFallback: bool("altFallback"),
+    altPrefix: str("altPrefix", ""),
+    thumbSelectorCss: str("thumbSelectorCss", ""),
+    skipSingleGroup: bool("skipSingleGroup"),
   });
 
   return { ok: true };
 };
 
 const TABS = [
+  { id: "installation", content: "Installation", panelID: "panel-installation" },
   { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
-  { id: "titre", content: "Titre", panelID: "panel-titre" },
+  { id: "galerie", content: "Galerie & titre", panelID: "panel-galerie" },
 ];
 
 export default function SettingsPage() {
-  const { settings } = useLoaderData<typeof loader>();
+  const { settings, themeName, deepLink } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -184,14 +231,26 @@ export default function SettingsPage() {
             <Card padding="0">
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="500">
-                  {tab === 0 && <ApparencePanel form={form} set={set} />}
-                  {tab === 1 && <TitrePanel form={form} set={set} />}
+                  {tab === 0 && (
+                    <InstallationPanel themeName={themeName} deepLink={deepLink} />
+                  )}
+                  {tab === 1 && <ApparencePanel form={form} set={set} />}
+                  {tab === 2 && (
+                    <BlockStack gap="600">
+                      <GaleriePanel form={form} set={set} />
+                      <Divider />
+                      <TitrePanel form={form} set={set} />
+                    </BlockStack>
+                  )}
                 </Box>
               </Tabs>
             </Card>
           </BlockStack>
         </Layout.Section>
 
+        {/* L'aperçu n'a rien à montrer pendant qu'on lit un guide d'installation :
+            il occuperait un tiers de l'écran pour rien. */}
+        {tab !== 0 && (
         <Layout.Section variant="oneThird">
           <Box position="sticky" insetBlockStart="400">
             <Card>
@@ -213,6 +272,7 @@ export default function SettingsPage() {
             </Card>
           </Box>
         </Layout.Section>
+        )}
       </Layout>
     </Page>
   );

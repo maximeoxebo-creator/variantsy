@@ -36,13 +36,16 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
+      {/* Installation, apparence, galerie et titre vivent désormais dans les
+          onglets d'une page unique. Ne restent au menu que les deux OUTILS :
+          une table de données et un inspecteur, qui ne se logent pas dans un
+          onglet de réglages sans devenir illisibles. */}
       <NavMenu>
         <Link to="/app" rel="home">
-          Réglages
+          Variantsy
         </Link>
-        <Link to="/app/images">Images par variante</Link>
-        <Link to="/app/swatches">Bibliothèque de swatches</Link>
-        <Link to="/app/setup">Installation</Link>
+        <Link to="/app/swatches">Bibliothèque de couleurs</Link>
+        <Link to="/app/images">Inspecteur de produit</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
