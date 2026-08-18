@@ -309,9 +309,12 @@
   border-color: var(--vtsy-selected-color);
 }
 
-/* Mode « aucun » : la liste garde la bordure neutre du thème, sans accent. */
+/* Mode « aucun » : la case choisie garde la bordure neutre, comme les autres.
+   La règle de base pose `--vtsy-selected-color` sur toute case sélectionnée ;
+   il faut donc la contredire explicitement, sans quoi « aucun accent » en
+   applique un — ce qui était le cas. */
 .variantsy[data-control-selected="none"] .variantsy__group--text .variantsy__swatch.is-selected {
-  border-color: var(--vtsy-selected-color);
+  border-color: var(--vtsy-border-color);
   box-shadow: none;
 }
 

@@ -1143,6 +1143,33 @@ section("Modes d'affichage");
   );
   await pageClair.close();
 
+  // --- « Aucun » doit vraiment n'appliquer aucun accent aux boutons --------
+  const pageSansAccent = await openPage(PRODUCT, PRODUCT.variants[1], {
+    style: {
+      displayMode: "text",
+      controlSelectedStyle: "none",
+      selectedColor: "#C1614B",
+      borderColor: "#D9D9D9",
+    },
+  });
+  const boutonChoisi = await pageSansAccent
+    .locator('.variantsy__swatch[data-variantsy-value="Noir"]')
+    .evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { bordure: s.borderTopColor, ombre: s.boxShadow };
+    });
+  check(
+    "Aucun accent : le bouton choisi garde la bordure neutre",
+    boutonChoisi.bordure === "rgb(217, 217, 217)",
+    JSON.stringify(boutonChoisi),
+  );
+  check(
+    "Aucun accent : aucune ombre intérieure ne subsiste",
+    boutonChoisi.ombre === "none",
+    JSON.stringify(boutonChoisi),
+  );
+  await pageSansAccent.close();
+
   // --- Le liseré doit agir sur la liste, pas seulement sur les boutons ------
   const pageLisere = await openPage(PRODUCT, PRODUCT.variants[1], {
     style: {

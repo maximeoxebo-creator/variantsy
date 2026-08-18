@@ -178,9 +178,12 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                     isSelected && settings.controlSelectedStyle === "fill"
                       ? settings.selectedColor
                       : "#fff",
-                  border: isSelected
-                    ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
-                    : `${settings.borderWidth}px solid ${settings.borderColor}`,
+                  // « Aucun » doit vraiment n'appliquer aucun accent : la case
+                  // choisie garde la bordure des autres.
+                  border:
+                    isSelected && settings.controlSelectedStyle !== "none"
+                      ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
+                      : `${settings.borderWidth}px solid ${settings.borderColor}`,
                   color:
                     isSelected && settings.controlSelectedStyle === "fill"
                       ? contrasteSur(settings.selectedColor)
