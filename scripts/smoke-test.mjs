@@ -1639,6 +1639,54 @@ section("Pastilles en collection");
     JSON.stringify(surimpression),
   );
 
+  // --- Apparition : toujours visible par défaut, au survol sur demande -----
+  // Le survol a d'abord été le comportement unique. Il s'est révélé illisible
+  // sur les thèmes qui échangent eux-mêmes la photo au survol : les deux
+  // valeurs sont donc testées, et c'est « toujours visible » qui est le défaut.
+  const reveleParDefaut = await page.evaluate(() => {
+    const rangee = document.querySelector("[data-variantsy-collection]");
+    if (!rangee) return { absent: true };
+    return {
+      survol: rangee.classList.contains("variantsy-collection--survol"),
+      opacite: getComputedStyle(rangee).opacity,
+    };
+  });
+  check(
+    "Par défaut, la rangée de collection est visible sans survol",
+    !reveleParDefaut.absent &&
+      reveleParDefaut.survol === false &&
+      reveleParDefaut.opacite === "1",
+    JSON.stringify(reveleParDefaut),
+  );
+
+  const pageSurvol = await ouvrirCollection({ collectionReveal: "hover" });
+  const avantSurvol = await pageSurvol.evaluate(() => {
+    const rangee = document.querySelector("[data-variantsy-collection]");
+    if (!rangee) return { absent: true };
+    return {
+      survol: rangee.classList.contains("variantsy-collection--survol"),
+      opacite: getComputedStyle(rangee).opacity,
+      // Sans un vrai pointeur fin, la règle de masquage ne s'applique pas et
+      // le test validerait une absence de comportement plutôt qu'un comportement.
+      pointeurFin: matchMedia("(hover: hover) and (pointer: fine)").matches,
+    };
+  });
+  await pageSurvol.locator(".carte img").first().hover();
+  await pageSurvol.waitForTimeout(300);
+  const apresSurvol = await pageSurvol.evaluate(
+    () => getComputedStyle(document.querySelector("[data-variantsy-collection]")).opacity,
+  );
+  check(
+    "En mode survol, la rangée est masquée puis révélée au passage de la souris",
+    !avantSurvol.absent &&
+      avantSurvol.pointeurFin === true &&
+      avantSurvol.survol === true &&
+      avantSurvol.opacite === "0" &&
+      apresSurvol === "1",
+    JSON.stringify({ ...avantSurvol, apresSurvol }),
+  );
+  await pageSurvol.close();
+
   // --- Placement « sous la carte » : la rangée s'aligne sur le titre --------
   // Page distincte : le placement est un réglage, et les deux valeurs doivent
   // être exercées.

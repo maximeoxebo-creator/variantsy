@@ -103,13 +103,17 @@
 }
 
 /* --- Apparition au survol -------------------------------------------------
-   Uniquement là où le survol existe. Sur un écran tactile il n'y en a pas :
-   masquer la rangée y reviendrait à supprimer la fonctionnalité pour la
-   moitié des visiteurs. `:focus-within` la rend au clavier, sans quoi elle
-   serait inatteignable autrement qu'à la souris.
+   Réservé au réglage « Au survol » : sans la classe `--survol`, la rangée
+   reste affichée en permanence. C'est le défaut, parce qu'un thème qui échange
+   lui-même sa photo au survol noie complètement l'apparition des pastilles.
+
+   Deux garde-fous supplémentaires. `(hover: hover) and (pointer: fine)` :
+   sur un écran tactile il n'y a pas de survol, masquer la rangée y reviendrait
+   à supprimer la fonctionnalité pour la moitié des visiteurs. `:focus-within` :
+   sans lui la rangée serait inatteignable autrement qu'à la souris.
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
-  .variantsy-collection--surimpression {
+  .variantsy-collection--surimpression.variantsy-collection--survol {
     opacity: 0;
     transform: translateY(6px);
     transition:
@@ -117,10 +121,10 @@
       transform 160ms ease;
   }
 
-  .variantsy-collection--surimpression:hover,
-  .variantsy-collection--surimpression:focus-within,
-  *:hover > .variantsy-collection--surimpression,
-  *:focus-within > .variantsy-collection--surimpression {
+  .variantsy-collection--surimpression.variantsy-collection--survol:hover,
+  .variantsy-collection--surimpression.variantsy-collection--survol:focus-within,
+  *:hover > .variantsy-collection--surimpression.variantsy-collection--survol,
+  *:focus-within > .variantsy-collection--surimpression.variantsy-collection--survol {
     opacity: 1;
     transform: none;
   }

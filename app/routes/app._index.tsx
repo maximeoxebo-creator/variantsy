@@ -102,6 +102,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     photoScale: Math.min(220, Math.max(100, int("photoScale", DEFAULT_SETTINGS.photoScale))),
     collectionPlacement: str("collectionPlacement", DEFAULT_SETTINGS.collectionPlacement),
+    collectionReveal: str("collectionReveal", DEFAULT_SETTINGS.collectionReveal),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
@@ -627,6 +628,71 @@ function Chip({
   );
 }
 
+/**
+ * Vignette miniature servant d'aperçu au choix « toujours visibles / au survol ».
+ *
+ * Le mode survol est illustré par une rangée estompée surmontée d'un curseur :
+ * une case vide ne dirait pas que les pastilles existent, seulement qu'elles
+ * ont disparu.
+ */
+function VignetteApercu({ revele }: { revele: boolean }) {
+  return (
+    <span
+      style={{
+        position: "relative",
+        display: "block",
+        width: 54,
+        height: 44,
+        borderRadius: 6,
+        background: "linear-gradient(160deg,#DFE4EA,#C3CBD4)",
+        overflow: "hidden",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          inset: "auto 0 0 0",
+          display: "flex",
+          gap: 3,
+          justifyContent: "center",
+          padding: "8px 0 5px",
+          opacity: revele ? 1 : 0.28,
+          transform: revele ? "none" : "translateY(3px)",
+        }}
+      >
+        {["#1F3A5F", "#D8C3A5"].map((c) => (
+          <span
+            key={c}
+            style={{
+              width: 9,
+              height: 9,
+              borderRadius: "50%",
+              background: c,
+              border: "1px solid rgba(255,255,255,.85)",
+            }}
+          />
+        ))}
+      </span>
+      {!revele && (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            right: 8,
+            bottom: 6,
+            width: 0,
+            height: 0,
+            borderLeft: "7px solid #2B3038",
+            borderBottom: "5px solid transparent",
+            transform: "rotate(-35deg)",
+            filter: "drop-shadow(0 0 1px #fff)",
+          }}
+        />
+      )}
+    </span>
+  );
+}
+
 function ApparencePanel({ form, set }: PanelProps) {
   const radius =
     form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
@@ -1088,6 +1154,36 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
         ]}
       />
+
+      {form.collectionPlacement === "overlay" && (
+        <ChoiceCards
+          label="Apparition des coloris"
+          help="Sur la photo, la rangée peut rester affichée ou n'apparaître qu'au survol."
+          value={form.collectionReveal}
+          accent={accent}
+          onChange={(v) => set("collectionReveal", v)}
+          options={[
+            {
+              id: "always",
+              label: "Toujours visibles",
+              preview: <VignetteApercu revele />,
+            },
+            {
+              id: "hover",
+              label: "Au survol",
+              preview: <VignetteApercu revele={false} />,
+            },
+          ]}
+        />
+      )}
+      {form.collectionPlacement === "overlay" && form.collectionReveal === "hover" && (
+        <Text as="p" variant="bodySm" tone="subdued">
+          Sur mobile la rangée reste visible : sans souris, il n'y a pas de survol, et la masquer
+          reviendrait à supprimer la fonctionnalité pour la moitié des visiteurs. À vérifier si
+          votre thème produit déjà un effet au survol des vignettes — les deux se disputeraient
+          l'attention.
+        </Text>
+      )}
 
       <Divider />
 

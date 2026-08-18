@@ -92,6 +92,13 @@ model ShopSettings {
   /// "overlay" → en surimpression sur la photo (défaut)
   /// "below"   → sous le bloc de texte
   collectionPlacement String @default("overlay")
+  /// Quand la rangée apparaît, en surimpression uniquement :
+  /// "always" → toujours visible (défaut)
+  /// "hover"  → au survol de la vignette
+  /// Le survol est élégant sur un thème sobre, mais il entre en concurrence
+  /// avec les thèmes qui échangent eux-mêmes la photo au survol. D'où le choix
+  /// laissé au marchand plutôt qu'un parti pris.
+  collectionReveal String @default("always")
   /// Agrandissement des pastilles qui affichent une photo, en pourcentage.
   /// Une photo a besoin de plus de place qu'un aplat pour être reconnaissable.
   photoScale     Int     @default(100)

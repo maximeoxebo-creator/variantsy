@@ -306,6 +306,11 @@
     if (entree.carte.querySelector("[data-variantsy-collection]")) return;
 
     if ((style.collectionPlacement || "overlay") === "overlay") {
+      // Le survol ne s'applique qu'en surimpression : sous la carte, une
+      // rangée qui apparaît pousserait le contenu à chaque passage de souris.
+      if (style.collectionReveal === "hover") {
+        conteneur.classList.add("variantsy-collection--survol");
+      }
       poserSurLaPhoto(entree.carte, conteneur);
     } else {
       entree.carte.appendChild(conteneur);
