@@ -1,0 +1,68 @@
+/* ==========================================================================
+   Variantsy — pastilles sur les pages de collection
+
+   Feuille séparée, chargée uniquement par l'app embed. La page produit a la
+   sienne et n'a pas à porter ces règles.
+   ========================================================================== */
+
+.variantsy-collection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vtsy-gap, 6px);
+  align-items: center;
+  margin-top: 8px;
+}
+
+.variantsy-collection__swatch {
+  /* PIÈGE N°5 (voir CLAUDE.md) : reset du chrome natif dès la première
+     version. Sans lui, le navigateur ajoute son propre fond et son halo. */
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+  /* Cible tactile confortable même si la pastille est petite : on l'obtient
+     par une zone transparente autour, pas en grossissant le visuel. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.variantsy-collection__visual {
+  display: block;
+  width: var(--vtsy-size, 24px);
+  height: var(--vtsy-size, 24px);
+  border-radius: var(--vtsy-radius, 50%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background-size: cover;
+  background-position: center;
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.variantsy-collection__swatch:hover .variantsy-collection__visual {
+  transform: scale(1.08);
+}
+
+.variantsy-collection__swatch.is-selected .variantsy-collection__visual {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--vtsy-selected-color, #111111);
+}
+
+/* Le focus clavier garde une épaisseur fixe : c'est un repère
+   d'accessibilité, vérifié par le review Shopify. */
+.variantsy-collection__swatch:focus-visible .variantsy-collection__visual {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px var(--vtsy-selected-color, #111111);
+}

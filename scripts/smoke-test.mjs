@@ -23,6 +23,14 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const js = readFileSync(join(root, "extensions/variant-engine/assets/variantsy.js"), "utf8");
+const jsCollection = readFileSync(
+  join(root, "extensions/variant-engine/assets/variantsy-collection.js"),
+  "utf8",
+);
+const cssCollection = readFileSync(
+  join(root, "extensions/variant-engine/assets/variantsy-collection.css"),
+  "utf8",
+);
 const css = readFileSync(join(root, "extensions/variant-engine/assets/variantsy.css"), "utf8");
 const templateSuite = JSON.parse(readFileSync(join(root, "scripts/template-cases.json"), "utf8"));
 const groupingSuite = JSON.parse(readFileSync(join(root, "scripts/grouping-cases.json"), "utf8"));
@@ -1419,6 +1427,112 @@ section("Couleurs natives Shopify");
     String(detecte),
   );
   await page3.close();
+}
+
+/* ========================================================================== */
+/* Scénario — pastilles sur une page de collection                            */
+/*                                                                            */
+/* Le thème rend ses vignettes lui-même : aucune app ne peut s'insérer dans    */
+/* sa boucle. On repère donc les cartes après coup, et on greffe les pastilles.*/
+/* ========================================================================== */
+
+section("Pastilles en collection");
+{
+  const page = await browser.newPage();
+  page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
+  page.on("pageerror", (e) => consoleErrors.push(String(e)));
+
+  await page.route("https://example.com/**", (route) => route.fulfill({ status: 200, body: "" }));
+  await page.route("**/apps/variantsy/settings", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...BASE_CONFIG, colors: { noir: "#111111" } }),
+    }),
+  );
+  // Shopify sert les données produit sur /products/<handle>.js
+  await page.route("**/products/sweat.js", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 1,
+        options: [
+          { name: "Couleur", values: ["Noir", "Bleu marine", "Terracotta"] },
+          { name: "Taille", values: ["S", "M", "L"] },
+        ],
+        variants: PRODUCT.variants.map((v) => ({
+          id: v.id,
+          options: v.o,
+          featured_image: { src: `https://example.com/variante-${v.id}.jpg` },
+        })),
+      }),
+    }),
+  );
+
+  await page.goto("https://example.com/collections/tout");
+  await page.evaluate(() => window.sessionStorage.clear());
+  await page.setContent(`<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><style>${cssCollection}</style></head>
+<body>
+  <ul class="grille">
+    <li class="carte">
+      <a href="/products/sweat"><img src="https://example.com/carte.jpg" alt="Sweat"></a>
+      <a href="/products/sweat" class="titre">Sweat en coton bio</a>
+    </li>
+  </ul>
+  <div data-variantsy-collection-root data-endpoint="/apps/variantsy/settings" hidden></div>
+</body></html>`);
+  await page.addScriptTag({ content: jsCollection });
+  await page.waitForTimeout(600);
+
+  const rendu = await page.evaluate(() => {
+    const bloc = document.querySelector("[data-variantsy-collection]");
+    if (!bloc) return { present: false };
+    const visuels = Array.from(bloc.querySelectorAll(".variantsy-collection__visual"));
+    return {
+      present: true,
+      nbPastilles: visuels.length,
+      premiereCouleur: getComputedStyle(visuels[0]).backgroundColor,
+      dansLaCarte: !!document.querySelector(".carte [data-variantsy-collection]"),
+    };
+  });
+
+  check(
+    "Une rangée de pastilles est greffée dans la carte produit",
+    rendu.present === true && rendu.dansLaCarte === true,
+    JSON.stringify(rendu),
+  );
+  check(
+    "Une pastille par coloris, pas par variante",
+    rendu.nbPastilles === 3,
+    JSON.stringify(rendu),
+  );
+  check(
+    "Les couleurs de la bibliothèque sont appliquées",
+    rendu.premiereCouleur === "rgb(17, 17, 17)",
+    JSON.stringify(rendu),
+  );
+
+  // Cliquer doit changer l'image ET pointer le lien vers la variante.
+  await page.locator(".variantsy-collection__swatch").nth(1).click();
+  await page.waitForTimeout(200);
+  const apresClic = await page.evaluate(() => ({
+    image: document.querySelector(".carte img").getAttribute("src"),
+    lien: document.querySelector(".carte a").getAttribute("href"),
+  }));
+  check(
+    "Choisir un coloris échange l'image de la carte",
+    apresClic.image === "https://example.com/variante-201.jpg",
+    JSON.stringify(apresClic),
+  );
+  check(
+    "Le lien de la carte pointe vers la bonne variante",
+    apresClic.lien === "/products/sweat?variant=201",
+    JSON.stringify(apresClic),
+  );
+
+  await page.close();
 }
 
 /* ========================================================================== */
