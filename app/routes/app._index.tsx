@@ -228,6 +228,26 @@ export default function SettingsPage() {
               </div>
             </Card>
 
+            {/* La fonctionnalité principale coupée, et son interrupteur enterré
+                dans un repli fermé : sans ce signal, un marchand cherche
+                pendant des heures pourquoi ses photos ne se filtrent pas. */}
+            {form.enabled && !form.galleryEnabled && (
+              <Banner
+                tone="warning"
+                title="Le filtrage des photos par coloris est désactivé"
+                action={{
+                  content: "Réactiver",
+                  onAction: () => set("galleryEnabled", true),
+                }}
+              >
+                <p>
+                  Vos clients voient toutes les photos du produit, quel que soit le coloris
+                  choisi. C&apos;est la fonctionnalité principale de Variantsy — les pastilles et
+                  le titre continuent de fonctionner sans elle.
+                </p>
+              </Banner>
+            )}
+
             <Card padding="0">
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="500">
