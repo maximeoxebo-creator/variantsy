@@ -12,6 +12,7 @@ export type PreviewSettings = {
   selectedWidth: number;
   selectedGap: number;
   cornerRadius: number;
+  displayMode: string;
   showLabels: boolean;
   showOptionName: boolean;
   soldOutStyle: string;
@@ -89,6 +90,74 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
         </div>
       )}
 
+      {/* Le mode d'affichage doit se refléter ici, sinon l'aperçu montre des
+          pastilles à un marchand qui vient de choisir une liste déroulante —
+          et un aperçu qui ment est pire que pas d'aperçu du tout. */}
+      {settings.displayMode === "dropdown" ? (
+        <select
+          value={DEMO_VALUES[selected].label}
+          onChange={(event) =>
+            setSelected(DEMO_VALUES.findIndex((v) => v.label === event.target.value))
+          }
+          style={{
+            display: "block",
+            width: "100%",
+            maxWidth: 320,
+            minHeight: 44,
+            padding: "0 12px",
+            border: `${settings.borderWidth}px solid ${settings.borderColor}`,
+            borderRadius: 6,
+            background: "#fff",
+            font: "inherit",
+            color: "#1A1A1A",
+            cursor: "pointer",
+          }}
+        >
+          {DEMO_VALUES.filter((v) => v.available || settings.soldOutStyle !== "hide").map((v) => (
+            <option key={v.label} value={v.label}>
+              {v.available ? v.label : `${v.label} — indisponible`}
+            </option>
+          ))}
+        </select>
+      ) : settings.displayMode === "text" ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: settings.gap }}>
+          {DEMO_VALUES.map((value, index) => {
+            if (!value.available && settings.soldOutStyle === "hide") return null;
+            const isSelected = index === selected;
+            return (
+              <button
+                key={value.label}
+                type="button"
+                onClick={() => setSelected(index)}
+                aria-pressed={isSelected}
+                style={{
+                  minWidth: 44,
+                  minHeight: 44,
+                  padding: "0 14px",
+                  borderRadius: 6,
+                  background: "#fff",
+                  border: isSelected
+                    ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
+                    : `${settings.borderWidth}px solid ${settings.borderColor}`,
+                  color: value.available ? "#1A1A1A" : "#9A9A9A",
+                  textDecoration: value.available ? "none" : "line-through",
+                  opacity: !value.available && settings.soldOutStyle === "dim" ? 0.45 : 1,
+                  font: "inherit",
+                  fontSize: 15,
+                  cursor: "pointer",
+                  // PIÈGE N°5 : reset du chrome natif.
+                  WebkitAppearance: "none",
+                  appearance: "none",
+                  outline: "none",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                {value.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
       <div style={{ display: "flex", flexWrap: "wrap", gap: settings.gap }}>
         {DEMO_VALUES.map((value, index) => {
           if (!value.available && settings.soldOutStyle === "hide") return null;
@@ -160,6 +229,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

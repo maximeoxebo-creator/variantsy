@@ -3,8 +3,11 @@ import { useLoaderData } from "@remix-run/react";
 import {
   Badge,
   BlockStack,
+  Box,
   Button,
   Card,
+  Divider,
+  InlineGrid,
   InlineStack,
   Layout,
   List,
@@ -25,6 +28,77 @@ const PUBLISHED_THEME_QUERY = `#graphql
     }
   }
 `;
+
+/* ========================================================================== */
+/* Schémas                                                                    */
+/*                                                                            */
+/* La règle de groupage est LA chose qu'un marchand doit comprendre, et la     */
+/* seule qu'aucune phrase n'explique bien : « le média assigné ouvre son       */
+/* groupe, les suivants le rejoignent » demande trois lectures. Un dessin la   */
+/* rend évidente d'un regard. Tout est en CSS : rien à charger, rien à         */
+/* maintenir, et les schémas suivent les couleurs de l'admin.                  */
+/* ========================================================================== */
+
+const NAVY = "#1F3A5F";
+const BEIGE = "#D8C3A5";
+const GRIS = "#C9CFD6";
+
+function Vignette({
+  color,
+  pinned,
+  faded,
+  legende,
+}: {
+  color: string;
+  pinned?: boolean;
+  faded?: boolean;
+  legende?: string;
+}) {
+  return (
+    <BlockStack gap="100" inlineAlign="center">
+      <span
+        style={{
+          position: "relative",
+          display: "block",
+          width: 46,
+          height: 56,
+          borderRadius: 8,
+          background: color,
+          opacity: faded ? 0.2 : 1,
+          border: "1px solid rgba(0,0,0,.08)",
+          boxShadow: faded ? "none" : "0 1px 2px rgba(0,0,0,.06)",
+        }}
+      >
+        {pinned && (
+          <span
+            style={{
+              position: "absolute",
+              top: -8,
+              right: -8,
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              background: "#1A1A1A",
+              color: "#fff",
+              fontSize: 11,
+              lineHeight: "20px",
+              textAlign: "center",
+              fontWeight: 700,
+              boxShadow: "0 1px 3px rgba(0,0,0,.25)",
+            }}
+          >
+            ★
+          </span>
+        )}
+      </span>
+      {legende && (
+        <Text as="span" variant="bodyXs" tone="subdued">
+          {legende}
+        </Text>
+      )}
+    </BlockStack>
+  );
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
@@ -112,15 +186,74 @@ export default function SetupPage() {
                   </Text>
                 </InlineStack>
                 <Text as="p">
-                  Pour afficher plusieurs images par coloris, une seule règle : dans l&apos;admin
-                  Shopify, assignez la <strong>première photo de chaque coloris</strong> à sa
-                  variante, et placez les autres photos du même coloris juste après. Variantsy
-                  s&apos;occupe du reste — aucune étiquette à poser, aucun réglage par produit.
+                  Une seule règle : dans l&apos;admin Shopify, assignez la{" "}
+                  <strong>première photo de chaque coloris</strong> à sa variante, et placez les
+                  autres photos du même coloris juste après.
                 </Text>
-                <Text as="p" tone="subdued">
-                  Les photos placées avant le premier coloris (guide des tailles, vidéo de marque)
-                  restent visibles pour toutes les variantes.
+
+                <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                  <BlockStack gap="400">
+                    <InlineStack gap="300" blockAlign="start" wrap>
+                      <Vignette color={GRIS} legende="Commune" />
+                      <Vignette color={NAVY} pinned legende="Navy" />
+                      <Vignette color={NAVY} legende="Navy" />
+                      <Vignette color={NAVY} legende="Navy" />
+                      <Vignette color={BEIGE} pinned legende="Beige" />
+                      <Vignette color={BEIGE} legende="Beige" />
+                    </InlineStack>
+                    <BlockStack gap="150">
+                      <Text as="p" variant="bodySm">
+                        <strong>★ = la photo que vous avez assignée à la variante.</strong> Elle
+                        ouvre le groupe de son coloris ; les photos qui la suivent le rejoignent,
+                        jusqu&apos;à la prochaine photo assignée.
+                      </Text>
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        Vous n&apos;assignez donc qu&apos;une seule photo par coloris, pas les
+                        quatre. Celles placées avant la première assignée — guide des tailles,
+                        vidéo de marque — restent visibles pour tous les coloris.
+                      </Text>
+                    </BlockStack>
+                  </BlockStack>
+                </Box>
+
+                <Divider />
+
+                <Text as="p" variant="headingSm">
+                  Ce que ça change pour vos clients
                 </Text>
+                <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+                  <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                    <BlockStack gap="300">
+                      <Badge tone="critical">Sans Variantsy</Badge>
+                      <InlineStack gap="200" wrap>
+                        <Vignette color={GRIS} />
+                        <Vignette color={NAVY} />
+                        <Vignette color={NAVY} />
+                        <Vignette color={BEIGE} />
+                        <Vignette color={BEIGE} />
+                      </InlineStack>
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        Le client choisit Navy et voit encore du beige.
+                      </Text>
+                    </BlockStack>
+                  </Box>
+                  <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+                    <BlockStack gap="300">
+                      <Badge tone="success">Avec Variantsy</Badge>
+                      <InlineStack gap="200" wrap>
+                        <Vignette color={GRIS} />
+                        <Vignette color={NAVY} />
+                        <Vignette color={NAVY} />
+                        <Vignette color={BEIGE} faded />
+                        <Vignette color={BEIGE} faded />
+                      </InlineStack>
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        Seules les photos du coloris choisi restent, plus les communes.
+                      </Text>
+                    </BlockStack>
+                  </Box>
+                </InlineGrid>
+
                 <InlineStack>
                   <Button url="/app/images">Vérifier un produit</Button>
                 </InlineStack>
