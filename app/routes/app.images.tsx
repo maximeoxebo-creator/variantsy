@@ -329,7 +329,7 @@ export default function ImagesPage() {
                         <p>{inspection.reason}</p>
                       </Banner>
                     ) : (
-                      <Banner tone="success" title={`Groupage par « ${inspection.optionName} »`}>
+                      <Banner tone="success" title={`Grouped by \u201C${inspection.optionName}\u201D`}>
                         <p>
                           {inspection.groups.length} group(s) detected. Each color will show
                           uniquement ses images.

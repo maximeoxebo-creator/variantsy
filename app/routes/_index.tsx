@@ -15,8 +15,8 @@ export default function Index() {
     <main style={{ fontFamily: "Inter, system-ui, sans-serif", padding: "48px 24px", maxWidth: 560, margin: "0 auto" }}>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>Variantsy</h1>
       <p style={{ color: "#616161", lineHeight: 1.6 }}>
-        Plusieurs images par variante, titre produit dynamique et sélecteurs en swatches.
-        Installez l&apos;app depuis le Shopify App Store pour commencer.
+        Multiple images per variant, a dynamic product title and swatch selectors.
+        Install the app from the Shopify App Store to get started.
       </p>
       <form method="get" action="/auth/login" style={{ marginTop: 24 }}>
         <label htmlFor="shop" style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>

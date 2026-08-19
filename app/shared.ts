@@ -91,16 +91,16 @@ export function renderTemplate(template: string, vars: Record<string, string>): 
 
 /** Variables disponibles dans l'éditeur de template, pour l'aide contextuelle. */
 export const TEMPLATE_VARIABLES: { token: string; label: string }[] = [
-  { token: "{{product_title}}", label: "Nom du produit" },
-  { token: "{{variant_title}}", label: "Nom complet de la variante" },
-  { token: "{{option1}}", label: "1re option (souvent la couleur)" },
-  { token: "{{option2}}", label: "2e option" },
-  { token: "{{option3}}", label: "3e option" },
-  { token: "{{option:Couleur}}", label: "Option désignée par son nom" },
-  { token: "{{price}}", label: "Prix de la variante" },
-  { token: "{{compare_at_price}}", label: "Prix barré" },
-  { token: "{{sku}}", label: "Référence (SKU)" },
-  { token: "{{barcode}}", label: "Code-barres" },
-  { token: "{{vendor}}", label: "Fournisseur" },
-  { token: "{{product_type}}", label: "Type de produit" },
+  { token: "{{product_title}}", label: "Product name" },
+  { token: "{{variant_title}}", label: "Full variant name" },
+  { token: "{{option1}}", label: "1st option (often the color)" },
+  { token: "{{option2}}", label: "2nd option" },
+  { token: "{{option3}}", label: "3rd option" },
+  { token: "{{option:Color}}", label: "Option named explicitly" },
+  { token: "{{price}}", label: "Variant price" },
+  { token: "{{compare_at_price}}", label: "Compare-at price" },
+  { token: "{{sku}}", label: "Reference (SKU)" },
+  { token: "{{barcode}}", label: "Barcode" },
+  { token: "{{vendor}}", label: "Vendor" },
+  { token: "{{product_type}}", label: "Product type" },
 ];

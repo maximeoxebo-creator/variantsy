@@ -355,10 +355,10 @@ function SchemaAssignation() {
  */
 function SchemaEditeurTheme() {
   const arbre = [
-    { texte: "Informations sur le produit", niveau: 0, actif: false },
-    { texte: "Support multimédia", niveau: 1, actif: false },
-    { texte: "Détails", niveau: 1, actif: false },
-    { texte: "Ajouter un bloc", niveau: 2, actif: true },
+    { texte: "Product information", niveau: 0, actif: false },
+    { texte: "Media", niveau: 1, actif: false },
+    { texte: "Details", niveau: 1, actif: false },
+    { texte: "Add block", niveau: 2, actif: true },
     { texte: "Titre", niveau: 2, actif: false },
     { texte: "Prix", niveau: 2, actif: false },
   ];
@@ -382,7 +382,7 @@ function SchemaEditeurTheme() {
           fontSize: 12,
         }}
       >
-        <span style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>Modèle</span>
+        <span style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>Template</span>
         {arbre.map((ligne) => (
           <span
             key={ligne.texte}
@@ -487,20 +487,20 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Étape 1</Badge>
+      <Badge tone="info">Step 1</Badge>
       <Text as="h2" variant="headingMd">
-        Activer le bloc sur la page produit
+        Enable the block on the product page
       </Text>
     </InlineStack>
     <Text as="p">
-      Variantsy s&apos;ajoute comme bloc d&apos;app dans l&apos;éditeur de thème
-      {themeName ? ` (${themeName})` : ""}. Placez-le juste au-dessus du bouton
-      « Ajouter au panier » de votre modèle produit.
+      Variantsy is added as an app block in the theme editor
+      {themeName ? ` (${themeName})` : ""}. Place it just above the
+      &ldquo;Add to cart&rdquo; button of your product template.
     </Text>
     {deepLink && (
       <InlineStack>
         <Button variant="primary" url={deepLink} target="_blank">
-          Ouvrir l&apos;éditeur de thème
+          Open the theme editor
         </Button>
       </InlineStack>
     )}
@@ -508,25 +508,25 @@ export function InstallationPanel({
       <BlockStack gap="300">
         <SchemaEditeurTheme />
         <Text as="p" variant="bodySm" tone="subdued">
-          Dans la section <strong>Détails</strong>, cliquez sur « Ajouter un bloc », puis
-          ouvrez l&apos;onglet <strong>Applis</strong> — ce n&apos;est pas celui affiché par
-          défaut, et c&apos;est là que presque tout le monde bloque.
+          Under <strong>Details</strong>, click &ldquo;Add block&rdquo;, then open the
+          <strong>Apps</strong> tab — it is not the one shown by default, and that is where
+          almost everyone gets stuck.
         </Text>
       </BlockStack>
     </Box>
 
     <List type="number">
       <List.Item>
-        En haut de l&apos;éditeur, basculez sur le modèle <strong>Produit</strong> —
-        le bloc n&apos;existe pas sur les autres modèles.
+        At the top of the editor, switch to the <strong>Product</strong> template — the
+        block does not exist on other templates.
       </List.Item>
       <List.Item>
-        Dans la section principale, cliquez sur « Ajouter un bloc », puis ouvrez
-        l&apos;onglet <strong>Apps</strong>.
+        In the main section, click &ldquo;Add block&rdquo;, then open the
+        <strong>Apps</strong> tab.
       </List.Item>
-      <List.Item>Choisissez « Variantsy ».</List.Item>
-      <List.Item>Glissez-le au-dessus du bouton d&apos;ajout au panier.</List.Item>
-      <List.Item>Enregistrez.</List.Item>
+      <List.Item>Choose &ldquo;Variantsy&rdquo;.</List.Item>
+      <List.Item>Drag it above the add-to-cart button.</List.Item>
+      <List.Item>Save.</List.Item>
     </List>
   </BlockStack>
 </Card>
@@ -535,48 +535,46 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Étape 2</Badge>
+      <Badge tone="info">Step 2</Badge>
       <Text as="h2" variant="headingMd">
-        Activer les pastilles sur vos pages de collection
+        Enable swatches on your collection pages
       </Text>
-      <Badge>Facultatif</Badge>
+      <Badge>Optional</Badge>
     </InlineStack>
     <Text as="p">
-      Les vignettes d&apos;une collection sont rendues par votre thème, dans une boucle
-      à laquelle aucune application n&apos;a accès. Les pastilles n&apos;y passent donc
-      pas par un bloc, mais par un <strong>module d&apos;application</strong> — rangé
-      ailleurs dans l&apos;éditeur de thème.
+      Collection cards are rendered by your theme, inside a loop no app can reach. Swatches
+      therefore do not go through a block, but through an <strong>app embed</strong> — filed
+      elsewhere in the theme editor.
     </Text>
     <Banner tone="info">
       <Text as="p" variant="bodySm">
-        C&apos;est la confusion la plus fréquente : on cherche « Variantsy » dans la
-        liste des blocs d&apos;une page de collection, et on ne le trouve pas. C&apos;est
-        normal, il n&apos;y est pas.
+        This is the most common confusion: people look for &ldquo;Variantsy&rdquo; in the
+        block list of a collection page and cannot find it. That is expected — it is not
+        there.
       </Text>
     </Banner>
     {embedLink && (
       <InlineStack>
         <Button variant="primary" url={embedLink} target="_blank">
-          Ouvrir les modules d&apos;application
+          Open app embeds
         </Button>
       </InlineStack>
     )}
     <List type="number">
       <List.Item>
-        Dans l&apos;éditeur de thème, ouvrez le panneau de gauche jusqu&apos;en bas et
-        cliquez sur <strong>Modules d&apos;application</strong> (icône en forme de prise).
+        In the theme editor, scroll the left panel to the bottom and click
+        <strong>App embeds</strong> (the plug icon).
       </List.Item>
       <List.Item>
-        Activez <strong>« Variantsy collections »</strong>.
+        Turn on <strong>&ldquo;Variantsy collections&rdquo;</strong>.
       </List.Item>
-      <List.Item>Enregistrez.</List.Item>
+      <List.Item>Save.</List.Item>
     </List>
     <Text as="p" variant="bodySm" tone="subdued">
-      Deux interrupteurs commandent cet affichage, et les deux doivent être allumés :
-      celui-ci charge le script, et celui de l&apos;onglet <strong>Apparence</strong>
-      décide de l&apos;affichage. Pour couper les pastilles de collection au quotidien,
-      utilisez celui de l&apos;onglet Apparence — il ne demande pas de repasser par
-      l&apos;éditeur de thème.
+      Two switches control this display, and both must be on: this one loads the script,
+      and the one on the <strong>Appearance</strong> tab decides whether anything is drawn.
+      To turn catalog swatches off day to day, use the Appearance one — it does not send you
+      back to the theme editor.
     </Text>
   </BlockStack>
 </Card>
@@ -584,28 +582,27 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Étape 3</Badge>
+      <Badge tone="info">Step 3</Badge>
       <Text as="h2" variant="headingMd">
-        Ranger vos photos dans l&apos;ordre
+        Put your photos in order
       </Text>
     </InlineStack>
     <Text as="p">
-      Une seule règle : dans l&apos;admin Shopify, assignez la{" "}
-      <strong>première photo de chaque coloris</strong> à sa variante, et placez les
-      autres photos du même coloris juste après.
+      One rule only: in the Shopify admin, assign the{" "}
+      <strong>first photo of each color</strong> to its variant, and place the other photos
+      of that same color right after it.
     </Text>
 
     <Box background="bg-surface-secondary" padding="400" borderRadius="300">
       <BlockStack gap="300">
         <Text as="p" variant="bodySm" fontWeight="semibold">
-          1. Déclarez vos coloris et leur teinte
+          1. Declare your colors and their shade
         </Text>
         <SchemaOptions />
         <Text as="p" variant="bodySm" tone="subdued">
-          Shopify attache une couleur à chaque valeur d&apos;option.{" "}
-          <strong>Variantsy la lit directement</strong> : renseignez-la ici et votre
-          nuancier est juste, sans aucune autre saisie. Même une teinte maison
-          qu&apos;aucun dictionnaire ne connaît.
+          A color can be attached to every option value.{" "}
+          <strong>Variantsy reads it directly</strong>: fill it in here and your palette is
+          correct, with nothing else to enter. Even an in-house shade no dictionary knows.
         </Text>
       </BlockStack>
     </Box>
@@ -613,14 +610,13 @@ export function InstallationPanel({
     <Box background="bg-surface-secondary" padding="400" borderRadius="300">
       <BlockStack gap="300">
         <Text as="p" variant="bodySm" fontWeight="semibold">
-          2. Assignez une photo à chaque coloris
+          2. Assign one photo to each color
         </Text>
         <SchemaAssignation />
         <Text as="p" variant="bodySm" tone="subdued">
-          Dans la fiche produit, section <strong>Variantes</strong> : cliquez sur
-          l&apos;emplacement d&apos;image à gauche de la ligne, et choisissez la
-          photo. C&apos;est le seul geste que Variantsy ne peut pas faire à votre
-          place.
+          On the product page, under <strong>Variants</strong>: click the image slot on the
+          left of the row and pick the photo. This is the one step Variantsy cannot do for
+          you.
         </Text>
       </BlockStack>
     </Box>
@@ -628,7 +624,7 @@ export function InstallationPanel({
     <Box background="bg-surface-secondary" padding="400" borderRadius="300">
       <BlockStack gap="400">
         <Text as="p" variant="bodySm" fontWeight="semibold">
-          3. Rangez les autres photos derrière
+          3. Place the remaining photos behind it
         </Text>
         <InlineStack gap="300" blockAlign="start" wrap>
           <Vignette color={BLUE} pinned legende="Blue" />
@@ -639,13 +635,12 @@ export function InstallationPanel({
         </InlineStack>
         <BlockStack gap="150">
           <Text as="p" variant="bodySm">
-            <strong>★ = la photo que vous avez assignée à la variante.</strong> Elle
-            ouvre le groupe de son coloris ; les photos qui la suivent le rejoignent,
-            jusqu&apos;à la prochaine photo assignée.
+            <strong>★ = the photo you assigned to the variant.</strong> It opens that
+            color&apos;s group; the photos following it join the same group, up to the next
+            assigned photo.
           </Text>
           <Text as="p" variant="bodySm" tone="subdued">
-            Vous n&apos;assignez donc qu&apos;une seule photo par coloris, pas les
-            quatre.
+            So you assign a single photo per color, not all four.
           </Text>
         </BlockStack>
       </BlockStack>
@@ -654,7 +649,7 @@ export function InstallationPanel({
     <Divider />
 
     <Text as="p" variant="headingSm">
-      Ce que voit votre client
+      What your shopper sees
     </Text>
     <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
       <FicheMiniature
@@ -665,7 +660,7 @@ export function InstallationPanel({
         miniatures={2}
       />
       <FicheMiniature
-        titre="Cocotte · Beige"
+        titre="Tee · Beige"
         couleur={BEIGE}
         pastilles={[BLUE, BEIGE]}
         choisie={1}
@@ -673,11 +668,11 @@ export function InstallationPanel({
       />
     </InlineGrid>
     <Text as="p" variant="bodySm" tone="subdued">
-      Même produit, deux coloris : chaque client ne voit que les photos du sien.
+      Same product, two colors: each shopper sees only the photos of theirs.
     </Text>
 
     <InlineStack>
-      <Button url="/app/images">Vérifier un produit</Button>
+      <Button url="/app/images">Inspect a product</Button>
     </InlineStack>
   </BlockStack>
 </Card>
@@ -685,17 +680,17 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Étape 4</Badge>
+      <Badge tone="info">Step 4</Badge>
       <Text as="h2" variant="headingMd">
-        Ajuster le style
+        Adjust the style
       </Text>
     </InlineStack>
     <Text as="p">
-      Forme, taille, style de sélection, gestion des ruptures et template de titre se
-      règlent dans « Réglages », avec un aperçu en direct.
+      Shape, size, selection style, sold-out handling and the title template are all set
+      under &ldquo;Settings&rdquo;, with a live preview.
     </Text>
     <InlineStack>
-      <Button url="/app">Aller aux réglages</Button>
+      <Button url="/app">Go to settings</Button>
     </InlineStack>
   </BlockStack>
 </Card>
@@ -703,18 +698,18 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <Text as="h2" variant="headingMd">
-      Le sélecteur natif de mon thème s&apos;affiche encore
+      My theme&apos;s own selector still shows
     </Text>
     <Text as="p">
-      Variantsy détecte automatiquement les sélecteurs des thèmes Shopify officiels
-      (Dawn, Refresh, Craft, Sense, Studio…) et de la plupart des thèmes premium. Pour un
-      thème très personnalisé, renseignez le sélecteur CSS du bloc à masquer dans
-      « Réglages → Image et intégration au thème ».
+      Variantsy detects the selectors of the official themes (Dawn, Refresh, Craft, Sense,
+      Studio…) and of most premium themes automatically. For a heavily customized theme,
+      enter the CSS selector of the block to hide under
+      &ldquo;Settings → Image and theme integration&rdquo;.
     </Text>
     <Text as="p" tone="subdued">
-      Le sélecteur natif n&apos;est jamais supprimé, seulement masqué : Variantsy le
-      pilote en arrière-plan, donc le panier reçoit toujours la bonne variante même si un
-      autre script du thème l&apos;écoute.
+      The native selector is never removed, only hidden: Variantsy drives it in the
+      background, so the cart always receives the right variant even if another script in
+      the theme listens to it.
     </Text>
   </BlockStack>
 </Card>

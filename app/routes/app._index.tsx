@@ -140,9 +140,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const TABS = [
   { id: "installation", content: "Installation", panelID: "panel-installation" },
-  { id: "apparence", content: "Apparence", panelID: "panel-apparence" },
-  { id: "titre", content: "Titre", panelID: "panel-titre" },
-  { id: "combinees", content: "Produits liés", panelID: "panel-combinees" },
+  { id: "apparence", content: "Appearance", panelID: "panel-apparence" },
+  { id: "titre", content: "Title", panelID: "panel-titre" },
+  { id: "combinees", content: "Linked products", panelID: "panel-combinees" },
 ];
 
 export default function SettingsPage() {
@@ -167,7 +167,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.ok) {
       setDirty(false);
-      shopify.toast.show("Réglages enregistrés");
+      shopify.toast.show("Settings saved");
     }
   }, [fetcher.state, fetcher.data, shopify]);
 
@@ -188,8 +188,8 @@ export default function SettingsPage() {
 
   return (
     <Page
-      title="Réglages"
-      subtitle="Apparence des swatches, titre dynamique et intégration au thème"
+      title="Settings"
+      subtitle="Swatch appearance, dynamic title and theme integration"
       primaryAction={{
         content: "Enregistrer",
         onAction: save,
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                   <Text as="p" variant="bodySm" tone="subdued">
                     {form.enabled
                       ? "Vos pastilles et vos galeries par coloris sont en ligne."
-                      : "Rien ne s'affiche sur votre boutique tant que l'app est désactivée."}
+                      : "Nothing shows on your storefront while the app is turned off."}
                   </Text>
                 </BlockStack>
                 {/* L'état et son interrupteur voyagent ensemble : le badge
@@ -248,16 +248,16 @@ export default function SettingsPage() {
             {form.enabled && !form.galleryEnabled && (
               <Banner
                 tone="warning"
-                title="Le filtrage des photos par coloris est désactivé"
+                title="Photo filtering by color is turned off"
                 action={{
-                  content: "Réactiver",
+                  content: "Turn back on",
                   onAction: () => set("galleryEnabled", true),
                 }}
               >
                 <p>
                   Vos clients voient toutes les photos du produit, quel que soit le coloris
-                  choisi. C&apos;est la fonctionnalité principale de Variantsy — les pastilles et
-                  le titre continuent de fonctionner sans elle.
+                  chosen. This is the core of Variantsy — swatches and titles keep working without it,
+                  but the gallery no longer follows the color.
                 </p>
               </Banner>
             )}
@@ -269,17 +269,16 @@ export default function SettingsPage() {
             {dirty && (
               <Banner
                 tone="warning"
-                title="Modifications non enregistrées"
+                title="Unsaved changes"
                 action={{
-                  content: "Enregistrer",
+                  content: "Save",
                   onAction: save,
                   loading: fetcher.state !== "idle",
                 }}
                 secondaryAction={{ content: "Annuler", onAction: discard }}
               >
                 <p>
-                  Vos changements sont visibles dans l&apos;aperçu, mais pas encore sur votre
-                  boutique.
+                  Your changes appear in the preview, but not yet on your storefront.
                 </p>
               </Banner>
             )}
@@ -308,16 +307,15 @@ export default function SettingsPage() {
               <BlockStack gap="300">
                 <InlineStack align="space-between" blockAlign="center">
                   <Text as="h2" variant="headingMd">
-                    Aperçu
+                    Preview
                   </Text>
                   <Text as="span" tone="subdued" variant="bodySm">
-                    Cliquable
+                    Clickable
                   </Text>
                 </InlineStack>
                 <SwatchPreview settings={form} />
                 <Text as="p" tone="subdued" variant="bodySm">
-                  Aperçu indicatif : la typographie et les espacements reprennent ceux de votre
-                  thème une fois en ligne.
+                  Indicative preview: type and spacing will follow your theme once live.
                 </Text>
               </BlockStack>
             </Card>
@@ -373,7 +371,7 @@ function Interrupteur({
       type="button"
       role="switch"
       aria-checked={actif}
-      aria-label={(actif ? "Désactiver " : "Activer ") + quoi}
+      aria-label={(actif ? "Turn off " : "Turn on ") + quoi}
       onClick={() => onChange(!actif)}
       style={{
         position: "relative",
@@ -468,7 +466,7 @@ function Advanced({ id, children }: { id: string; children: React.ReactNode }) {
           disclosure={open ? "up" : "down"}
           onClick={() => setOpen((v) => !v)}
         >
-          Réglages avancés
+          Advanced settings
         </Button>
       </InlineStack>
       <Collapsible id={`avances-${id}`} open={open}>
@@ -719,8 +717,8 @@ function ApparencePanel({ form, set }: PanelProps) {
   return (
     <BlockStack gap="600">
       <ChoiceCards
-        label="Comment s'affichent vos coloris"
-        help="Ne concerne que les options de couleur. Les tailles restent des boutons texte dans tous les cas."
+        label="How your colors are shown"
+        help="Applies to color options only. Sizes stay text buttons in every case."
         value={form.displayMode}
         accent={accent}
         onChange={(v) => set("displayMode", v)}
@@ -763,7 +761,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
           {
             id: "dropdown",
-            label: "Liste déroulante",
+            label: "Dropdown",
             preview: (
               <span
                 style={{
@@ -792,7 +790,7 @@ function ApparencePanel({ form, set }: PanelProps) {
       {enPastilles && (
         <>
       <ChoiceCards
-        label="Forme des pastilles"
+        label="Swatch shape"
         value={form.shape}
         accent={accent}
         onChange={(v) => set("shape", v)}
@@ -803,7 +801,7 @@ function ApparencePanel({ form, set }: PanelProps) {
             label: "Arrondi",
             preview: <Chip radius={`${form.cornerRadius}px`} background="#C9CFD6" />,
           },
-          { id: "square", label: "Carré", preview: <Chip radius="0px" background="#C9CFD6" /> },
+          { id: "square", label: "Square", preview: <Chip radius="0px" background="#C9CFD6" /> },
         ]}
       />
 
@@ -825,14 +823,14 @@ function ApparencePanel({ form, set }: PanelProps) {
       {!enPastilles && (
         <BlockStack gap="400">
           <ChoiceCards
-            label="Comment se voit la case choisie"
+            label="How the chosen box is shown"
             value={form.controlSelectedStyle}
             accent={accent}
             onChange={(v) => set("controlSelectedStyle", v)}
             options={[
               {
                 id: "outline",
-                label: "Liseré",
+                label: "Outline",
                 preview: (
                   <span
                     style={{
@@ -887,14 +885,14 @@ function ApparencePanel({ form, set }: PanelProps) {
             output
             helpText={
               form.displayMode === "dropdown"
-                ? "Angles de la liste déroulante."
+                ? "Corners of the dropdown."
                 : "Angles des boutons."
             }
           />
           {form.displayMode === "dropdown" && (
             <Checkbox
-              label="La liste occupe toute la largeur disponible"
-              helpText="Sinon elle s'arrête à 320 px, ce qui convient à la plupart des fiches produit."
+              label="The dropdown fills the available width"
+              helpText="Otherwise it stops at 320 px, which suits most product pages."
               checked={form.dropdownFullWidth}
               onChange={(v) => set("dropdownFullWidth", v)}
             />
@@ -912,7 +910,7 @@ function ApparencePanel({ form, set }: PanelProps) {
               value={form.size}
               onChange={(v) => set("size", Number(v))}
               output
-              helpText="44 px minimum est recommandé pour le tactile."
+              helpText="44 px minimum is recommended for touch."
             />
           ) : (
             <Box />
@@ -933,7 +931,7 @@ function ApparencePanel({ form, set }: PanelProps) {
       <Divider />
 
       <ChoiceCards
-        label="Comment se voit la pastille choisie"
+        label="How the chosen swatch is shown"
         value={form.selectedStyle}
         accent={accent}
         onChange={(v) => set("selectedStyle", v)}
@@ -977,10 +975,10 @@ function ApparencePanel({ form, set }: PanelProps) {
           descend dans les avancés — elle reste utile, mais un gris discret
           convient à presque tout le monde. */}
       <ColorField
-        label="Couleur de sélection"
+        label="Selection color"
         value={form.selectedColor}
         onChange={(v) => set("selectedColor", v)}
-        help="Teinte du liseré, de la bordure épaisse ou de l'ombre, selon le style choisi ci-dessus."
+        help="Shade of the outline, thick border or shadow, depending on the style chosen above."
       />
 
       {form.selectedStyle !== "shadow" && (
@@ -1022,15 +1020,15 @@ function ApparencePanel({ form, set }: PanelProps) {
       <Divider />
 
       <ChoiceCards
-        label="Quand une couleur n'est pas renseignée"
-        help="Ce que verra le client pour une valeur absente de votre Bibliothèque de swatches. Chaque aperçu montre trois valeurs différentes : Blue, Beige, Terracotta."
+        label="When a color is not defined"
+        help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Blue, Beige, Terracotta."
         value={form.swatchFallback}
         accent={accent}
         onChange={(v) => set("swatchFallback", v)}
         options={[
           {
             id: "color",
-            label: "Une couleur par nom",
+            label: "A color guessed from the name",
             preview: (
               <span style={{ display: "flex", gap: 4 }}>
                 <Chip radius={radius} background="#1F3A5F" size={20} />
@@ -1041,7 +1039,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           },
           {
             id: "image",
-            label: "La photo du produit",
+            label: "The product photo",
             preview: (
               <span style={{ display: "flex", gap: 4 }}>
                 <Chip
@@ -1074,9 +1072,9 @@ function ApparencePanel({ form, set }: PanelProps) {
           value={form.photoScale}
           onChange={(v) => set("photoScale", Number(v))}
           output
-          helpText={`Une photo réduite à ${form.size} px n'est pas reconnaissable, là où un aplat de couleur l'est. Seules les pastilles portant une photo sont agrandies — ${Math.round(
+          helpText={`A photo shrunk to ${form.size} px is not recognizable, where a flat color is. Only swatches carrying a photo are enlarged — ${Math.round(
             (form.size * form.photoScale) / 100,
-          )} px ici.`}
+          )} px here.`}
         />
       )}
         </>
@@ -1092,8 +1090,8 @@ function ApparencePanel({ form, set }: PanelProps) {
           <BlockStack gap="100">
             <SectionTitle accent={accent}>Pastilles sur les pages de collection</SectionTitle>
             <Text as="p" variant="bodySm" tone="subdued">
-              Les coloris apparaissent sur chaque vignette du catalogue. La page produit
-              n'est pas concernée par cet interrupteur.
+              Colors appear on every card in your catalog. The product page is not affected
+              by this switch.
             </Text>
           </BlockStack>
           <Interrupteur
@@ -1104,8 +1102,8 @@ function ApparencePanel({ form, set }: PanelProps) {
         </InlineStack>
         {!form.collectionEnabled && (
           <Text as="p" variant="bodySm" tone="subdued">
-            Le bloc « Variantsy collections » peut rester activé dans votre thème :
-            rien ne s'affichera tant que cet interrupteur est éteint.
+            The &ldquo;Variantsy collections&rdquo; block can stay enabled in your theme:
+            nothing will show while this switch is off.
           </Text>
         )}
       </BlockStack>
@@ -1114,8 +1112,8 @@ function ApparencePanel({ form, set }: PanelProps) {
         <>
       {(
         <ChoiceCards
-          label="Apparition des coloris"
-          help="Sur la photo, la rangée peut rester affichée ou n'apparaître qu'au survol."
+          label="How the colors appear"
+          help="On the photo, the row can stay visible or appear only on hover."
           value={form.collectionReveal}
           accent={accent}
           onChange={(v) => set("collectionReveal", v)}
@@ -1135,10 +1133,9 @@ function ApparencePanel({ form, set }: PanelProps) {
       )}
       {form.collectionReveal === "hover" && (
         <Text as="p" variant="bodySm" tone="subdued">
-          Sur mobile la rangée reste visible : sans souris, il n'y a pas de survol, et la masquer
-          reviendrait à supprimer la fonctionnalité pour la moitié des visiteurs. À vérifier si
-          votre thème produit déjà un effet au survol des vignettes — les deux se disputeraient
-          l'attention.
+          On mobile the row stays visible: without a mouse there is no hover, and hiding it
+          would remove the feature for half your visitors. Worth checking whether your theme
+          already has a hover effect on cards — the two would compete for attention.
         </Text>
       )}
         </>
@@ -1147,24 +1144,24 @@ function ApparencePanel({ form, set }: PanelProps) {
       <Divider />
 
       <ChoiceCards
-        label="Quand un coloris est en rupture"
+        label="When a color is sold out"
         value={form.soldOutStyle}
         accent={accent}
         onChange={(v) => set("soldOutStyle", v)}
         options={[
           {
             id: "strikethrough",
-            label: "Barré",
+            label: "Struck through",
             preview: <Chip radius={radius} background="#C9CFD6" struck />,
           },
           {
             id: "dim",
-            label: "Atténué",
+            label: "Dimmed",
             preview: <Chip radius={radius} background="#C9CFD6" opacity={0.35} />,
           },
           {
             id: "hide",
-            label: "Retiré",
+            label: "Removed",
             preview: (
               <Chip radius={radius} background="transparent" border="1px dashed #B0B7BF" />
             ),
@@ -1181,20 +1178,20 @@ function ApparencePanel({ form, set }: PanelProps) {
       <Divider />
 
       <BlockStack gap="300">
-        <SectionTitle accent={accent} help="Ce qui accompagne le sélecteur, en toutes lettres.">
-          Textes affichés
+        <SectionTitle accent={accent} help="What accompanies the selector, in words.">
+          Labels shown
         </SectionTitle>
         {/* Le nom SOUS la pastille n'a pas d'équivalent ailleurs : en boutons
             texte le nom EST le bouton, et une liste affiche déjà sa valeur. */}
         {enPastilles && (
           <Checkbox
-            label="Le nom de la couleur sous chaque pastille"
+            label="The color name under each swatch"
             checked={form.showLabels}
             onChange={(v) => set("showLabels", v)}
           />
         )}
         <Checkbox
-          label="La ligne « Couleur : Bleu marine » au-dessus du sélecteur"
+          label="The &ldquo;Color: Blue&rdquo; line above the selector"
           checked={form.showOptionName}
           onChange={(v) => set("showOptionName", v)}
         />
@@ -1205,65 +1202,65 @@ function ApparencePanel({ form, set }: PanelProps) {
           une page que le marchand traverse pour arrondir ses pastilles. */}
       <Advanced id="avances">
         <Text as="p" variant="bodySm" tone="subdued">
-          Ces réglages sont déjà actifs et se règlent seuls. N&apos;y touchez que si quelque
-          chose ne s&apos;affiche pas correctement.
+          These are already on and look after themselves. Only touch them if something
+          behaves unexpectedly.
         </Text>
         <ColorField
-          label="Couleur de bordure au repos"
+          label="Border color at rest"
           value={form.borderColor}
           onChange={(v) => set("borderColor", v)}
         />
         <Checkbox
-          label="Filtrer la galerie selon le coloris choisi"
-          helpText="C'est la fonctionnalité principale de Variantsy. Décochez pour revenir au comportement natif de Shopify — une seule image par variante. Le regroupement lui-même est entièrement automatique."
+          label="Filter the gallery to the chosen color"
+          helpText="This is the core of Variantsy. Uncheck to fall back to the native behavior — one image per variant. The grouping itself is entirely automatic."
           checked={form.galleryEnabled}
           onChange={(v) => set("galleryEnabled", v)}
         />
         <Checkbox
-          label="Précharger l'image au survol d'une pastille"
-          helpText="Le changement d'image paraît instantané au clic."
+          label="Preload the image when a swatch is hovered"
+          helpText="The image change then feels instant on click."
           checked={form.preloadOnHover}
           onChange={(v) => set("preloadOnHover", v)}
         />
         <Checkbox
-          label="Mettre à jour l'URL (?variant=…) à la sélection"
-          helpText="Permet de partager un lien qui ouvre directement le bon coloris."
+          label="Update the URL (?variant=…) on selection"
+          helpText="Lets you share a link that opens straight on the right color."
           checked={form.updateUrl}
           onChange={(v) => set("updateUrl", v)}
         />
         <Checkbox
-          label="Masquer le sélecteur de variantes natif du thème"
-          helpText="Variantsy continue de le piloter en arrière-plan : le panier reçoit toujours la bonne variante, même si un autre script l'écoute."
+          label="Hide the theme's own variant selector"
+          helpText="Variantsy keeps driving it in the background: the cart always receives the right variant, even if another script listens to it."
           checked={form.hideNativeSelector}
           onChange={(v) => set("hideNativeSelector", v)}
         />
         <Checkbox
-          label="Changer l'image principale à la sélection"
+          label="Change the main image on selection"
           checked={form.swapImage}
           onChange={(v) => set("swapImage", v)}
         />
         <TextField
-          label="Forcer certaines options en pastilles"
-          helpText="Variantsy reconnaît une option de couleur à ses valeurs, quel que soit son nom. Ne remplissez ceci que pour un nuancier composé uniquement de teintes maison. Séparez par des virgules."
+          label="Force certain options into swatches"
+          helpText="Variantsy recognizes a color option by its values, whatever its name. Fill this in only for a palette made entirely of in-house shades. Separate with commas."
           value={form.colorOptionNames}
           onChange={(v) => set("colorOptionNames", v)}
           autoComplete="off"
         />
         <TextField
-          label="Sélecteur CSS du bloc à masquer"
+          label="CSS selector of the block to hide"
           value={form.nativeSelectorCss}
           onChange={(v) => set("nativeSelectorCss", v)}
           disabled={!form.hideNativeSelector}
           autoComplete="off"
-          placeholder="Laisser vide pour la détection automatique"
+          placeholder="Leave empty for automatic detection"
         />
         <TextField
-          label="Sélecteur CSS de la galerie"
+          label="CSS selector of the gallery"
           value={form.imageSelectorCss}
           onChange={(v) => set("imageSelectorCss", v)}
           disabled={!form.swapImage}
           autoComplete="off"
-          placeholder="Laisser vide pour la détection automatique"
+          placeholder="Leave empty for automatic detection"
         />
       </Advanced>
     </BlockStack>
@@ -1275,7 +1272,7 @@ function ApparencePanel({ form, set }: PanelProps) {
  *  de rendre visible ce que font les blocs conditionnels — invisible sinon. */
 const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
   {
-    nom: "Produit à deux options",
+    nom: "Product with two options",
     vars: {
       product_title: "Sweat en coton bio",
       variant_title: "Bleu marine / M",
@@ -1293,7 +1290,7 @@ const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
     },
   },
   {
-    nom: "Produit à une seule option",
+    nom: "Product with a single option",
     vars: {
       product_title: "Tee-shirt en lin",
       variant_title: "Écru",
@@ -1320,10 +1317,10 @@ const VARIABLE_GROUPS: { titre: string; teinte: string; tokens: string[] }[] = [
   {
     titre: "Variante",
     teinte: "#2E7D32",
-    tokens: ["{{variant_title}}", "{{option1}}", "{{option2}}", "{{option3}}", "{{option:Couleur}}"],
+    tokens: ["{{variant_title}}", "{{option1}}", "{{option2}}", "{{option3}}", "{{option:Color}}"],
   },
   { titre: "Prix", teinte: "#C1614B", tokens: ["{{price}}", "{{compare_at_price}}"] },
-  { titre: "Références", teinte: "#6D5B8E", tokens: ["{{sku}}", "{{barcode}}"] },
+  { titre: "References", teinte: "#6D5B8E", tokens: ["{{sku}}", "{{barcode}}"] },
 ];
 
 function TitrePanel({ form, set }: PanelProps) {
@@ -1351,8 +1348,8 @@ function TitrePanel({ form, set }: PanelProps) {
   return (
     <BlockStack gap="600">
       <Checkbox
-        label="Réécrire le titre du produit selon la variante choisie"
-        helpText="Le titre de votre page produit suit alors le coloris ou la taille sélectionnés."
+        label="Rewrite the product title from the chosen variant"
+        helpText="Your product page title then follows the selected color or size."
         checked={form.updateTitle}
         onChange={(v) => set("updateTitle", v)}
       />
@@ -1360,8 +1357,8 @@ function TitrePanel({ form, set }: PanelProps) {
       {form.updateTitle && (
         <>
           <BlockStack gap="300">
-            <SectionTitle accent={accent} help="Composez-le avec les variables ci-dessous.">
-              Votre modèle
+            <SectionTitle accent={accent} help="Compose it with the variables below.">
+              Your template
             </SectionTitle>
 
             <TextField
@@ -1462,19 +1459,19 @@ function TitrePanel({ form, set }: PanelProps) {
           <BlockStack gap="300">
             <SectionTitle
               accent={accent}
-              help="Vos produits n'ont pas tous le même nombre d'options. Un modèle qui mentionne la taille laisse un mot en trop sur un produit qui n'en a pas."
+              help="Your products do not all carry the same options. A template that mentions size leaves a stray word on a product that has none."
             >
-              Un seul modèle pour tout votre catalogue
+              One template for your whole catalog
             </SectionTitle>
 
             <Box background="bg-surface-secondary" padding="400" borderRadius="300">
               <BlockStack gap="400">
                 <BlockStack gap="200">
                   <Text as="p" variant="bodyXs" tone="subdued">
-                    Le modèle
+                    The template
                   </Text>
                   <Text as="p" variant="bodyMd">
-                    <code>{"{{product_title}} — {{option1}} — Taille {{option2}}"}</code>
+                    <code>{"{{product_title}} — {{option1}} — Size {{option2}}"}</code>
                   </Text>
                 </BlockStack>
 
@@ -1488,7 +1485,7 @@ function TitrePanel({ form, set }: PanelProps) {
                     </InlineStack>
                     <Text as="p" variant="bodyMd" fontWeight="medium">
                       {renderTemplate(
-                        "{{product_title}} — {{option1}} — Taille {{option2}}",
+                        "{{product_title}} — {{option1}} — Size {{option2}}",
                         TITLE_EXAMPLES[0].vars,
                       )}
                     </Text>
@@ -1496,19 +1493,19 @@ function TitrePanel({ form, set }: PanelProps) {
 
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="critical">Tee-shirt</Badge>
+                      <Badge tone="critical">T-shirt</Badge>
                       <Text as="span" variant="bodyXs" tone="subdued">
-                        n&apos;en a pas
+                        has none
                       </Text>
                     </InlineStack>
                     <Text as="p" variant="bodyMd" fontWeight="medium">
                       {renderTemplate(
-                        "{{product_title}} — {{option1}} — Taille {{option2}}",
+                        "{{product_title}} — {{option1}} — Size {{option2}}",
                         TITLE_EXAMPLES[1].vars,
                       )}
                     </Text>
                     <Text as="p" variant="bodyXs" tone="critical">
-                      Le mot « Taille » reste, sans rien derrière.
+                      The word &ldquo;Size&rdquo; stays, with nothing after it.
                     </Text>
                   </BlockStack>
                 </InlineGrid>
@@ -1560,34 +1557,32 @@ function TitrePanel({ form, set }: PanelProps) {
             </Box>
 
             <Text as="p" variant="bodySm" tone="subdued">
-              Vous n&apos;en avez besoin que si votre modèle contient du <strong>texte</strong>
-              autour d&apos;une variable. Un tiret ou une barre oblique restés seuls sont
-              nettoyés automatiquement.
+              You only need this if your template has <strong>text</strong> around a variable. A dash
+              or a slash left on its own is cleaned up automatically.
             </Text>
           </BlockStack>
 
           <Banner tone="info">
             <p>
-              Si le coloris figure déjà dans le nom de vos produits — « Sweat bleu marine » —
-              un modèle qui l&apos;ajoute produira une répétition. Préférez alors « Nom du
-              produit seul », ou n&apos;ajoutez que la taille.
+              If the color is already in your product names — &ldquo;Blue tee&rdquo; — a template that adds
+              it will repeat itself. Prefer a name without the color in that case.
             </p>
           </Banner>
 
           <Advanced id="titre">
             <Checkbox
-              label="Mettre aussi à jour le titre de l'onglet du navigateur"
-              helpText="Shopify y place déjà le nom de la variante : activer ceci peut donc le faire apparaître deux fois."
+              label="Also update the browser tab title"
+              helpText="The variant name is already placed there, so turning this on can make it appear twice."
               checked={form.updateDocumentTitle}
               onChange={(v) => set("updateDocumentTitle", v)}
             />
             <TextField
-              label="Sélecteur CSS du titre"
+              label="CSS selector of the title"
               value={form.titleSelectorCss}
               onChange={(v) => set("titleSelectorCss", v)}
               autoComplete="off"
-              placeholder="Laisser vide pour la détection automatique"
-              helpText="À renseigner uniquement si votre thème utilise un balisage inhabituel."
+              placeholder="Leave empty for automatic detection"
+              helpText="Only needed if your theme uses unusual markup."
             />
           </Advanced>
         </>

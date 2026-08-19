@@ -319,7 +319,7 @@ export default function SwatchesPage() {
         <Modal
           open
           onClose={() => setEditing(null)}
-          title={editing.id ? `Modifier « ${editing.label} »` : "Ajouter un swatch"}
+          title={editing.id ? `Edit \u201C${editing.label}\u201D` : "Add a swatch"}
           primaryAction={{ content: "Enregistrer", onAction: submitEdit, disabled: !editing.label }}
           secondaryActions={[{ content: "Annuler", onAction: () => setEditing(null) }]}
         >
