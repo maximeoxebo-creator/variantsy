@@ -4,7 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "engines": {
-    "node": ">=20.10"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "shopify app dev",
@@ -44,7 +44,7 @@
   "devDependencies": {
     "@remix-run/eslint-config": "^2.15.0",
     "@types/eslint": "^9.6.1",
-    "@types/node": "^22.10.1",
+    "@types/node": "^24.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "eslint": "^8.57.1",
