@@ -36,6 +36,14 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 
+  /// Jetons offline EXPIRANTS (obligatoires depuis 2025 : Shopify refuse les
+  /// jetons perpétuels avec un 403 sur toute l'API Admin). L'accès ne vaut
+  /// qu'une heure ; la librairie le renouvelle seule avec ce jeton de
+  /// rafraîchissement, valable 90 jours. Ces deux colonnes sont lues et
+  /// écrites par PrismaSessionStorage : ne pas les renommer.
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+
   @@index([shop])
 }
 

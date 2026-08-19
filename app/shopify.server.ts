@@ -37,9 +37,23 @@ const shopify = shopifyApp({
   }),
 
   distribution: AppDistribution.AppStore,
+  /**
+   * `expiringOfflineAccessTokens` n'est pas une option de confort : depuis 2025,
+   * Shopify répond 403 à TOUTE requête Admin faite avec un jeton perpétuel
+   * (« Non-expiring access tokens are no longer accepted »). Sans ce drapeau,
+   * l'app obtient un jeton du vieux type et son back-office est mort — plus
+   * d'inspecteur, plus d'import, plus de lien vers l'éditeur de thème.
+   *
+   * L'accès ne vaut plus qu'une heure. La librairie le renouvelle seule grâce
+   * au jeton de rafraîchissement stocké en base (colonnes `refreshToken` et
+   * `refreshTokenExpires`), valable 90 jours.
+   *
+   * `unstable_newEmbeddedAuthStrategy` et `removeRest` ont disparu en v4 :
+   * l'échange de jeton y est le comportement par défaut, et l'API REST a été
+   * retirée pour de bon — il n'y a plus rien à désactiver.
+   */
   future: {
-    unstable_newEmbeddedAuthStrategy: true,
-    removeRest: true,
+    expiringOfflineAccessTokens: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
