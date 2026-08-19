@@ -1639,6 +1639,28 @@ section("Pastilles en collection");
     JSON.stringify(surimpression),
   );
 
+  // Épaisseur réelle du liseré en surimpression. Le réglage vaut 2 px ici :
+  // la règle a longtemps additionné l'écart à l'épaisseur et en dessinait 4,
+  // ce qui est énorme sur une pastille de vignette. On mesure donc l'étalement
+  // effectif du box-shadow, pas la variable qui l'alimente.
+  const epaisseurLisere = await page.evaluate(() => {
+    const choisi = document.querySelector(
+      ".variantsy-collection--surimpression .variantsy-collection__swatch.is-selected .variantsy-collection__visual",
+    );
+    if (!choisi) return { absent: true };
+    const ombre = getComputedStyle(choisi).boxShadow;
+    // « rgb(17, 17, 17) 0px 0px 0px 2px, rgba(0, 0, 0, 0.35) 0px 1px 4px 0px »
+    // La première ombre porte le liseré ; son 4e nombre est l'étalement.
+    const premiere = ombre.split(/,(?![^(]*\))/)[0];
+    const longueurs = premiere.match(/-?[\d.]+px/g) || [];
+    return { ombre, etalement: longueurs[3] };
+  });
+  check(
+    "Le liseré en surimpression fait exactement l'épaisseur réglée",
+    !epaisseurLisere.absent && epaisseurLisere.etalement === "2px",
+    JSON.stringify(epaisseurLisere),
+  );
+
   // --- Apparition : toujours visible par défaut, au survol sur demande -----
   // Le survol a d'abord été le comportement unique. Il s'est révélé illisible
   // sur les thèmes qui échangent eux-mêmes la photo au survol : les deux

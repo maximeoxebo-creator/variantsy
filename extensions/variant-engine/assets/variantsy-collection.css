@@ -95,10 +95,16 @@
 
 .variantsy-collection--surimpression .variantsy-collection__swatch.is-selected .variantsy-collection__visual {
   /* Le liseré prend directement la couleur de sélection, sans l'écart blanc
-     de la page produit : sur une photo, ce blanc lit comme une salissure. */
+     de la page produit : sur une photo, ce blanc lit comme une salissure.
+
+     Son épaisseur est exactement `--vtsy-selected-width`, et rien d'autre.
+     Cette règle a d'abord additionné l'écart à l'épaisseur — ce que fait la
+     page produit, mais là-bas l'écart est rempli de blanc et seul le reste se
+     voit. Sans cette couche blanche, la somme devient un bloc plein : un
+     réglage à 1 px d'épaisseur et 3 px d'écart dessinait un anneau de 4 px
+     autour d'une pastille de 19. */
   box-shadow:
-    0 0 0 calc(var(--vtsy-selected-gap, 1px) + var(--vtsy-selected-width, 1px))
-      var(--vtsy-selected-color, #111111),
+    0 0 0 var(--vtsy-selected-width, 1px) var(--vtsy-selected-color, #111111),
     0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
