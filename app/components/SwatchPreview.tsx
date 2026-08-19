@@ -255,7 +255,17 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                   border:
                     isSelected && settings.selectedStyle === "border"
                       ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
-                      : `${settings.borderWidth}px solid ${settings.borderColor}`,
+                      : // En mode anneau, la bordure neutre de la pastille
+                        // choisie s'efface : sinon elle dessine un SECOND
+                        // contour collé à l'anneau. `transparent` et non `0`,
+                        // pour que la pastille ne change pas de taille quand on
+                        // la choisit. Même règle que variantsy.css — l'aperçu
+                        // ne vaut que s'il montre ce que verra le client.
+                        `${settings.borderWidth}px solid ${
+                          isSelected && settings.selectedStyle === "ring"
+                            ? "transparent"
+                            : settings.borderColor
+                        }`,
                   boxShadow: ring,
                   cursor: "pointer",
                   padding: 0,
