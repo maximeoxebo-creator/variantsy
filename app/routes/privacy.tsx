@@ -24,7 +24,7 @@ export const meta: MetaFunction = () => [
   },
 ];
 
-/* --- Charte reprise du site Zeppelin Studio ------------------------------ */
+/* --- Charte visuelle ---------------------------------------------------- */
 const C = {
   fond: "#F5F5F3",
   encre: "#17181C",
@@ -104,33 +104,20 @@ export default function Privacy() {
           padding: "0 24px 96px",
         }}
       >
-        <nav
+        <div
           style={{
             display: "flex",
-            gap: 30,
             justifyContent: "center",
-            background: "rgba(255,255,255,.75)",
-            borderRadius: "0 0 22px 22px",
-            boxShadow: C.ombre,
-            padding: "22px 34px",
-            width: "fit-content",
-            margin: "0 auto 64px",
-            fontSize: 13,
-            letterSpacing: "1.4px",
-            textTransform: "uppercase",
+            padding: "34px 0 66px",
+            fontFamily: C.serif,
+            fontWeight: 300,
+            fontSize: 21,
+            letterSpacing: "-.4px",
+            color: C.encre,
           }}
         >
-          <a href="https://zeppelin-studio.vercel.app" style={{ color: C.doux, textDecoration: "none" }}>
-            Home
-          </a>
-          <a
-            href="https://zeppelin-studio.vercel.app/support"
-            style={{ color: C.doux, textDecoration: "none" }}
-          >
-            Contact
-          </a>
-          <span style={{ color: C.encre }}>Privacy</span>
-        </nav>
+          Variantsy
+        </div>
 
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <Surtitre>Privacy · Variantsy</Surtitre>
@@ -150,9 +137,9 @@ export default function Privacy() {
             and what it never does.
           </h1>
           <p style={{ fontSize: 18, lineHeight: 1.62, color: C.doux, margin: "0 0 44px" }}>
-            Variantsy is a Shopify app published by Zeppelin Studio. It changes how product
-            colors, images and titles are displayed. It does not need to know anything about
-            the people who visit your store, and it is built so that it never does.
+            Variantsy is a Shopify app that changes how product colors, images and titles are
+            displayed. It does not need to know anything about the people who visit your store,
+            and it is built so that it never does.
           </p>
 
           <Section titre="No customer data, at any point">
@@ -240,7 +227,7 @@ export default function Privacy() {
 
           <Section titre="Contact">
             <p>
-              Zeppelin Studio —{" "}
+              Questions about this policy, or about the data held for your store:{" "}
               <a href={`mailto:${EMAIL}`} style={lien}>
                 {EMAIL}
               </a>
