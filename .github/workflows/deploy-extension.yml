@@ -6,8 +6,18 @@
 # storefront (piège n°1). Ce workflow supprime l'oubli manuel.
 #
 # Secrets à créer dans GitHub → Settings → Secrets and variables → Actions :
-#   SHOPIFY_CLI_PARTNERS_TOKEN  (Partner Dashboard → CLI token)
-#   SHOPIFY_API_KEY             (client_id de l'app)
+#   SHOPIFY_APP_AUTOMATION_TOKEN  (Dev Dashboard → l'app → Settings →
+#                                  App Automation Token → Create token)
+#   SHOPIFY_API_KEY               (client_id de l'app)
+#
+# ⚠️  CE JETON EXPIRE — 1, 3 ou 6 mois selon ce qui a été choisi à sa création.
+#     Le jour où il expire, ce workflow échoue avec « Authorization is required
+#     to continue » sans qu'aucun commit n'ait bougé. C'est la panne à
+#     soupçonner en premier quand la CI casse toute seule.
+#
+# Les jetons CLI du Partner Dashboard (SHOPIFY_CLI_PARTNERS_TOKEN) sont
+# dépréciés depuis mai 2026 : ils continuent de fonctionner jusqu'à leur
+# expiration, puis s'arrêtent. C'est ce qui est arrivé ici.
 # ---------------------------------------------------------------------------
 name: Deploy theme extension
 
@@ -42,7 +52,7 @@ jobs:
 
       - name: shopify app deploy
         env:
-          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+          SHOPIFY_APP_AUTOMATION_TOKEN: ${{ secrets.SHOPIFY_APP_AUTOMATION_TOKEN }}
           SHOPIFY_API_KEY: ${{ secrets.SHOPIFY_API_KEY }}
           SHOPIFY_CLI_NO_ANALYTICS: "1"
         # --allow-updates remplace --force, retiré en CLI 4.x. Sans lui la
