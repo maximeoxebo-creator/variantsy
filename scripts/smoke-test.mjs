@@ -433,6 +433,36 @@ section("Page produit (config par défaut)");
     "Groupe Terracotta : une seule image + l'image commune",
     same(await visibleMedia(page), [900, 33]),
   );
+  // Un seul contour sur la pastille choisie, page produit comprise. La bordure
+  // neutre restait dessinée SOUS l'anneau : deux traits collés l'un à l'autre,
+  // criants dès que la bordure est claire et l'anneau sombre. Son épaisseur est
+  // conservée (transparent, pas 0) pour que la pastille ne change pas de taille.
+  const contourProduit = await page.evaluate(() => {
+    const choisi = document.querySelector(
+      '.variantsy__group[data-option-position="1"] .variantsy__swatch.is-selected .variantsy__visual',
+    );
+    const autre = document.querySelector(
+      '.variantsy__group[data-option-position="1"] .variantsy__swatch:not(.is-selected) .variantsy__visual',
+    );
+    if (!choisi || !autre) return { absent: true };
+    const s = getComputedStyle(choisi);
+    return {
+      couleurBordure: s.borderTopColor,
+      epaisseurBordure: s.borderTopWidth,
+      epaisseurVoisine: getComputedStyle(autre).borderTopWidth,
+      largeur: Math.round(choisi.getBoundingClientRect().width),
+      largeurVoisine: Math.round(autre.getBoundingClientRect().width),
+    };
+  });
+  check(
+    "Page produit : la bordure neutre s'efface sous l'anneau, sans changer la taille",
+    !contourProduit.absent &&
+      contourProduit.couleurBordure === "rgba(0, 0, 0, 0)" &&
+      contourProduit.epaisseurBordure === contourProduit.epaisseurVoisine &&
+      contourProduit.largeur === contourProduit.largeurVoisine,
+    JSON.stringify(contourProduit),
+  );
+
   check(
     "Le titre n'accumule pas les concaténations",
     (await page.locator("h1.product__title").textContent())?.trim() === "Sweat en coton bio — Terracotta / L",
@@ -1695,27 +1725,25 @@ section("Pastilles en collection");
       // `inset` négatif : l'anneau flotte à (écart + épaisseur) de la pastille,
       // et l'écart laisse voir la photo.
       decalage: anneau.top,
-      // L'anneau doit être dessiné par ::after et NULLE PART ailleurs.
-      // La règle de la page produit compte une classe de plus que celle de la
-      // surimpression : à spécificité supérieure elle reprenait la main, et son
-      // anneau plein se superposait au trait fin. Comparer l'ombre de la
-      // pastille choisie à celle d'une autre le prouve sans coder en dur la
-      // valeur attendue.
+      // La pastille choisie ne doit porter QU'UN seul contour, celui de
+      // ::after. Deux fautes l'ont violé : la règle de la page produit qui
+      // reprenait la main par sa spécificité, puis le filet blanc intérieur
+      // qui faisait un second trait juste à côté du liseré. On interdit donc
+      // tout contour peint par la pastille elle-même — inset comme étalement.
       ombre: getComputedStyle(choisi).boxShadow,
-      ombreDesAutres: getComputedStyle(
-        document.querySelector(
-          ".variantsy-collection--surimpression .variantsy-collection__swatch:not(.is-selected) .variantsy-collection__visual",
-        ),
-      ).boxShadow,
     };
   });
+  const contoursDansLOmbre = (ombre) =>
+    (ombre.match(/inset/g) || []).length +
+    // « 0px 0px 0px Npx » avec N > 0 : un anneau plein, pas une ombre douce.
+    (ombre.match(/0px 0px 0px [1-9]/g) || []).length;
   check(
-    "Le liseré est un trait fin détaché de la pastille, pas un anneau plein",
+    "La pastille choisie ne porte qu'un seul contour, dessiné par ::after",
     !lisere.absent &&
       lisere.epaisseur === "2px" &&
       lisere.decalage === "-4px" &&
       lisere.contenu !== "none" &&
-      lisere.ombre === lisere.ombreDesAutres,
+      contoursDansLOmbre(lisere.ombre) === 0,
     JSON.stringify(lisere),
   );
 

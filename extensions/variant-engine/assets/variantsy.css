@@ -113,6 +113,12 @@
 
 /* --- États sélectionnés (le mode actif est posé en classe sur .variantsy) --- */
 .variantsy[data-selected-style="ring"] .variantsy__swatch.is-selected .variantsy__visual {
+  /* La bordure neutre s'efface au profit de l'anneau. La garder dessinait un
+     SECOND contour collé au premier — deux traits au lieu d'un, très visible
+     dès que la bordure est claire et l'anneau sombre.
+     `transparent` et non `0` : l'épaisseur est conservée, donc la pastille ne
+     change pas de taille quand on la choisit. */
+  border-color: transparent;
   box-shadow:
     0 0 0 var(--vtsy-selected-gap) #fff,
     0 0 0 calc(var(--vtsy-selected-gap) + var(--vtsy-selected-width))
