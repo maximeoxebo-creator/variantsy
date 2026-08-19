@@ -1871,30 +1871,6 @@ section("Pastilles en collection");
   );
   await pageSurvol.close();
 
-  // --- Placement « sous la carte » : la rangée s'aligne sur le titre --------
-  // Page distincte : le placement est un réglage, et les deux valeurs doivent
-  // être exercées.
-  const pageSous = await ouvrirCollection({ collectionPlacement: "below" });
-  const alignementSous = await pageSous.evaluate(() => {
-    const rangee = document.querySelector("[data-variantsy-collection]");
-    const titre = document.querySelector(".titre");
-    if (!rangee || !titre) return { absent: true };
-    const gauche = (el) => Math.round(el.getBoundingClientRect().left);
-    return {
-      premierePastille: gauche(rangee.querySelector(".variantsy-collection__swatch")),
-      titre: gauche(titre),
-      surimpression: rangee.classList.contains("variantsy-collection--surimpression"),
-    };
-  });
-  check(
-    "En placement sous la carte, la rangée s'aligne sur le titre",
-    !alignementSous.absent &&
-      alignementSous.surimpression === false &&
-      Math.abs(alignementSous.premierePastille - alignementSous.titre) <= 2,
-    JSON.stringify(alignementSous),
-  );
-  await pageSous.close();
-
   // Cliquer doit changer l'image ET pointer le lien vers la variante.
   await page.locator(".variantsy-collection__swatch").nth(1).click();
   await page.waitForTimeout(200);

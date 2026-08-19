@@ -347,17 +347,13 @@
     // sinon deux rangées.
     if (entree.carte.querySelector("[data-variantsy-collection]")) return;
 
-    if ((style.collectionPlacement || "overlay") === "overlay") {
-      // Le survol ne s'applique qu'en surimpression : sous la carte, une
-      // rangée qui apparaît pousserait le contenu à chaque passage de souris.
-      if (style.collectionReveal === "hover") {
-        conteneur.classList.add("variantsy-collection--survol");
-      }
-      poserSurLaPhoto(entree.carte, conteneur);
-    } else {
-      entree.carte.appendChild(conteneur);
-      aligner(entree.carte, conteneur);
+    // Un seul placement : sur la photo. Le placement « sous la carte » a été
+    // retiré — il allongeait la vignette, poussait le prix vers le bas et
+    // s'alignait mal d'un thème à l'autre.
+    if (style.collectionReveal === "hover") {
+      conteneur.classList.add("variantsy-collection--survol");
     }
+    poserSurLaPhoto(entree.carte, conteneur);
   }
 
   /**
@@ -462,44 +458,6 @@
 
     conteneur.classList.add("variantsy-collection--surimpression");
     hote.appendChild(conteneur);
-  }
-
-  /**
-   * Aligne la rangée sur le texte de la vignette.
-   *
-   * Une marge fixe serait fausse partout : selon le thème, le titre est collé
-   * au bord ou retiré de vingt pixels, et notre rangée doublerait la seconde
-   * tout en laissant la première à ras. On mesure donc le décalage réel du
-   * titre et on l'applique — ce qui s'ajuste seul, quel que soit le thème.
-   */
-  function aligner(carte, conteneur) {
-    var texte = null;
-    // `:has()` n'existe pas sur les navigateurs anciens et fait lever le
-    // sélecteur entier. On l'isole donc, pour que son absence ne prive pas du
-    // repli qui suit.
-    try {
-      texte = carte.querySelector("a[href*='/products/']:not(:has(img))");
-    } catch (error) {
-      texte = null;
-    }
-    if (!texte) {
-      texte = carte.querySelector("h2, h3, [class*='title'], [class*='titre']");
-    }
-    if (!texte) return;
-
-    try {
-      var decalage = Math.round(
-        texte.getBoundingClientRect().left - carte.getBoundingClientRect().left,
-      );
-      // Au-delà de 60 px on soupçonne une mesure aberrante — mieux vaut ne
-      // rien faire que décaler une rangée au milieu de la vignette.
-      if (decalage > 0 && decalage <= 60) {
-        conteneur.style.paddingInlineStart = decalage + "px";
-        conteneur.style.paddingInlineEnd = decalage + "px";
-      }
-    } catch (error) {
-      /* sélecteur non supporté par un vieux navigateur : on laisse tel quel */
-    }
   }
 
   /* ---------------------------------------------------------------------- */

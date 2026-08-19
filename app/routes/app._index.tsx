@@ -1112,89 +1112,7 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       {form.collectionEnabled && (
         <>
-      <ChoiceCards
-        label="Sur les pages de collection"
-        help="Où poser la rangée de coloris sur chaque vignette."
-        value={form.collectionPlacement}
-        accent={accent}
-        onChange={(v) => set("collectionPlacement", v)}
-        options={[
-          {
-            id: "overlay",
-            label: "Sur la photo",
-            preview: (
-              <span
-                style={{
-                  position: "relative",
-                  display: "block",
-                  width: 54,
-                  height: 44,
-                  borderRadius: 6,
-                  background: "linear-gradient(160deg,#DFE4EA,#C3CBD4)",
-                  overflow: "hidden",
-                }}
-              >
-                <span
-                  style={{
-                    position: "absolute",
-                    inset: "auto 0 0 0",
-                    display: "flex",
-                    gap: 3,
-                    justifyContent: "center",
-                    padding: "8px 0 4px",
-                    background: "linear-gradient(to top,rgba(0,0,0,.25),transparent)",
-                  }}
-                >
-                  {["#1F3A5F", "#D8C3A5"].map((c) => (
-                    <span
-                      key={c}
-                      style={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: "50%",
-                        background: c,
-                        border: "1px solid rgba(255,255,255,.85)",
-                      }}
-                    />
-                  ))}
-                </span>
-              </span>
-            ),
-          },
-          {
-            id: "below",
-            label: "Sous la carte",
-            preview: (
-              <span style={{ display: "block", width: 54 }}>
-                <span
-                  style={{
-                    display: "block",
-                    height: 30,
-                    borderRadius: 6,
-                    background: "linear-gradient(160deg,#DFE4EA,#C3CBD4)",
-                  }}
-                />
-                <span style={{ display: "flex", gap: 3, paddingTop: 6 }}>
-                  {["#1F3A5F", "#D8C3A5"].map((c) => (
-                    <span
-                      key={c}
-                      style={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: "50%",
-                        background: c,
-                        border: "1px solid rgba(0,0,0,.12)",
-                      }}
-                    />
-                  ))}
-                </span>
-              </span>
-            ),
-          },
-        ]}
-      />
-
-      {form.collectionPlacement === "overlay" && (
+      {(
         <ChoiceCards
           label="Apparition des coloris"
           help="Sur la photo, la rangée peut rester affichée ou n'apparaître qu'au survol."
@@ -1215,7 +1133,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           ]}
         />
       )}
-      {form.collectionPlacement === "overlay" && form.collectionReveal === "hover" && (
+      {form.collectionReveal === "hover" && (
         <Text as="p" variant="bodySm" tone="subdued">
           Sur mobile la rangée reste visible : sans souris, il n'y a pas de survol, et la masquer
           reviendrait à supprimer la fonctionnalité pour la moitié des visiteurs. À vérifier si
