@@ -1492,6 +1492,24 @@ async function ouvrirCollection(styleOverrides = {}) {
     }),
   );
 
+  // Produit distinct pour la ligne de panier : avec le même handle que la
+  // grille, l'exclusion serait masquée par le dédoublonnage et le test ne
+  // prouverait rien.
+  await page.route("**/products/echarpe.js", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 3,
+        options: [{ name: "Couleur", values: ["Noir", "Beige"] }],
+        variants: [
+          { id: 903, options: ["Noir"], featured_image: { src: "https://example.com/e-noir.jpg" } },
+          { id: 904, options: ["Beige"], featured_image: { src: "https://example.com/e-beige.jpg" } },
+        ],
+      }),
+    }),
+  );
+
   await page.goto("https://example.com/collections/tout");
   await page.evaluate(() => window.sessionStorage.clear());
   await page.setContent(`<!doctype html>
@@ -1506,6 +1524,11 @@ async function ouvrirCollection(styleOverrides = {}) {
        cadre. Un vrai thème leur donne toujours une hauteur. */
     .carte { list-style: none; }
     .carte__media { display: block; }
+    /* Les éléments personnalisés sont en ligne par défaut ; un vrai thème les
+       passe en bloc. Sans ça la remontée les ignorerait et le test vaudrait
+       pour une structure que personne n'a. */
+    slideshow-component, slideshow-slides, slideshow-slide, .media { display: block; position: relative; }
+    .diapo--survol { position: absolute; inset: 0; }
     .carte img { display: block; width: 200px; height: 160px; background: #ccc; }
   </style>
   <!-- Structure imbriquée d'un vrai thème : plusieurs liens vers le même
@@ -1514,7 +1537,18 @@ async function ouvrirCollection(styleOverrides = {}) {
   <ul class="grille">
     <li class="carte">
       <div class="carte__media">
-        <a href="/products/sweat"><img src="https://example.com/carte.jpg" alt="Sweat"></a>
+        <!-- Carrousel, comme la plupart des thèmes récents : la photo vit dans
+             une diapo, et la seconde se dessine par-dessus au survol. Ancrer
+             la rangée dans la première diapo la faisait disparaître dès que la
+             souris entrait dans la vignette. -->
+        <slideshow-component><slideshow-slides>
+          <slideshow-slide class="diapo">
+            <div class="media"><a href="/products/sweat"><img src="https://example.com/carte.jpg" alt="Sweat"></a></div>
+          </slideshow-slide>
+          <slideshow-slide class="diapo diapo--survol">
+            <div class="media"><img src="https://example.com/carte-2.jpg" alt=""></div>
+          </slideshow-slide>
+        </slideshow-slides></slideshow-component>
       </div>
       <div class="carte__infos">
         <a href="/products/sweat" class="titre">Sweat en coton bio</a>
@@ -1537,6 +1571,13 @@ async function ouvrirCollection(styleOverrides = {}) {
   <div class="tiroir-achat-rapide" hidden>
     <a href="/products/sweat">Ajouter au panier</a>
   </div>
+  <!-- Un tiroir de panier contient exactement ce que cherche le repérage : un
+       lien produit et une vignette. Il se faisait prendre pour une carte, et
+       les pastilles s'empilaient sur la photo de la ligne de panier. -->
+  <cart-drawer class="cart-drawer">
+    <a href="/products/echarpe"><img src="https://example.com/panier.jpg" alt="Écharpe"></a>
+    <a href="/products/echarpe" class="titre">Écharpe en laine</a>
+  </cart-drawer>
   <div data-variantsy-collection-root data-endpoint="/apps/variantsy/settings" hidden></div>
 </body></html>`);
   await page.addScriptTag({ content: jsCollection });
@@ -1639,26 +1680,74 @@ section("Pastilles en collection");
     JSON.stringify(surimpression),
   );
 
-  // Épaisseur réelle du liseré en surimpression. Le réglage vaut 2 px ici :
-  // la règle a longtemps additionné l'écart à l'épaisseur et en dessinait 4,
-  // ce qui est énorme sur une pastille de vignette. On mesure donc l'étalement
-  // effectif du box-shadow, pas la variable qui l'alimente.
-  const epaisseurLisere = await page.evaluate(() => {
+  // Épaisseur et écart réels du liseré. Le réglage vaut 2 px et 2 px ici.
+  // La règle a d'abord additionné les deux et dessinait un anneau plein de
+  // 4 px : on mesure donc ce qui est peint, pas la variable qui l'alimente.
+  const lisere = await page.evaluate(() => {
     const choisi = document.querySelector(
       ".variantsy-collection--surimpression .variantsy-collection__swatch.is-selected .variantsy-collection__visual",
     );
     if (!choisi) return { absent: true };
-    const ombre = getComputedStyle(choisi).boxShadow;
-    // « rgb(17, 17, 17) 0px 0px 0px 2px, rgba(0, 0, 0, 0.35) 0px 1px 4px 0px »
-    // La première ombre porte le liseré ; son 4e nombre est l'étalement.
-    const premiere = ombre.split(/,(?![^(]*\))/)[0];
-    const longueurs = premiere.match(/-?[\d.]+px/g) || [];
-    return { ombre, etalement: longueurs[3] };
+    const anneau = getComputedStyle(choisi, "::after");
+    return {
+      contenu: anneau.content,
+      epaisseur: anneau.borderTopWidth,
+      // `inset` négatif : l'anneau flotte à (écart + épaisseur) de la pastille,
+      // et l'écart laisse voir la photo.
+      decalage: anneau.top,
+      // L'ancienne version peignait l'anneau en ombre portée. S'il en reste
+      // une trace colorée, c'est que la règle n'a pas été remplacée.
+      ombre: getComputedStyle(choisi).boxShadow,
+    };
   });
   check(
-    "Le liseré en surimpression fait exactement l'épaisseur réglée",
-    !epaisseurLisere.absent && epaisseurLisere.etalement === "2px",
-    JSON.stringify(epaisseurLisere),
+    "Le liseré est un trait fin détaché de la pastille, pas un anneau plein",
+    !lisere.absent &&
+      lisere.epaisseur === "2px" &&
+      lisere.decalage === "-4px" &&
+      lisere.contenu !== "none",
+    JSON.stringify(lisere),
+  );
+
+  // --- Ancrage au niveau de la galerie, pas de la diapo --------------------
+  const ancrage = await page.evaluate(() => {
+    const rangee = document.querySelector(".carte [data-variantsy-collection]");
+    if (!rangee) return { absent: true };
+    return {
+      dansUneDiapo: !!rangee.closest("slideshow-slide"),
+      // L'hôte doit contenir TOUTES les diapos : c'est ce qui met la rangée
+      // au-dessus de celle que le thème substitue au survol.
+      contientLesDiapos: rangee.parentElement.querySelectorAll("slideshow-slide").length,
+      zIndex: getComputedStyle(rangee).zIndex,
+      chevauche: (() => {
+        const r = rangee.getBoundingClientRect();
+        const i = document.querySelector(".carte img").getBoundingClientRect();
+        return r.top < i.bottom && r.bottom > i.top;
+      })(),
+    };
+  });
+  check(
+    "La rangée est ancrée au-dessus des diapos, pas dans l'une d'elles",
+    !ancrage.absent &&
+      ancrage.dansUneDiapo === false &&
+      ancrage.contientLesDiapos === 2 &&
+      ancrage.zIndex === "2" &&
+      ancrage.chevauche === true,
+    JSON.stringify(ancrage),
+  );
+
+  // --- Le panier n'est pas une grille de collection ------------------------
+  const panier = await page.evaluate(() => ({
+    rangeesDansLePanier: document.querySelectorAll("cart-drawer [data-variantsy-collection]").length,
+    lienBienPresent: !!document.querySelector('cart-drawer a[href*="/products/"]'),
+    imageBienPresente: !!document.querySelector("cart-drawer img"),
+  }));
+  check(
+    "Aucune pastille n'est greffée dans le tiroir de panier",
+    panier.rangeesDansLePanier === 0 &&
+      panier.lienBienPresent === true &&
+      panier.imageBienPresente === true,
+    JSON.stringify(panier),
   );
 
   // --- Apparition : toujours visible par défaut, au survol sur demande -----
@@ -1693,11 +1782,12 @@ section("Pastilles en collection");
       pointeurFin: matchMedia("(hover: hover) and (pointer: fine)").matches,
     };
   });
-  await pageSurvol.locator(".carte img").first().hover();
+  await pageSurvol.locator(".carte__media").first().hover();
   await pageSurvol.waitForTimeout(300);
-  const apresSurvol = await pageSurvol.evaluate(
-    () => getComputedStyle(document.querySelector("[data-variantsy-collection]")).opacity,
-  );
+  const apresSurvol = await pageSurvol.evaluate(() => {
+    const rangee = document.querySelector("[data-variantsy-collection]");
+    return rangee ? getComputedStyle(rangee).opacity : "aucune rangée";
+  });
   check(
     "En mode survol, la rangée est masquée puis révélée au passage de la souris",
     !avantSurvol.absent &&

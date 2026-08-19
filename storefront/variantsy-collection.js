@@ -120,6 +120,47 @@
     return false;
   }
 
+  /**
+   * Ce lien vit-il dans un panier ?
+   *
+   * Un tiroir de panier contient exactement ce qu'on cherche — un lien produit
+   * et une vignette — et se faisait donc prendre pour une carte de collection.
+   * Les pastilles s'empilaient sur la photo de la ligne de panier, où elles
+   * n'ont aucun sens : le coloris y est déjà choisi, et le changer ne
+   * changerait pas ce qui est dans le panier.
+   */
+  /*
+   * Le sélecteur exige une frontière de mot autour de « cart ».
+   *
+   * Une simple recherche de sous-chaîne écartait toutes les cartes d'un thème
+   * francophone : « carte » contient « cart ». Et `form[action*="/cart"]`
+   * attrapait les formulaires d'ajout rapide (`/cart/add`) posés autour de
+   * chaque vignette par beaucoup de thèmes — donc, là encore, toute la grille.
+   */
+  var SELECTEUR_PANIER = [
+    'form[action$="/cart"]',
+    "cart-drawer",
+    "cart-items",
+    "cart-item",
+    "cart-notification",
+    '[class~="cart"]',
+    '[class*="cart-" i]',
+    '[class*="-cart" i]',
+    '[class*="cart_" i]',
+    '[class*="_cart" i]',
+    '[id~="cart"]',
+    '[id*="cart-" i]',
+    '[id*="-cart" i]',
+  ].join(",");
+
+  function dansLePanier(element) {
+    try {
+      return !!element.closest(SELECTEUR_PANIER);
+    } catch (error) {
+      return false;
+    }
+  }
+
   /** Cet élément abrite-t-il un lien vers un AUTRE produit que celui-ci ? */
   function contientAutreProduit(element, handle) {
     var liens = element.querySelectorAll('a[href*="/products/"]');
@@ -152,6 +193,7 @@
     Array.prototype.forEach.call(liens, function (lien) {
       var handle = handleDe(lien);
       if (!handle || vus[handle]) return;
+      if (dansLePanier(lien)) return;
 
       var noeud = lien;
       var carte = null;
@@ -375,23 +417,38 @@
       return;
     }
 
-    // On cherche le conteneur qui donne sa hauteur à l'image, en écartant les
-    // éléments en ligne : un <a> non converti en bloc a une boîte qui ne suit
-    // pas son contenu, et la rangée s'y ancre de travers.
-    var hote = image.parentElement;
-    for (var i = 0; i < 4 && hote && hote !== carte.parentElement; i++) {
-      var boite = hote.getBoundingClientRect();
+    // On cherche l'enveloppe de la photo : le PLUS HAUT conteneur qui fait
+    // encore sa hauteur, sans déborder sur le texte.
+    //
+    // S'arrêter au premier — ce que faisait cette boucle — laissait la rangée
+    // à l'intérieur d'une diapo de carrousel. Au survol, le thème passe à la
+    // diapo suivante, qui se dessine par-dessus, et nos pastilles disparaissent
+    // avec l'ancienne. La cartouche « Sold out » du thème est posée au niveau
+    // de la galerie, pas d'une diapo, et c'est exactement pour cette raison.
+    var hauteurImage = image.getBoundingClientRect().height;
+    var hote = null;
+    var noeud = image.parentElement;
+
+    for (var i = 0; i < 8 && noeud && (noeud === carte || carte.contains(noeud)); i++) {
+      var boite = noeud.getBoundingClientRect();
       var affichage = "block";
       try {
-        affichage = window.getComputedStyle(hote).display;
+        affichage = window.getComputedStyle(noeud).display;
       } catch (error) {
         /* noop */
       }
-      var enLigne = affichage === "inline";
-      if (!enLigne && boite.height >= image.getBoundingClientRect().height - 2) break;
-      hote = hote.parentElement;
+      // Un <a> resté en ligne a une boîte qui ne suit pas son contenu :
+      // s'y ancrer poserait la rangée de travers.
+      if (affichage !== "inline" && boite.height >= hauteurImage - 2) {
+        // Dès qu'on dépasse nettement la photo, on a mordu sur le titre : le
+        // conteneur précédent était le bon.
+        if (boite.height > hauteurImage + 4) break;
+        hote = noeud;
+      }
+      if (noeud === carte) break;
+      noeud = noeud.parentElement;
     }
-    if (!hote || hote === document.body || !carte.contains(hote)) hote = carte;
+    if (!hote) hote = carte;
 
     // `position: static` empêcherait l'ancrage. On ne l'impose que si le thème
     // ne l'a pas déjà défini, pour ne pas casser une mise en page existante.

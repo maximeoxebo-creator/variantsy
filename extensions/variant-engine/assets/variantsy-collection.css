@@ -86,26 +86,37 @@
      l'ombre portée de chaque pastille, pas par un voile qui salirait l'image. */
   background: none;
   pointer-events: auto;
+  /* Au-dessus de l'image que le thème substitue au survol. La cartouche
+     « Sold out » de Savor se place à 1 dans le même contexte ; on passe juste
+     devant elle plutôt que de surenchérir, pour ne rien recouvrir d'autre. */
+  z-index: 2;
 }
 
 .variantsy-collection--surimpression .variantsy-collection__visual {
-  border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  /* Pas de bordure, mais un filet blanc INTÉRIEUR : il détache la pastille de
+     la photo sans s'ajouter à son diamètre. Une bordure épaissit le rond ;
+     à 19 px, deux pixels de plus se voient. */
+  border: 0;
+  position: relative;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
-.variantsy-collection--surimpression .variantsy-collection__swatch.is-selected .variantsy-collection__visual {
-  /* Le liseré prend directement la couleur de sélection, sans l'écart blanc
-     de la page produit : sur une photo, ce blanc lit comme une salissure.
-
-     Son épaisseur est exactement `--vtsy-selected-width`, et rien d'autre.
-     Cette règle a d'abord additionné l'écart à l'épaisseur — ce que fait la
-     page produit, mais là-bas l'écart est rempli de blanc et seul le reste se
-     voit. Sans cette couche blanche, la somme devient un bloc plein : un
-     réglage à 1 px d'épaisseur et 3 px d'écart dessinait un anneau de 4 px
-     autour d'une pastille de 19. */
-  box-shadow:
-    0 0 0 var(--vtsy-selected-width, 1px) var(--vtsy-selected-color, #111111),
-    0 1px 4px rgba(0, 0, 0, 0.35);
+.variantsy-collection--surimpression
+  .variantsy-collection__swatch.is-selected
+  .variantsy-collection__visual::after {
+  /* Le liseré est un élément à part, pas une ombre.
+     C'est la seule façon de le faire flotter À DISTANCE de la pastille en
+     laissant voir la photo dans l'écart : une ombre portée ne sait pas faire
+     de trou, elle remplit tout ce qu'elle couvre. C'est exactement ce qui
+     donnait un anneau plein de 4 px là où le réglage en demandait 1. */
+  content: "";
+  position: absolute;
+  inset: calc(-1 * (var(--vtsy-selected-gap, 2px) + var(--vtsy-selected-width, 1px)));
+  border: var(--vtsy-selected-width, 1px) solid var(--vtsy-selected-color, #111111);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 /* --- Apparition au survol -------------------------------------------------
