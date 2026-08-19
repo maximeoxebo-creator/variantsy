@@ -1731,6 +1731,19 @@ section("Pastilles en collection");
       // qui faisait un second trait juste à côté du liseré. On interdit donc
       // tout contour peint par la pastille elle-même — inset comme étalement.
       ombre: getComputedStyle(choisi).boxShadow,
+      // Aucune pastille ne porte de contour, choisie ou non : le filet blanc
+      // intérieur essayé ici se lisait comme une bordure — bleu-gris sur un
+      // aplat sombre, crème sur un aplat clair.
+      ombreDesAutres: getComputedStyle(
+        document.querySelector(
+          ".variantsy-collection--surimpression .variantsy-collection__swatch:not(.is-selected) .variantsy-collection__visual",
+        ),
+      ).boxShadow,
+      bordureDesAutres: getComputedStyle(
+        document.querySelector(
+          ".variantsy-collection--surimpression .variantsy-collection__swatch:not(.is-selected) .variantsy-collection__visual",
+        ),
+      ).borderTopWidth,
     };
   });
   const contoursDansLOmbre = (ombre) =>
@@ -1738,12 +1751,14 @@ section("Pastilles en collection");
     // « 0px 0px 0px Npx » avec N > 0 : un anneau plein, pas une ombre douce.
     (ombre.match(/0px 0px 0px [1-9]/g) || []).length;
   check(
-    "La pastille choisie ne porte qu'un seul contour, dessiné par ::after",
+    "Aucune pastille de collection ne porte de contour, hors le liseré ::after",
     !lisere.absent &&
       lisere.epaisseur === "2px" &&
       lisere.decalage === "-4px" &&
       lisere.contenu !== "none" &&
-      contoursDansLOmbre(lisere.ombre) === 0,
+      contoursDansLOmbre(lisere.ombre) === 0 &&
+      contoursDansLOmbre(lisere.ombreDesAutres) === 0 &&
+      lisere.bordureDesAutres === "0px",
     JSON.stringify(lisere),
   );
 

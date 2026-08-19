@@ -93,14 +93,15 @@
 }
 
 .variantsy-collection--surimpression .variantsy-collection__visual {
-  /* Pas de bordure, mais un filet blanc INTÉRIEUR : il détache la pastille de
-     la photo sans s'ajouter à son diamètre. Une bordure épaissit le rond ;
-     à 19 px, deux pixels de plus se voient. */
+  /* Aucun contour, d'aucune sorte. Le filet blanc intérieur essayé ici
+     détachait bien la pastille de la photo, mais il se lisait comme une
+     bordure — bleu-gris sur un aplat sombre, crème sur un aplat clair — et
+     doublait le liseré sur la pastille choisie.
+     La séparation d'avec la photo est confiée à la seule ombre portée, qui
+     donne un bord sans dessiner de trait. */
   border: 0;
   position: relative;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
-    0 1px 2px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .variantsy-collection--surimpression
@@ -112,10 +113,10 @@
      superposait au trait fin dessiné juste en dessous. Deux liserés, dont un
      épais. La pastille choisie garde donc exactement l'habillage des autres —
      seul ::after la distingue. */
-  /* Le filet blanc disparaît ici : avec le liseré juste à côté, il faisait un
-     second contour. Une pastille choisie n'a pas besoin d'être détachée de la
-     photo — son anneau s'en charge. */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  /* Même habillage que les autres : seul ::after distingue la pastille
+     choisie. Toute la spécificité de cette règle sert à annuler celle de la
+     page produit, qui sinon reprendrait la main et repeindrait son anneau. */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .variantsy-collection--surimpression
