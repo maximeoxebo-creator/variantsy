@@ -187,7 +187,7 @@ export default function SwatchesPage() {
       { method: "POST" },
     );
     setEditing(null);
-    shopify.toast.show("Swatch enregistré");
+    shopify.toast.show("Swatch saved");
     setTimeout(() => revalidator.revalidate(), 300);
   };
 
@@ -198,8 +198,8 @@ export default function SwatchesPage() {
 
   return (
     <Page
-      title="Bibliothèque de swatches"
-      subtitle="Associez chaque valeur d'option à une couleur ou une image. Le mapping s'applique à toute la boutique."
+      title="Swatch library"
+      subtitle="Map every option value to a color or an image. The mapping applies to the whole store."
       primaryAction={{
         content: "Importer depuis mes produits",
         onAction: runImport,
@@ -215,8 +215,8 @@ export default function SwatchesPage() {
                 tone={fetcher.data.imported ? "success" : "info"}
                 title={
                   fetcher.data.imported
-                    ? `${fetcher.data.imported} valeur(s) importée(s)`
-                    : "Aucune nouvelle valeur trouvée"
+                    ? `${fetcher.data.imported} value(s) imported`
+                    : "No new value found"
                 }
               >
                 {fetcher.data.imported ? (
@@ -226,8 +226,8 @@ export default function SwatchesPage() {
                   </p>
                 ) : (
                   <p>
-                    Vérifiez que le nom de vos options figure bien dans « Options traitées comme des
-                    couleurs » dans les réglages.
+                    Check that your option names appear under &ldquo;Options treated as colors&rdquo;
+                      in the settings.
                   </p>
                 )}
               </Banner>
@@ -242,8 +242,8 @@ export default function SwatchesPage() {
                   image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                 >
                   <p>
-                    L&apos;import parcourt votre catalogue et reconnaît automatiquement les noms de
-                    couleurs courants en français et en anglais.
+                    The import walks your catalog and recognizes common color names in English
+                      and French automatically.
                   </p>
                 </EmptyState>
               ) : (
@@ -266,7 +266,7 @@ export default function SwatchesPage() {
                     selectedItemsCount={resourceState.selectedResources.length}
                     onSelectionChange={resourceState.handleSelectionChange}
                     headings={[
-                      { title: "Aperçu" },
+                      { title: "Preview" },
                       { title: "Valeur" },
                       { title: "Option" },
                       { title: "Type" },
@@ -328,14 +328,14 @@ export default function SwatchesPage() {
               <InlineStack gap="300" blockAlign="center">
                 <SwatchDot row={editing as SwatchRow} size={48} />
                 <Text as="span" tone="subdued">
-                  Aperçu
+                  Preview
                 </Text>
               </InlineStack>
               <TextField
                 label="Valeur de l'option"
                 value={editing.label || ""}
                 onChange={(v) => setEditing({ ...editing, label: v })}
-                helpText="Doit correspondre exactement à la valeur dans vos produits (la casse et les accents sont ignorés)."
+                helpText="Must match the value in your products exactly (case and accents are ignored)."
                 autoComplete="off"
               />
               <TextField
@@ -348,7 +348,7 @@ export default function SwatchesPage() {
                 label="Type de swatch"
                 options={[
                   { label: "Couleur unie", value: "color" },
-                  { label: "Bicolore (dégradé)", value: "gradient" },
+                  { label: "Two-tone (gradient)", value: "gradient" },
                   { label: "Image / texture", value: "image" },
                 ]}
                 value={editing.kind || "color"}
@@ -365,7 +365,7 @@ export default function SwatchesPage() {
                   />
                   {editing.kind === "gradient" && (
                     <TextField
-                      label="Deuxième couleur"
+                      label="Second color"
                       value={editing.colorHex2 || ""}
                       onChange={(v) => setEditing({ ...editing, colorHex2: v })}
                       placeholder="#FFFFFF"
@@ -379,7 +379,7 @@ export default function SwatchesPage() {
                   label="URL de l'image"
                   value={editing.imageUrl || ""}
                   onChange={(v) => setEditing({ ...editing, imageUrl: v })}
-                  helpText="Téléversez le fichier dans Contenu → Fichiers, puis collez son URL ici."
+                  helpText="Upload the file under Content → Files, then paste its URL here."
                   placeholder="https://cdn.shopify.com/s/files/..."
                   autoComplete="off"
                 />

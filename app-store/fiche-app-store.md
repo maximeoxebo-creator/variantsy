@@ -1,6 +1,6 @@
-# Variantsy — contenu de la fiche App Store
+# Variantsy — fiche App Store
 
-Longueurs vérifiées automatiquement. Orthographe américaine.
+Longueurs vérifiées à la génération. Orthographe américaine.
 
 ## App name  (27/30)
 
@@ -54,13 +54,13 @@ color swatches
 
 variant images
 
-## Search term 3  (15/20)
+## Search term 3  (13/20)
+
+variant title
+
+## Search term 4  (15/20)
 
 variant gallery
-
-## Search term 4  (16/20)
-
-product variants
 
 ## Search term 5  (16/20)
 
@@ -73,6 +73,64 @@ Variantsy — Variant Color Swatches & Image Galleries
 ## Meta description  (140/160)
 
 Give every product color its own photo gallery, swatches and title. One click switches the whole page. Works on any theme, no code required.
+
+## Category
+
+Selling products › Custom products › Product variants
+
+### Customization tags
+Swatches · Variants display · Dropdowns · Radio buttons
+
+Écartés à dessein : Custom CSS (le champ existe en base mais n'est pas exposé
+dans l'admin — le tag serait faux tant qu'un marchand ne peut pas s'en servir),
+Preview (désigne un aperçu montré à l'acheteur, pas à l'admin), Conditional
+logic (désigne des options qui en révèlent d'autres).
+
+### Pricing tags
+Not applicable for this app
+
+### Inventory tags
+Hide out-of-stock
+
+Correspond au réglage « Quand un coloris est en rupture → Retiré ». Écartés :
+SKU management (afficher un SKU dans le titre n'est pas le gérer), In-stock
+display et Stock availability (évoquent des badges ou des quantités, absents),
+Auto-updates, Manual updates, Low stock alerts.
+
+## Sales channel
+
+Shopify Online Store — obligatoire avec une extension de thème.
+
+## Languages
+
+French. L'interface d'administration est intégralement en français ; ce champ
+demande les langues dans lesquelles l'app est ENTIÈREMENT disponible.
+
+## Privacy policy URL
+
+https://variantsy.vercel.app/privacy
+
+## Support email · Merchant review email · App submission email
+
+contact.zeppelin.studio@gmail.com
+
+## Test account
+
+Cocher « My app doesn't require an account to use it ».
+Le mot de passe de la boutique de démonstration figure dans les instructions
+de test.
+
+## Feature media + Screenshots
+
+Feature media : variantsy-01.png
+Screenshots 1 à 5 : variantsy-02 à variantsy-06.png
+Textes alternatifs : voir alt-text.md
+
+## À fournir par Maxime
+
+- App icon 1200×1200 — icones/variantsy-icon-W1.png, à téléverser au Partner Dashboard
+- Demo store URL — la boutique est encore protégée par mot de passe
+- Screencast URL — vidéo de 3 à 8 minutes, obligatoire
 
 ## Testing instructions  (2364/2800)
 

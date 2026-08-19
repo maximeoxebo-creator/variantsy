@@ -779,7 +779,7 @@ function ApparencePanel({ form, set }: PanelProps) {
                   border: "1px solid #B0B7BF",
                 }}
               >
-                Navy
+                Blue
                 <span style={{ fontSize: 8 }}>▼</span>
               </span>
             ),
@@ -1023,7 +1023,7 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <ChoiceCards
         label="Quand une couleur n'est pas renseignée"
-        help="Ce que verra le client pour une valeur absente de votre Bibliothèque de swatches. Chaque aperçu montre trois valeurs différentes : Navy, Beige, Terracotta."
+        help="Ce que verra le client pour une valeur absente de votre Bibliothèque de swatches. Chaque aperçu montre trois valeurs différentes : Blue, Beige, Terracotta."
         value={form.swatchFallback}
         accent={accent}
         onChange={(v) => set("swatchFallback", v)}

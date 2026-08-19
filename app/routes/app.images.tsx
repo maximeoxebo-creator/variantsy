@@ -178,17 +178,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!result) {
       // Un diagnostic précis vaut mieux qu'un « ça ne marche pas » : c'est ce
       // qui évite les tickets de support.
-      let reason = "Aucun groupe détecté.";
+      let reason = "No group detected.";
       if (!settings.galleryEnabled) {
-        reason = "La galerie par variante est désactivée dans les réglages ci-dessus.";
+        reason = "Variant galleries are turned off in the settings above.";
       } else if (!mediaViews.length) {
-        reason = "Ce produit n'a aucun média.";
+        reason = "This product has no media.";
       } else if (!payload.variants.some((variant) => variant.m)) {
         reason =
-          "Aucune image n'est assignée à une variante dans l'admin Shopify, et aucun texte alternatif ne correspond à une valeur d'option. Assignez la première image de chaque coloris à sa variante.";
+          "No image is assigned to a variant in the Shopify admin, and no alt text matches an option value. Assign the first image of each color to its variant.";
       } else {
         reason =
-          "Toutes les images se retrouvent dans un seul groupe. Vérifiez que chaque coloris a bien sa propre image assignée, ou désactivez « Ne pas filtrer si un seul groupe » pour forcer le filtrage.";
+          "Every image falls into a single group. Check that each color has its own assigned image, or turn off &ldquo;Skip when a single group&rdquo; to force filtering.";
       }
       const inspection: Inspection = {
         productTitle: product.title,
@@ -238,7 +238,7 @@ export default function ImagesPage() {
   useEffect(() => {
     if (saveFetcher.state === "idle" && saveFetcher.data?.ok) {
       setDirty(false);
-      shopify.toast.show("Réglages enregistrés");
+      shopify.toast.show("Settings saved");
     }
   }, [saveFetcher.state, saveFetcher.data, shopify]);
 
@@ -273,7 +273,7 @@ export default function ImagesPage() {
   return (
     <Page
       title="Inspecteur de produit"
-      subtitle="Voyez exactement comment Variantsy regroupe les médias d'un produit."
+      subtitle="See exactly how Variantsy groups a product's media."
       primaryAction={{
         content: "Enregistrer",
         onAction: save,
@@ -299,23 +299,22 @@ export default function ImagesPage() {
               <BlockStack gap="400">
                 <InlineStack align="space-between" blockAlign="center">
                   <Text as="h2" variant="headingMd">
-                    Vérifier un produit
+                    Inspect a product
                   </Text>
                   <Button onClick={pickProduct} loading={inspectFetcher.state !== "idle"}>
-                    Choisir un produit
+                    Choose a product
                   </Button>
                 </InlineStack>
                 <Text as="p" tone="subdued">
-                  Affiche exactement le découpage que verront vos clients, calculé avec le même
-                  moteur que la boutique. À utiliser avant de vous inquiéter d&apos;un affichage
-                  inattendu.
+                  Shows exactly the grouping your shoppers will see, computed with the same engine
+                  as the storefront. Use it before worrying about an unexpected display.
                 </Text>
 
                 {inspectFetcher.data &&
                   "error" in inspectFetcher.data &&
                   inspectFetcher.data.error === "product_not_found" && (
-                    <Banner tone="critical" title="Produit introuvable">
-                      <p>Réessayez avec un autre produit.</p>
+                    <Banner tone="critical" title="Product not found">
+                      <p>Try another product.</p>
                     </Banner>
                   )}
 
@@ -326,13 +325,13 @@ export default function ImagesPage() {
                     </Text>
 
                     {inspection.reason ? (
-                      <Banner tone="warning" title="Aucun groupe détecté">
+                      <Banner tone="warning" title="No group detected">
                         <p>{inspection.reason}</p>
                       </Banner>
                     ) : (
                       <Banner tone="success" title={`Groupage par « ${inspection.optionName} »`}>
                         <p>
-                          {inspection.groups.length} groupe(s) détecté(s). Chaque coloris affichera
+                          {inspection.groups.length} group(s) detected. Each color will show
                           uniquement ses images.
                         </p>
                       </Banner>
@@ -342,7 +341,7 @@ export default function ImagesPage() {
                       <MediaRow
                         title={
                           inspection.reason
-                            ? "Médias du produit"
+                            ? "Product media"
                             : "Images communes (avant le premier coloris)"
                         }
                         tone="info"
@@ -388,7 +387,7 @@ function MediaRow({
             {title}
           </Text>
           {tone === "info" && <Badge tone="info">Toujours visibles</Badge>}
-          {count && <Badge>{`${media.length} média${media.length > 1 ? "s" : ""}`}</Badge>}
+          {count && <Badge>{`${media.length} media`}</Badge>}
         </InlineStack>
         <InlineStack gap="200" wrap>
           {media.map((item) => (

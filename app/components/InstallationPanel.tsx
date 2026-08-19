@@ -20,7 +20,7 @@ import {
 /* comprendre trois gestes.                                                   */
 /* ========================================================================== */
 
-const NAVY = "#1F3A5F";
+const BLUE = "#2C5AA0";
 const BEIGE = "#D8C3A5";
 
 /** Pastille étoilée : marque une photo assignée à une variante. */
@@ -203,7 +203,7 @@ function FicheMiniature({
 function SchemaOptions() {
   const valeurs = [
     { nom: "Beige", couleur: BEIGE },
-    { nom: "Navy", couleur: NAVY },
+    { nom: "Blue", couleur: BLUE },
   ];
 
   return (
@@ -278,7 +278,7 @@ function SchemaOptions() {
  */
 function SchemaAssignation() {
   const lignes = [
-    { valeur: "Navy", couleur: NAVY },
+    { valeur: "Blue", couleur: BLUE },
     { valeur: "Beige", couleur: BEIGE },
   ];
 
@@ -461,7 +461,7 @@ function SchemaEditeurTheme() {
               width: 18,
               height: 18,
               borderRadius: 4,
-              background: NAVY,
+              background: BLUE,
               flex: "0 0 auto",
             }}
           />
@@ -631,9 +631,9 @@ export function InstallationPanel({
           3. Rangez les autres photos derrière
         </Text>
         <InlineStack gap="300" blockAlign="start" wrap>
-          <Vignette color={NAVY} pinned legende="Navy" />
-          <Vignette color={NAVY} legende="Navy" />
-          <Vignette color={NAVY} legende="Navy" />
+          <Vignette color={BLUE} pinned legende="Blue" />
+          <Vignette color={BLUE} legende="Blue" />
+          <Vignette color={BLUE} legende="Blue" />
           <Vignette color={BEIGE} pinned legende="Beige" />
           <Vignette color={BEIGE} legende="Beige" />
         </InlineStack>
@@ -658,16 +658,16 @@ export function InstallationPanel({
     </Text>
     <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
       <FicheMiniature
-        titre="Cocotte · Navy"
-        couleur={NAVY}
-        pastilles={[NAVY, BEIGE]}
+        titre="Tee · Blue"
+        couleur={BLUE}
+        pastilles={[BLUE, BEIGE]}
         choisie={0}
         miniatures={2}
       />
       <FicheMiniature
         titre="Cocotte · Beige"
         couleur={BEIGE}
-        pastilles={[NAVY, BEIGE]}
+        pastilles={[BLUE, BEIGE]}
         choisie={1}
         miniatures={2}
       />

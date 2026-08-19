@@ -15,7 +15,7 @@ import { BlockStack, Badge, Banner, Box, Button, InlineGrid, InlineStack, Text }
 /* ========================================================================== */
 
 const LIEN_APP = "https://apps.shopify.com/combined-listings";
-const NAVY = "#1F3A5F";
+const BLUE = "#2C5AA0";
 const BEIGE = "#D8C3A5";
 
 /** Silhouette de tee-shirt, identique à celle du volet Installation. */
@@ -72,7 +72,7 @@ function Fiche({
         </Text>
         {relie ? (
           <span style={{ display: "flex", gap: 6 }}>
-            {[NAVY, BEIGE].map((c) => (
+            {[BLUE, BEIGE].map((c) => (
               <span
                 key={c}
                 style={{
@@ -103,14 +103,14 @@ export function ListesCombineesPanel() {
       <BlockStack gap="200">
         <InlineStack gap="200" blockAlign="center">
           <Text as="h3" variant="headingMd">
-            Un coloris par produit ?
+            One color per product?
           </Text>
-          <Badge tone="info">Fonctionnalité Shopify</Badge>
+          <Badge tone="info">Shopify feature</Badge>
         </InlineStack>
         <Text as="p" variant="bodySm" tone="subdued">
-          Variantsy travaille à l&apos;intérieur d&apos;un produit : il regroupe ses photos et
-          filtre sa galerie selon la variante choisie. Si chacun de vos coloris est un produit
-          distinct, il n&apos;a rien à relier entre eux — mais Shopify sait le faire.
+          Variantsy works inside a single product: it groups its photos and filters the gallery
+          to the chosen variant. If each of your colors is a separate product, there is nothing
+          for it to link together — but Shopify can do exactly that.
         </Text>
       </BlockStack>
 
@@ -119,28 +119,28 @@ export function ListesCombineesPanel() {
           <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
             <BlockStack gap="300">
               <InlineStack>
-                <Badge tone="critical">Aujourd&apos;hui</Badge>
+                <Badge tone="critical">Today</Badge>
               </InlineStack>
               <BlockStack gap="200">
-                <Fiche titre="Sweat bleu marine" couleur={NAVY} />
-                <Fiche titre="Sweat beige" couleur={BEIGE} />
+                <Fiche titre="Blue tee" couleur={BLUE} />
+                <Fiche titre="Beige tee" couleur={BEIGE} />
               </BlockStack>
               <Text as="p" variant="bodySm" tone="subdued">
-                Deux fiches sans rapport. Un client arrivé sur la bleue ignore que la beige
-                existe.
+                Two unrelated pages. A shopper who lands on the blue one never learns the beige
+                exists.
               </Text>
             </BlockStack>
 
             <BlockStack gap="300">
               <InlineStack>
-                <Badge tone="success">Avec une liste combinée</Badge>
+                <Badge tone="success">With a combined listing</Badge>
               </InlineStack>
               <BlockStack gap="200">
-                <Fiche titre="Sweat bleu marine" couleur={NAVY} relie />
+                <Fiche titre="Blue tee" couleur={BLUE} relie />
                 <Fiche titre="Sweat beige" couleur={BEIGE} relie />
               </BlockStack>
               <Text as="p" variant="bodySm" tone="subdued">
-                Un sélecteur de coloris sur chaque fiche, qui mène à l&apos;autre produit.
+                A color selector on each page, leading to the other product.
               </Text>
             </BlockStack>
           </InlineGrid>
@@ -149,36 +149,36 @@ export function ListesCombineesPanel() {
 
       <BlockStack gap="300">
         <Text as="h3" variant="headingSm">
-          Pourquoi ce n&apos;est pas dans Variantsy
+          Why this is not part of Variantsy
         </Text>
         <Text as="p" variant="bodySm">
-          Parce que Shopify le fait mieux. Sa fonctionnalité est intégrée aux thèmes, gratuite, et
-          surtout <strong>chaque produit garde son adresse</strong> — donc son référencement, ses
-          avis et ses liens entrants. Une app qui fusionnerait vos fiches les détruirait.
+          Because Shopify does it better. The feature is built into themes, free, and above all
+          <strong>every product keeps its own address</strong> — and with it its search ranking, its
+          reviews and its inbound links. An app that merged your pages would destroy all three.
         </Text>
         <Text as="p" variant="bodySm" tone="subdued">
-          Les deux se complètent : Shopify relie vos fiches entre elles, Variantsy filtre les
-          photos à l&apos;intérieur de chacune.
+          The two work together: Shopify links your pages to each other, Variantsy filters the
+          photos inside each one.
         </Text>
       </BlockStack>
 
       <Banner tone="info">
         <p>
-          <strong>Deux points à vérifier avant de vous lancer.</strong> Votre thème doit prendre en
-          charge les listes combinées — c&apos;est le cas de Dawn et des thèmes récents. Et la
-          disponibilité peut dépendre de votre forfait Shopify : l&apos;installation vous le dira.
+          <strong>Two things to check first.</strong> Your theme must support combined listings —
+          Dawn and recent themes do. And availability can depend on your Shopify plan: the install
+          flow will tell you.
         </p>
       </Banner>
 
       <InlineStack gap="300">
         <Button variant="primary" url={LIEN_APP} target="_blank">
-          Installer Combined Listings
+          Install Combined Listings
         </Button>
         <Button
           url="https://help.shopify.com/manual/products/combined-listings"
           target="_blank"
         >
-          Documentation Shopify
+          Shopify documentation
         </Button>
       </InlineStack>
     </BlockStack>
