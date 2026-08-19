@@ -17,7 +17,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "db:deploy": "set -a && . ./.env && set +a && prisma migrate deploy",
-    "deploy:extension": "shopify app deploy --force",
+    "deploy:extension": "npx @shopify/cli@4.6.1 app deploy --force",
     "deploy:all": "./scripts/deploy.sh",
     "config:link": "shopify app config link",
     "setup": "prisma generate && prisma migrate deploy",

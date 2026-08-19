@@ -32,7 +32,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # @shopify/cli 4.x exige Node >= 22.12. Épingler Node 20 ici pendant
+          # que la CLI se mettait à jour toute seule (voir ci-dessous) a fait
+          # échouer ce workflow en 44 s, sans que rien n'ait changé dans le repo.
+          node-version: 22
           cache: npm
 
       - run: npm ci
@@ -46,4 +49,10 @@ jobs:
         # confirmation interactive et le job reste bloqué jusqu'au timeout.
         # La minification doit précéder le déploiement : `assets/` est généré,
         # pas versionné. Sans cette ligne, l'extension partirait sans son JS.
-        run: npm run minify && npx shopify app deploy --force
+        # La CLI est ÉPINGLÉE. Sans version, `npx shopify` télécharge la
+        # dernière publiée : une montée de version majeure arrive alors en
+        # production sans qu'aucun commit ne la mentionne, et le jour où elle
+        # change ses prérequis, la CI casse sur un repo qui n'a pas bougé.
+        # C'est exactement ce qui s'est produit. Monter ce numéro doit être un
+        # commit délibéré.
+        run: npm run minify && npx @shopify/cli@4.6.1 app deploy --force
