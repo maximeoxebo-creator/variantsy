@@ -105,6 +105,20 @@
 
 .variantsy-collection--surimpression
   .variantsy-collection__swatch.is-selected
+  .variantsy-collection__visual {
+  /* L'anneau de la page produit doit être ANNULÉ ici, pas seulement ignoré.
+     Sa règle compte trois classes contre deux à celle de la surimpression :
+     à spécificité supérieure, elle reprenait la main et son anneau plein se
+     superposait au trait fin dessiné juste en dessous. Deux liserés, dont un
+     épais. La pastille choisie garde donc exactement l'habillage des autres —
+     seul ::after la distingue. */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.variantsy-collection--surimpression
+  .variantsy-collection__swatch.is-selected
   .variantsy-collection__visual::after {
   /* Le liseré est un élément à part, pas une ombre.
      C'est la seule façon de le faire flotter À DISTANCE de la pastille en

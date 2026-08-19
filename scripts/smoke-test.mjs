@@ -1695,9 +1695,18 @@ section("Pastilles en collection");
       // `inset` négatif : l'anneau flotte à (écart + épaisseur) de la pastille,
       // et l'écart laisse voir la photo.
       decalage: anneau.top,
-      // L'ancienne version peignait l'anneau en ombre portée. S'il en reste
-      // une trace colorée, c'est que la règle n'a pas été remplacée.
+      // L'anneau doit être dessiné par ::after et NULLE PART ailleurs.
+      // La règle de la page produit compte une classe de plus que celle de la
+      // surimpression : à spécificité supérieure elle reprenait la main, et son
+      // anneau plein se superposait au trait fin. Comparer l'ombre de la
+      // pastille choisie à celle d'une autre le prouve sans coder en dur la
+      // valeur attendue.
       ombre: getComputedStyle(choisi).boxShadow,
+      ombreDesAutres: getComputedStyle(
+        document.querySelector(
+          ".variantsy-collection--surimpression .variantsy-collection__swatch:not(.is-selected) .variantsy-collection__visual",
+        ),
+      ).boxShadow,
     };
   });
   check(
@@ -1705,7 +1714,8 @@ section("Pastilles en collection");
     !lisere.absent &&
       lisere.epaisseur === "2px" &&
       lisere.decalage === "-4px" &&
-      lisere.contenu !== "none",
+      lisere.contenu !== "none" &&
+      lisere.ombre === lisere.ombreDesAutres,
     JSON.stringify(lisere),
   );
 
