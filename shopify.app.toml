@@ -56,5 +56,13 @@ api_version = "2026-07"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
+  # Obligatoires pour toute app publiée sur l'App Store. Leur absence — ou une
+  # réponse incorrecte — est le premier motif de refus à la première
+  # soumission : l'équipe d'examen les teste à chaque passage, signature
+  # valide ET signature falsifiée.
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks/compliance"
+
 [pos]
 embedded = false

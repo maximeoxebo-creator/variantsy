@@ -1,0 +1,69 @@
+import type { ActionFunctionArgs } from "@remix-run/node";
+import prisma from "../db.server";
+import { authenticate } from "../shopify.server";
+
+/**
+ * Webhooks de conformité obligatoires pour toute app publiée sur l'App Store.
+ *
+ * Les trois topics arrivent sur une seule route, comme le montre l'exemple de
+ * la documentation : ils partagent la même vérification de signature et le même
+ * contrat de réponse.
+ *
+ * DEUX RÈGLES QUE L'EXAMEN SHOPIFY TESTE EXPLICITEMENT :
+ *   1. signature valide   → statut 2xx
+ *   2. signature INVALIDE → statut 401
+ *
+ * La seconde est celle qu'on rate : un handler qui attrape toutes les erreurs
+ * pour « ne jamais planter » répond 200 à une requête non signée, et l'app est
+ * refusée. `authenticate.webhook` lève une Response 401 ; on la laisse donc
+ * remonter telle quelle, sans try/catch autour.
+ *
+ * Ce que l'app détient réellement : des réglages de boutique et une
+ * bibliothèque de couleurs. AUCUNE donnée personnelle de client — ni nom, ni
+ * e-mail, ni commande. Les deux topics « customers » n'ont donc rien à purger
+ * ni à restituer, et c'est une réponse légitime : le règlement demande de
+ * traiter la demande, pas d'inventer des données.
+ */
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { shop, topic, payload } = await authenticate.webhook(request);
+
+  switch (topic) {
+    case "CUSTOMERS_DATA_REQUEST":
+      // Rien à restituer : aucune donnée client n'est stockée. On journalise
+      // pour pouvoir en attester si le marchand ou Shopify le demande.
+      console.log(`[conformité] demande de données client — ${shop} — aucune donnée détenue`);
+      break;
+
+    case "CUSTOMERS_REDACT":
+      console.log(`[conformité] effacement client — ${shop} — aucune donnée détenue`);
+      break;
+
+    case "SHOP_REDACT": {
+      // Là, il y a vraiment quelque chose à effacer. Shopify envoie ce topic
+      // 48 h après une désinstallation, et tout ce qui concerne la boutique
+      // doit disparaître.
+      //
+      // C'est le pendant de `app/uninstalled`, qui CONSERVE volontairement les
+      // réglages pour qu'un marchand qui réinstalle retrouve sa configuration.
+      // Cette rétention est légitime à court terme ; elle cesse de l'être quand
+      // le marchand demande l'effacement. Ici on purge donc tout.
+      const [reglages, couleurs, sessions] = await prisma.$transaction([
+        prisma.shopSettings.deleteMany({ where: { shop } }),
+        prisma.swatchValue.deleteMany({ where: { shop } }),
+        prisma.session.deleteMany({ where: { shop } }),
+      ]);
+      console.log(
+        `[conformité] effacement boutique — ${shop} — ` +
+          `${reglages.count} réglage(s), ${couleurs.count} couleur(s), ${sessions.count} session(s)`,
+      );
+      break;
+    }
+
+    default:
+      // Un topic inattendu sur cette route ne doit pas produire d'erreur : la
+      // signature était valide, donc la requête vient bien de Shopify.
+      console.log(`[conformité] topic non traité : ${topic} — ${shop}`, payload ? "" : "");
+  }
+
+  return new Response();
+};
