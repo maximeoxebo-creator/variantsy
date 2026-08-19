@@ -1789,6 +1789,25 @@ section("Pastilles en collection");
     JSON.stringify(ancrage),
   );
 
+  // --- Interrupteur des pastilles de collection ----------------------------
+  // Le marchand peut couper les collections sans toucher à la page produit.
+  // Ce réglage double la case de l'app embed dans l'éditeur de thème : celle-ci
+  // empêche le rendu, celle-là empêche le chargement du script. Un thème dont
+  // le bloc est resté actif ne doit donc RIEN afficher si l'admin dit non.
+  const pageEteinte = await ouvrirCollection({ collectionEnabled: false });
+  const eteint = await pageEteinte.evaluate(() => ({
+    rangees: document.querySelectorAll("[data-variantsy-collection]").length,
+    // La racine est bien là : le script a été chargé, c'est lui qui s'abstient.
+    racine: !!document.querySelector("[data-variantsy-collection-root]"),
+    cartes: document.querySelectorAll('a[href*="/products/"]').length,
+  }));
+  check(
+    "Éteint dans l'admin, aucune pastille n'est greffée en collection",
+    eteint.rangees === 0 && eteint.racine === true && eteint.cartes > 0,
+    JSON.stringify(eteint),
+  );
+  await pageEteinte.close();
+
   // --- Le panier n'est pas une grille de collection ------------------------
   const panier = await page.evaluate(() => ({
     rangeesDansLePanier: document.querySelectorAll("cart-drawer [data-variantsy-collection]").length,

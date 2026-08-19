@@ -68,7 +68,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?template=product`
         : null;
 
-  return { settings, themeName, deepLink };
+  // Les pastilles de collection ne passent PAS par le même mécanisme que le
+  // bloc produit : c'est un « app embed », rangé ailleurs dans l'éditeur de
+  // thème. Sans ce second lien, un marchand cherche un bloc qui n'existe pas.
+  const embedLink =
+    themeId && extensionUuid
+      ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?context=apps&activateAppId=${extensionUuid}/collection`
+      : null;
+
+  return { settings, themeName, deepLink, embedLink };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -101,6 +109,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     photoScale: Math.min(220, Math.max(100, int("photoScale", DEFAULT_SETTINGS.photoScale))),
+    collectionEnabled: bool("collectionEnabled"),
     collectionPlacement: str("collectionPlacement", DEFAULT_SETTINGS.collectionPlacement),
     collectionReveal: str("collectionReveal", DEFAULT_SETTINGS.collectionReveal),
     showLabels: bool("showLabels"),
@@ -137,7 +146,7 @@ const TABS = [
 ];
 
 export default function SettingsPage() {
-  const { settings, themeName, deepLink } = useLoaderData<typeof loader>();
+  const { settings, themeName, deepLink, embedLink } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -279,7 +288,7 @@ export default function SettingsPage() {
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="500">
                   {tab === 0 && (
-                    <InstallationPanel themeName={themeName} deepLink={deepLink} />
+                    <InstallationPanel themeName={themeName} deepLink={deepLink} embedLink={embedLink} />
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
@@ -350,16 +359,21 @@ type PanelProps = {
 function Interrupteur({
   actif,
   onChange,
+  // Le libellé était figé sur « Variantsy » : réutiliser le composant pour un
+  // second réglage aurait annoncé « Désactiver Variantsy » à un lecteur d'écran
+  // en coupant seulement les collections.
+  quoi = "Variantsy",
 }: {
   actif: boolean;
   onChange: (value: boolean) => void;
+  quoi?: string;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={actif}
-      aria-label={actif ? "Désactiver Variantsy" : "Activer Variantsy"}
+      aria-label={(actif ? "Désactiver " : "Activer ") + quoi}
       onClick={() => onChange(!actif)}
       style={{
         position: "relative",
@@ -1070,9 +1084,34 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       <Divider />
 
-      {/* Vignettes de collection : réglage à part, car il ne concerne pas la
-          page produit. Il vit ici plutôt que dans un onglet dédié — un seul
-          choix ne justifie pas un volet. */}
+      {/* Vignettes de collection : réglages à part, car ils ne concernent pas
+          la page produit. Ils vivent ici plutôt que dans un onglet dédié — trois
+          choix ne justifient pas un volet. */}
+      <BlockStack gap="300">
+        <InlineStack align="space-between" blockAlign="center" gap="400" wrap={false}>
+          <BlockStack gap="100">
+            <SectionTitle accent={accent}>Pastilles sur les pages de collection</SectionTitle>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Les coloris apparaissent sur chaque vignette du catalogue. La page produit
+              n'est pas concernée par cet interrupteur.
+            </Text>
+          </BlockStack>
+          <Interrupteur
+            actif={form.collectionEnabled}
+            quoi="les pastilles de collection"
+            onChange={(v) => set("collectionEnabled", v)}
+          />
+        </InlineStack>
+        {!form.collectionEnabled && (
+          <Text as="p" variant="bodySm" tone="subdued">
+            Le bloc « Variantsy collections » peut rester activé dans votre thème :
+            rien ne s'affichera tant que cet interrupteur est éteint.
+          </Text>
+        )}
+      </BlockStack>
+
+      {form.collectionEnabled && (
+        <>
       <ChoiceCards
         label="Sur les pages de collection"
         help="Où poser la rangée de coloris sur chaque vignette."
@@ -1183,6 +1222,8 @@ function ApparencePanel({ form, set }: PanelProps) {
           votre thème produit déjà un effet au survol des vignettes — les deux se disputeraient
           l'attention.
         </Text>
+      )}
+        </>
       )}
 
       <Divider />

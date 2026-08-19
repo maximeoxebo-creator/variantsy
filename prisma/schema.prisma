@@ -96,6 +96,12 @@ model ShopSettings {
   /// "color"   → rester en pastille de couleur, devinée depuis le nom
   /// "neutral" → rester en pastille, toujours de la teinte neutre
   swatchFallback String @default("image")
+  /// Afficher les pastilles sur les pages de collection.
+  /// Doublon assumé de la case du même nom dans l'éditeur de thème : celle-ci
+  /// empêche le rendu, celle-là empêche le chargement du script. Un marchand
+  /// cherche ce réglage dans l'app, pas dans son thème — et beaucoup n'ouvrent
+  /// jamais l'éditeur après l'installation.
+  collectionEnabled Boolean @default(true)
   /// Où poser la rangée de pastilles sur une vignette de collection :
   /// "overlay" → en surimpression sur la photo (défaut)
   /// "below"   → sous le bloc de texte

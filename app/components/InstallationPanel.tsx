@@ -1,5 +1,6 @@
 import {
   Badge,
+  Banner,
   BlockStack,
   Box,
   Button,
@@ -474,9 +475,11 @@ function SchemaEditeurTheme() {
 export function InstallationPanel({
   themeName,
   deepLink,
+  embedLink,
 }: {
   themeName: string | null;
   deepLink: string | null;
+  embedLink: string | null;
 }) {
   return (
     <BlockStack gap="500">
@@ -486,7 +489,7 @@ export function InstallationPanel({
     <InlineStack gap="200" blockAlign="center">
       <Badge tone="info">Étape 1</Badge>
       <Text as="h2" variant="headingMd">
-        Activer le bloc dans votre thème
+        Activer le bloc sur la page produit
       </Text>
     </InlineStack>
     <Text as="p">
@@ -528,10 +531,60 @@ export function InstallationPanel({
   </BlockStack>
 </Card>
 
+
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
       <Badge tone="info">Étape 2</Badge>
+      <Text as="h2" variant="headingMd">
+        Activer les pastilles sur vos pages de collection
+      </Text>
+      <Badge>Facultatif</Badge>
+    </InlineStack>
+    <Text as="p">
+      Les vignettes d&apos;une collection sont rendues par votre thème, dans une boucle
+      à laquelle aucune application n&apos;a accès. Les pastilles n&apos;y passent donc
+      pas par un bloc, mais par un <strong>module d&apos;application</strong> — rangé
+      ailleurs dans l&apos;éditeur de thème.
+    </Text>
+    <Banner tone="info">
+      <Text as="p" variant="bodySm">
+        C&apos;est la confusion la plus fréquente : on cherche « Variantsy » dans la
+        liste des blocs d&apos;une page de collection, et on ne le trouve pas. C&apos;est
+        normal, il n&apos;y est pas.
+      </Text>
+    </Banner>
+    {embedLink && (
+      <InlineStack>
+        <Button variant="primary" url={embedLink} target="_blank">
+          Ouvrir les modules d&apos;application
+        </Button>
+      </InlineStack>
+    )}
+    <List type="number">
+      <List.Item>
+        Dans l&apos;éditeur de thème, ouvrez le panneau de gauche jusqu&apos;en bas et
+        cliquez sur <strong>Modules d&apos;application</strong> (icône en forme de prise).
+      </List.Item>
+      <List.Item>
+        Activez <strong>« Variantsy collections »</strong>.
+      </List.Item>
+      <List.Item>Enregistrez.</List.Item>
+    </List>
+    <Text as="p" variant="bodySm" tone="subdued">
+      Deux interrupteurs commandent cet affichage, et les deux doivent être allumés :
+      celui-ci charge le script, et celui de l&apos;onglet <strong>Apparence</strong>
+      décide de l&apos;affichage. Pour couper les pastilles de collection au quotidien,
+      utilisez celui de l&apos;onglet Apparence — il ne demande pas de repasser par
+      l&apos;éditeur de thème.
+    </Text>
+  </BlockStack>
+</Card>
+
+<Card>
+  <BlockStack gap="300">
+    <InlineStack gap="200" blockAlign="center">
+      <Badge tone="info">Étape 3</Badge>
       <Text as="h2" variant="headingMd">
         Ranger vos photos dans l&apos;ordre
       </Text>
@@ -632,7 +685,7 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Étape 3</Badge>
+      <Badge tone="info">Étape 4</Badge>
       <Text as="h2" variant="headingMd">
         Ajuster le style
       </Text>

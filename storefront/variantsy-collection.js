@@ -514,6 +514,11 @@
     chargerConfig(endpoint)
       .then(function (config) {
         if (!config || config.enabled === false) return;
+        // Interrupteur propre aux collections, réglé depuis l'admin. Il double
+        // la case de l'app embed dans l'éditeur de thème, et c'est voulu :
+        // celle-ci empêche le script de se charger, celui-là empêche le rendu.
+        // Un marchand cherche ce réglage dans l'app, pas dans son thème.
+        if ((config.style || {}).collectionEnabled === false) return;
 
         var cartes = trouverCartes(document);
         if (!cartes.length) return;
