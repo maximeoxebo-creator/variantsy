@@ -45,8 +45,13 @@ jobs:
           SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
           SHOPIFY_API_KEY: ${{ secrets.SHOPIFY_API_KEY }}
           SHOPIFY_CLI_NO_ANALYTICS: "1"
-        # --force est obligatoire en CI : sans lui la commande attend une
-        # confirmation interactive et le job reste bloqué jusqu'au timeout.
+        # --allow-updates remplace --force, retiré en CLI 4.x. Sans lui la
+        # commande attend une confirmation interactive et le job reste bloqué
+        # jusqu'au timeout. C'est le drapeau que Shopify recommande pour la CI.
+        #
+        # Volontairement PAS --allow-deletes : celui-là accepterait aussi la
+        # suppression d'extensions. Un déploiement qui s'arrête parce qu'il
+        # allait effacer quelque chose est un déploiement qui fait son travail.
         # La minification doit précéder le déploiement : `assets/` est généré,
         # pas versionné. Sans cette ligne, l'extension partirait sans son JS.
         # La CLI est ÉPINGLÉE. Sans version, `npx shopify` télécharge la
@@ -55,4 +60,4 @@ jobs:
         # change ses prérequis, la CI casse sur un repo qui n'a pas bougé.
         # C'est exactement ce qui s'est produit. Monter ce numéro doit être un
         # commit délibéré.
-        run: npm run minify && npx @shopify/cli@4.6.1 app deploy --force
+        run: npm run minify && npx @shopify/cli@4.6.1 app deploy --allow-updates
