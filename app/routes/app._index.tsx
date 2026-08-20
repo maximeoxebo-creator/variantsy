@@ -162,7 +162,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
  *  apparence et son titre, et le mode « produits liés » ajoute la gestion des
  *  groupes. On désigne l'onglet actif par son identifiant, jamais par son
  *  indice — les deux listes n'ont pas la même longueur. */
-export const ONGLETS = {
+const ONGLETS = {
   variants: [
     { id: "apparence", content: "Appearance", panelID: "panel-apparence" },
     { id: "titre", content: "Title", panelID: "panel-titre" },
@@ -176,7 +176,7 @@ export const ONGLETS = {
   ],
 } as const;
 
-export type Mode = keyof typeof ONGLETS;
+type Mode = keyof typeof ONGLETS;
 
 /** Les deux fonctionnalités de l'app, posées dès l'arrivée.
  *
@@ -185,7 +185,7 @@ export type Mode = keyof typeof ONGLETS;
  *  rien perdre. C'est la différence avec l'ancien écran « Setup », qui posait
  *  la même question pour ne montrer que des instructions, et renvoyait vers un
  *  onglet au lieu d'y mener. */
-export function SelecteurMode({
+function SelecteurMode({
   mode,
   onChange,
   nbGroupes,
@@ -974,7 +974,7 @@ function ApercuRangee({ radius, accent }: { radius: string; accent: string }) {
   );
 }
 
-export function ApparencePanel({ form, set }: PanelProps) {
+function ApparencePanel({ form, set }: PanelProps) {
   const radius =
     form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
   const accent = form.selectedColor;
@@ -1541,7 +1541,7 @@ const VARIABLE_GROUPS: { titre: string; teinte: string; tokens: string[] }[] = [
   { titre: "References", teinte: "#6D5B8E", tokens: ["{{sku}}", "{{barcode}}"] },
 ];
 
-export function TitrePanel({ form, set }: PanelProps) {
+function TitrePanel({ form, set }: PanelProps) {
   const accent = form.selectedColor;
 
   // Insertion à la position du curseur, et non en fin de champ : ajouter
