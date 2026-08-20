@@ -370,3 +370,23 @@
   width: var(--vtsy-photo-size, var(--vtsy-size));
   height: var(--vtsy-photo-size, var(--vtsy-size));
 }
+
+/* --- Produits liés : un coloris par fiche produit -------------------------
+   Même habillage que les pastilles de variantes, à une différence près : ce
+   sont des LIENS. Le navigateur les souligne et les colore par défaut, ce qui
+   n'a aucun sens sur une pastille — d'où ce reset, jumeau du PIÈGE N°5 sur les
+   boutons.
+
+   La photo de la fiche sœur sert de visuel quand aucune couleur n'est connue,
+   posée en `background-image` par le Liquid.
+   -------------------------------------------------------------------------- */
+.variantsy__group--linked .variantsy__swatch {
+  text-decoration: none;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.variantsy__group--linked .variantsy__visual {
+  background-size: cover;
+  background-position: center;
+}

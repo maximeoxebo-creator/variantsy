@@ -170,7 +170,42 @@ function groupHtml(option, selected) {
     </div>`;
 }
 
-function buildHtml(product, currentVariant) {
+/**
+ * Rangée « produits liés », telle que le Liquid la rend : mêmes classes que les
+ * variantes pour hériter du même habillage, mais des LIENS vers d'autres fiches.
+ * Le fixture doit la reproduire fidèlement — c'est justement cette ressemblance
+ * qui piégeait le moteur de variantes.
+ */
+function buildLinkedRow() {
+  const membres = [
+    { h: "cocotte-bleue", v: "Blue", self: false },
+    { h: "cocotte-beige", v: "Beige", self: true },
+    { h: "cocotte-anthracite", v: "Charcoal", self: false },
+  ];
+  const liens = membres
+    .map(
+      (m) => `
+        <a class="variantsy__swatch${m.self ? " is-selected" : ""}" href="/products/${m.h}"
+           role="listitem" aria-current="${m.self ? "page" : "false"}"
+           data-variantsy-value="${m.v}" data-variantsy-linked-handle="${m.h}">
+          <span class="variantsy__visual" aria-hidden="true"></span>
+          <span class="variantsy__text">${m.v}</span>
+          <span class="variantsy__caption">${m.v}</span>
+        </a>`,
+    )
+    .join("");
+  return `
+    <div class="variantsy__group variantsy__group--color variantsy__group--linked"
+         data-variantsy-linked data-option-name="Color">
+      <div class="variantsy__label">
+        <span class="variantsy__label-name">Color</span>
+        <span class="variantsy__label-value">Beige</span>
+      </div>
+      <div class="variantsy__options" role="list">${liens}</div>
+    </div>`;
+}
+
+function buildHtml(product, currentVariant, options = {}) {
   const selected = currentVariant.o;
 
   const slides = product.media
@@ -228,6 +263,7 @@ function buildHtml(product, currentVariant) {
            data-endpoint="/apps/variantsy/settings" data-current-variant="${currentVariant.id}">
         <script type="application/json" data-variantsy-data>${JSON.stringify(product)}</script>
         ${product.options.map((option) => groupHtml(option, selected)).join("")}
+        ${options.liens ? buildLinkedRow() : ""}
       </div>
 
       <form action="/cart/add" method="post">
@@ -286,7 +322,7 @@ async function openPage(product, currentVariant, configOverrides = {}) {
   // sessionStorage est partagé par origine : on le vide pour que chaque scénario
   // reparte de sa propre config et non du cache du scénario précédent.
   await page.evaluate(() => window.sessionStorage.clear());
-  await page.setContent(buildHtml(product, currentVariant));
+  await page.setContent(buildHtml(product, currentVariant, { liens: configOverrides.liens }));
   await page.addScriptTag({ content: js });
   await page.waitForFunction(() => document.querySelector("[data-variantsy-ready]") !== null);
   await page.waitForTimeout(120);
@@ -1788,6 +1824,40 @@ section("Pastilles en collection");
       ancrage.chevauche === true,
     JSON.stringify(ancrage),
   );
+
+  // --- Produits liés : un coloris par fiche ---------------------------------
+  // La rangée porte les mêmes classes que les variantes pour hériter du même
+  // habillage. Le moteur de variantes doit pourtant l'ignorer : sans cela il
+  // repeint les pastilles depuis le dictionnaire, efface la sélection posée par
+  // le thème et les marque indisponibles, aucune variante ne leur répondant.
+  const pageLiee = await openPage(PRODUCT, PRODUCT.variants[1], { liens: true });
+  const lie = await pageLiee.evaluate(() => {
+    const g = document.querySelector("[data-variantsy-linked]");
+    if (!g) return { absent: true };
+    const a = [...g.querySelectorAll(".variantsy__swatch")];
+    return {
+      nombre: a.length,
+      liens: a.every((x) => x.tagName === "A" && x.getAttribute("href")),
+      // Ce que le moteur de variantes aurait fait s'il ne les ignorait pas :
+      indisponibles: a.filter((x) => x.getAttribute("data-unavailable") === "true").length,
+      selectionIntacte: g.querySelectorAll(".is-selected").length,
+      // Et les groupes de variantes, eux, restent bien traités.
+      groupesVariantes: document.querySelectorAll(
+        ".variantsy__group:not([data-variantsy-linked]) .variantsy__swatch",
+      ).length,
+    };
+  });
+  check(
+    "La rangée de produits liés échappe au moteur de variantes",
+    !lie.absent &&
+      lie.nombre === 3 &&
+      lie.liens === true &&
+      lie.indisponibles === 0 &&
+      lie.selectionIntacte === 1 &&
+      lie.groupesVariantes > 0,
+    JSON.stringify(lie),
+  );
+  await pageLiee.close();
 
   // --- Interrupteur des pastilles de collection ----------------------------
   // Le marchand peut couper les collections sans toucher à la page produit.

@@ -1311,7 +1311,14 @@
           : "50%",
     );
 
-    var groups = this.root.querySelectorAll(".variantsy__group");
+    // La rangée « produits liés » porte les mêmes classes pour hériter du même
+    // habillage, mais ce ne sont PAS des variantes : ses pastilles sont des
+    // liens vers d'autres fiches. Les passer à la moulinette des variantes les
+    // repeignait depuis le dictionnaire, effaçait la sélection posée par le
+    // Liquid et les marquait indisponibles — aucune variante ne leur répondant.
+    var groups = this.root.querySelectorAll(
+      ".variantsy__group:not([data-variantsy-linked])",
+    );
     Array.prototype.forEach.call(groups, function (group) {
       var position = Number(group.getAttribute("data-option-position"));
       var optionName = normalize(group.getAttribute("data-option-name"));
@@ -1770,6 +1777,8 @@
 
     this.root.addEventListener("click", function (event) {
       var button = event.target.closest(".variantsy__swatch");
+      // Un lien de produit lié navigue : on ne l'intercepte pas.
+      if (button && button.closest("[data-variantsy-linked]")) return;
       if (!button || !self.root.contains(button)) return;
       event.preventDefault();
       self.select(
@@ -1781,6 +1790,8 @@
     this.root.addEventListener("keydown", function (event) {
       if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].indexOf(event.key) === -1) return;
       var button = event.target.closest(".variantsy__swatch");
+      // Un lien de produit lié navigue : on ne l'intercepte pas.
+      if (button && button.closest("[data-variantsy-linked]")) return;
       if (!button) return;
       var group = button.closest(".variantsy__group");
       var buttons = Array.prototype.slice
@@ -1805,6 +1816,7 @@
         "pointerenter",
         function (event) {
           var button = event.target.closest && event.target.closest(".variantsy__swatch");
+          if (button && button.closest("[data-variantsy-linked]")) return;
           if (!button) return;
           self.preload(
             Number(button.getAttribute("data-option-position")),

@@ -61,6 +61,19 @@
         "vendor": {{ product.vendor | json }},
         "type": {{ product.type | json }},
         {%- comment -%}
+          Produits liés — un coloris par fiche produit.
+
+          La vérité vit dans les métadonnées du produit, pas dans notre base :
+          le Liquid les lit sans appel réseau, la charge utile du proxy ne
+          gonfle pas avec le catalogue, et les données restent chez le marchand
+          s'il désinstalle.
+
+          `group` identifie le groupe, `group_value` le coloris que CETTE fiche
+          représente. Les fiches sœurs sont retrouvées côté JS.
+        {%- endcomment -%}
+        "group": {{ product.metafields.variantsy.group | default: '' | json }},
+        "groupValue": {{ product.metafields.variantsy.group_value | default: '' | json }},
+        {%- comment -%}
           Liste ORDONNÉE des médias du produit. L'ordre est l'information
           centrale du groupage : une image assignée à une variante ouvre son
           groupe, les images qui suivent le rejoignent jusqu'à la prochaine
@@ -174,6 +187,68 @@
         </div>
       </div>
     {%- endfor -%}
+
+    {%- comment -%}
+      PRODUITS LIÉS — un coloris par fiche produit.
+
+      Pour les catalogues où chaque couleur est un produit distinct. Shopify
+      propose « Combined Listings » pour ça, mais elle est réservée aux comptes
+      Plus : la majorité des marchands n'y a pas accès.
+
+      Le groupe ne stocke QUE des handles. Le titre, la photo et le coloris de
+      chaque fiche sœur sont résolus ici par `all_products`, donc rien à
+      resynchroniser quand un marchand renomme un produit ou change sa photo.
+
+      Chaque pastille est un LIEN, pas un bouton : on change de fiche, on ne
+      change pas de variante. Le référencement de chaque produit est préservé —
+      c'est tout l'intérêt par rapport à une app qui fusionnerait les fiches.
+    {%- endcomment -%}
+    {%- assign vtsy_members = product.metafields.variantsy.group_members.value -%}
+    {%- if vtsy_members and vtsy_members.size > 1 -%}
+      <div
+        class="variantsy__group variantsy__group--color variantsy__group--linked"
+        data-variantsy-linked
+        data-option-name="{{ product.metafields.variantsy.group_label | default: 'Color' | escape }}"
+      >
+        <div class="variantsy__label">
+          <span class="variantsy__label-name">{{ product.metafields.variantsy.group_label | default: 'Color' }}</span>
+          <span class="variantsy__label-value">{{ product.metafields.variantsy.group_value }}</span>
+        </div>
+
+        <div class="variantsy__options" role="list">
+          {%- for vtsy_handle in vtsy_members -%}
+            {%- assign vtsy_sibling = all_products[vtsy_handle] -%}
+            {%- comment -%}
+              Une fiche dépubliée ou supprimée revient vide. On la saute plutôt
+              que d'afficher une pastille qui mène à une 404.
+            {%- endcomment -%}
+            {%- if vtsy_sibling and vtsy_sibling.handle != blank -%}
+              {%- assign vtsy_value = vtsy_sibling.metafields.variantsy.group_value | default: vtsy_sibling.title -%}
+              {%- assign vtsy_self = false -%}
+              {%- if vtsy_sibling.handle == product.handle -%}{%- assign vtsy_self = true -%}{%- endif -%}
+              <a
+                class="variantsy__swatch{% if vtsy_self %} is-selected{% endif %}"
+                href="{{ vtsy_sibling.url }}"
+                role="listitem"
+                aria-current="{% if vtsy_self %}page{% else %}false{% endif %}"
+                aria-label="{{ vtsy_value | escape }}"
+                title="{{ vtsy_value | escape }}"
+                data-variantsy-value="{{ vtsy_value | escape }}"
+                data-variantsy-linked-handle="{{ vtsy_sibling.handle }}"
+              >
+                <span
+                  class="variantsy__visual"
+                  aria-hidden="true"
+                  {%- if vtsy_sibling.featured_image %} style="background-image: url({{ vtsy_sibling.featured_image | image_url: width: 200 }})"{% endif -%}
+                ></span>
+                <span class="variantsy__text">{{ vtsy_value }}</span>
+                <span class="variantsy__caption">{{ vtsy_value }}</span>
+              </a>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endif -%}
   </div>
 
   <script src="{{ 'variantsy.js' | asset_url }}" defer></script>

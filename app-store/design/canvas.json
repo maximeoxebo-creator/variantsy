@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1200, "h": 1200, "title": "Verre éteint" },
+    { "file": "Teinte.dc.html", "x": 1320, "y": 0, "w": 1200, "h": 1200, "title": "Verre légèrement teinté" },
+    { "file": "Test48.dc.html", "x": 0, "y": 1320, "w": 1200, "h": 560, "title": "Test à 48 px" }
+  ],
+  "annotations": [
+    { "id": "voile", "x": 1320, "y": 1320, "w": 520, "text": "Le curseur Voile en haut de chaque planche règle l'opacité du verre.\n\n0,03 : presque invisible, la bleue règne seule.\n0,30 : les tuiles éteintes reviennent au premier plan.\n\nC'est le seul arbitrage qui reste." },
+    { "id": "teinte", "x": 1900, "y": 1320, "w": 520, "text": "La seconde planche laisse une trace de beige et de terre sous le verre : on devine les coloris au lieu de deux plaques neutres.\n\nMoins pur, plus parlant sur ce que fait l'app." }
+  ],
+  "launch": { "view": "canvas" }
+}

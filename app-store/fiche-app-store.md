@@ -103,8 +103,9 @@ Shopify Online Store — obligatoire avec une extension de thème.
 
 ## Languages
 
-French. L'interface d'administration est intégralement en français ; ce champ
-demande les langues dans lesquelles l'app est ENTIÈREMENT disponible.
+English. L'interface d'administration a été traduite le 19 août 2026 ; ce champ
+demande les langues dans lesquelles l'app est ENTIÈREMENT disponible, et c'est
+désormais l'anglais.
 
 ## Privacy policy URL
 
@@ -172,6 +173,5 @@ WHAT IS ALREADY SET UP
 - The demo store has an active Pro subscription so that the admin can be reviewed.
 
 NOTES
-- The app interface is currently in French. An English version is in progress.
 - Uninstalling removes the storefront code entirely; no theme file is ever modified.
 
