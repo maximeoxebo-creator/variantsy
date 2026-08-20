@@ -66,8 +66,17 @@ export function LiensProduitsPanel({
     });
     if (!selection) return;
     const anciens = new Map((brouillon?.members ?? []).map((m) => [m.id, m]));
+    // Le nom de l'option des produits choisis, quand ils en ont une de couleur.
+    // Le pré-remplir vaut mieux que l'expliquer : c'est lui qui décide si les
+    // fiches liées rejoignent le nuancier existant ou forment une seconde
+    // rangée, et une boutique française gardait « Color » sans savoir.
+    const nomOption = selection
+      .flatMap((p: { options?: { name: string }[] }) => p.options ?? [])
+      .map((o) => o.name)
+      .find((n) => /colou?r|couleur|farbe|kleur|colore/i.test(n));
     setBrouillon((b) => ({
       ...(b ?? VIDE),
+      label: b?.id ? b.label : nomOption || b?.label || VIDE.label,
       members: selection.map(
         (p: { id: string; handle: string; title: string; options?: { name: string }[] }) => ({
           id: p.id,
