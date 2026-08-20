@@ -310,9 +310,16 @@ export default function SettingsPage() {
               </Banner>
             )}
 
+            {/* La barre d'onglets garde sa carte ; le CONTENU en sort.
+                Tant qu'il restait dedans, chaque bloc de réglages était une
+                carte imbriquée dans une autre — Polaris les aplatit, et la mise
+                en groupes ne se voyait pas. Posés sur le fond de la page, les
+                blocs redeviennent des cartes à part entière. */}
             <Card padding="0">
-              <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
-                <Box padding="500">
+              <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted />
+            </Card>
+
+            <BlockStack gap="400">
                   {tab === 3 && (
                     <InstallationPanel themeName={themeName} deepLink={deepLink} />
                   )}
@@ -340,9 +347,7 @@ export default function SettingsPage() {
                         fetcher.submit(data, { method: "POST" });
                       }}
                     />}
-                </Box>
-              </Tabs>
-            </Card>
+            </BlockStack>
           </BlockStack>
         </Layout.Section>
 
@@ -775,8 +780,8 @@ function Bloc({
   return (
     <Card>
       <BlockStack gap="500">
-        <InlineStack align="space-between" blockAlign="start" gap="400" wrap={false}>
-          <BlockStack gap="100">
+        <InlineStack align="space-between" blockAlign="center" gap="400" wrap={false}>
+          <BlockStack gap="050">
             <Text as="h3" variant="headingMd">
               {titre}
             </Text>
@@ -786,6 +791,7 @@ function Bloc({
           </BlockStack>
           {illustration}
         </InlineStack>
+        <Divider />
         <BlockStack gap="500">{children}</BlockStack>
       </BlockStack>
     </Card>
