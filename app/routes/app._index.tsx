@@ -29,7 +29,7 @@ import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
 import { LiensProduitsPanel } from "../components/LiensProduitsPanel";
 import type { ProduitChoisi } from "../components/LiensProduitsPanel";
-import { SchemaGroupe, SchemaOptions } from "../components/schemas";
+import { SchemaAvantApres, SchemaGroupe } from "../components/schemas";
 
 /** Thème publié : sert au lien direct vers l'éditeur, dans l'onglet Installation. */
 const PUBLISHED_THEME_QUERY = `#graphql
@@ -203,7 +203,7 @@ export function SelecteurMode({
       id: "variants" as const,
       titre: "Product variants",
       sous: "One product page, options handled by Shopify variants",
-      apercu: <SchemaOptions />,
+      apercu: <SchemaAvantApres />,
       note: "Color, size, material… Filter the gallery, hide the theme's selector, rewrite the title.",
     },
     {
@@ -461,6 +461,27 @@ export default function SettingsPage() {
               />
             </Card>
 
+            {/* L'aperçu occupait un tiers de la page en colonne de droite et
+                écrasait les volets. En pleine largeur il ne dispute la place à
+                personne, et posé AVANT les réglages il est là dès l'arrivée :
+                sous eux, il fallait traverser toute la page pour voir l'effet
+                de ce qu'on venait de changer. Il n'a rien à montrer pendant
+                qu'on lit une notice ou qu'on compose un groupe. */}
+            {(actif === "apparence" || actif === "titre") && (
+              <Card>
+                <BlockStack gap="300">
+                  <InlineStack align="space-between" blockAlign="center">
+                    <Text as="h2" variant="headingMd">Preview</Text>
+                    <Text as="span" tone="subdued" variant="bodySm">Clickable</Text>
+                  </InlineStack>
+                  <SwatchPreview settings={form} />
+                  <Text as="p" tone="subdued" variant="bodySm">
+                    Indicative preview: type and spacing will follow your theme once live.
+                  </Text>
+                </BlockStack>
+              </Card>
+            )}
+
             <BlockStack gap="400">
                   {actif === "installation" && (
                     <InstallationPanel themeName={themeName} deepLink={deepLink} mode={mode} />
@@ -502,25 +523,6 @@ export default function SettingsPage() {
                     />}
             </BlockStack>
 
-            {/* L'aperçu occupait un tiers de la page en colonne de droite et
-                écrasait les volets, dont les cartes de réglages se retrouvaient
-                à l'étroit. En pleine largeur sous le contenu, il ne dispute la
-                place à personne. Il n'a rien à montrer pendant qu'on lit une
-                notice ou qu'on compose un groupe. */}
-            {(actif === "apparence" || actif === "titre") && (
-              <Card>
-                <BlockStack gap="300">
-                  <InlineStack align="space-between" blockAlign="center">
-                    <Text as="h2" variant="headingMd">Preview</Text>
-                    <Text as="span" tone="subdued" variant="bodySm">Clickable</Text>
-                  </InlineStack>
-                  <SwatchPreview settings={form} />
-                  <Text as="p" tone="subdued" variant="bodySm">
-                    Indicative preview: type and spacing will follow your theme once live.
-                  </Text>
-                </BlockStack>
-              </Card>
-            )}
           </BlockStack>
         </Layout.Section>
 

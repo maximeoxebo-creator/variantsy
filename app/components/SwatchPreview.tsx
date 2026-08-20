@@ -46,14 +46,14 @@ function contrasteSur(couleur: string): string {
 type PreviewValue = { label: string; color: string; available: boolean };
 
 const DEMO_VALUES: PreviewValue[] = [
-  { label: "Noir", color: "#1A1A1A", available: true },
-  { label: "Bleu marine", color: "#1F3A5F", available: true },
+  { label: "Black", color: "#1A1A1A", available: true },
+  { label: "Navy", color: "#1F3A5F", available: true },
   { label: "Beige", color: "#D8C3A5", available: true },
   { label: "Terracotta", color: "#C1614B", available: false },
-  { label: "Blanc", color: "#F5F5F0", available: true },
+  { label: "White", color: "#F5F5F0", available: true },
 ];
 
-const DEMO_PRODUCT = "Sweat en coton bio";
+const DEMO_PRODUCT = "Organic cotton sweatshirt";
 const DEMO_SIZE = "M";
 
 export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
@@ -77,8 +77,8 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
       option1: value.label,
       option2: DEMO_SIZE,
       option3: "",
-      price: "59,00 €",
-      compare_at_price: "79,00 €",
+      price: "$59.00",
+      compare_at_price: "$79.00",
       sku: "SWT-001",
     });
   }, [selected, settings.titleTemplate, settings.updateTitle]);
@@ -105,11 +105,11 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
       >
         {title}
       </div>
-      <div style={{ fontSize: 16, color: "#616161", marginBottom: 20 }}>59,00 €</div>
+      <div style={{ fontSize: 16, color: "#616161", marginBottom: 20 }}>$59.00</div>
 
       {settings.showOptionName && (
         <div style={{ fontSize: 13, marginBottom: 10, color: "#4A4A4A" }}>
-          Couleur : <strong>{DEMO_VALUES[selected].label}</strong>
+          Color: <strong>{DEMO_VALUES[selected].label}</strong>
         </div>
       )}
 

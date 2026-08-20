@@ -64,6 +64,14 @@ export default function Apercu() {
                   fitted
                 />
               </Card>
+                {(actif === "apparence" || actif === "titre") && (
+                  <Card>
+                    <BlockStack gap="300">
+                      <Text as="h2" variant="headingMd">Preview</Text>
+                      <SwatchPreview settings={form} />
+                    </BlockStack>
+                  </Card>
+                )}
               <BlockStack gap="400">
                 {actif === "groupes" && (
                   <LiensProduitsPanel
@@ -84,14 +92,6 @@ export default function Apercu() {
                 {actif === "titre" && <TitrePanel form={form} set={set as never} />}
                 {actif === "installation" && (
                   <InstallationPanel themeName="Dawn" deepLink="https://example.com" mode={mode} />
-                )}
-                {(actif === "apparence" || actif === "titre") && (
-                  <Card>
-                    <BlockStack gap="300">
-                      <Text as="h2" variant="headingMd">Preview</Text>
-                      <SwatchPreview settings={form} />
-                    </BlockStack>
-                  </Card>
                 )}
               </BlockStack>
             </BlockStack>
