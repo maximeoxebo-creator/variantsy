@@ -28,6 +28,8 @@ import { listGroups, saveGroup, deleteGroup } from "../groups.server";
 import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
 import { LiensProduitsPanel } from "../components/LiensProduitsPanel";
+import type { ProduitChoisi } from "../components/LiensProduitsPanel";
+import { SchemaAvantApres, SchemaGroupe } from "../components/schemas";
 
 /** Thème publié : sert au lien direct vers l'éditeur, dans l'onglet Installation. */
 const PUBLISHED_THEME_QUERY = `#graphql
@@ -156,12 +158,135 @@ export const action = async ({ request }: ActionFunctionArgs) => {
  * s'ajustent ensuite. L'installation ferme la marche : elle se consulte une
  * fois, au premier jour.
  */
-const TABS = [
-  { id: "liens", content: "Linked products", panelID: "panel-liens" },
-  { id: "apparence", content: "Appearance", panelID: "panel-apparence" },
-  { id: "titre", content: "Title", panelID: "panel-titre" },
-  { id: "installation", content: "Setup", panelID: "panel-installation" },
-];
+/** Les onglets dépendent de la fonctionnalité choisie : chacune a son
+ *  apparence et son titre, et le mode « produits liés » ajoute la gestion des
+ *  groupes. On désigne l'onglet actif par son identifiant, jamais par son
+ *  indice — les deux listes n'ont pas la même longueur. */
+const ONGLETS = {
+  variants: [
+    { id: "apparence", content: "Appearance", panelID: "panel-apparence" },
+    { id: "titre", content: "Title", panelID: "panel-titre" },
+    { id: "installation", content: "Installation", panelID: "panel-installation" },
+  ],
+  linked: [
+    { id: "groupes", content: "Groups", panelID: "panel-groupes" },
+    { id: "apparence", content: "Appearance", panelID: "panel-apparence" },
+    { id: "titre", content: "Title", panelID: "panel-titre" },
+    { id: "installation", content: "Installation", panelID: "panel-installation" },
+  ],
+} as const;
+
+type Mode = keyof typeof ONGLETS;
+
+/** Les deux fonctionnalités de l'app, posées dès l'arrivée.
+ *
+ *  Elles coexistent — un catalogue peut mêler les deux modèles — donc ce
+ *  sélecteur navigue, il ne verrouille rien : on passe de l'un à l'autre sans
+ *  rien perdre. C'est la différence avec l'ancien écran « Setup », qui posait
+ *  la même question pour ne montrer que des instructions, et renvoyait vers un
+ *  onglet au lieu d'y mener. */
+function SelecteurMode({
+  mode,
+  onChange,
+  nbGroupes,
+}: {
+  mode: Mode;
+  onChange: (m: Mode) => void;
+  nbGroupes: number;
+}) {
+  // La carte écartée s'efface, pour que l'œil se pose d'abord sur celle qui
+  // est active. Elle se rallume au survol : atténuée en permanence, elle
+  // passerait pour désactivée et personne n'essaierait de cliquer.
+  const [survolee, setSurvolee] = useState<Mode | null>(null);
+  const choix = [
+    {
+      id: "variants" as const,
+      titre: "Product variants",
+      sous: "One product page, options handled by Shopify variants",
+      apercu: <SchemaAvantApres />,
+      note: "Color, size, material… Filter the gallery, hide the theme's selector, rewrite the title.",
+    },
+    {
+      id: "linked" as const,
+      titre: "Linked products",
+      sous: "One product page per color, linked together",
+      apercu: <SchemaGroupe />,
+      note:
+        nbGroupes > 0
+          ? `${nbGroupes} group${nbGroupes > 1 ? "s" : ""} set up.`
+          : "What Shopify reserves to Plus plans. Here, on any plan.",
+    },
+  ];
+
+  return (
+    <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+      {choix.map((c) => {
+        const actif = mode === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onChange(c.id)}
+            onMouseEnter={() => setSurvolee(c.id)}
+            onMouseLeave={() => setSurvolee(null)}
+            onFocus={() => setSurvolee(c.id)}
+            onBlur={() => setSurvolee(null)}
+            aria-pressed={actif}
+            style={{
+              opacity: actif || survolee === c.id ? 1 : 0.55,
+              transition: "opacity 150ms ease",
+              // PIÈGE N°5 : un bouton étiré par la grille centre son contenu.
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              justifyContent: "flex-start",
+              gap: 12,
+              width: "100%",
+              textAlign: "left",
+              padding: 16,
+              borderRadius: 14,
+              cursor: "pointer",
+              background: actif
+                ? "var(--p-color-bg-surface-selected)"
+                : "var(--p-color-bg-surface)",
+              border: actif
+                ? "2px solid var(--p-color-border-emphasis)"
+                : "1px solid var(--p-color-border-secondary)",
+              WebkitAppearance: "none",
+              appearance: "none",
+              outline: "none",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <span>
+              <span style={{ display: "block", fontSize: 15, fontWeight: 650 }}>{c.titre}</span>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 13,
+                  marginTop: 2,
+                  color: "var(--p-color-text-secondary)",
+                }}
+              >
+                {c.sous}
+              </span>
+            </span>
+            {c.apercu}
+            <span
+              style={{
+                fontSize: 12,
+                marginTop: "auto",
+                color: "var(--p-color-text-secondary)",
+              }}
+            >
+              {c.note}
+            </span>
+          </button>
+        );
+      })}
+    </InlineGrid>
+  );
+}
 
 export default function SettingsPage() {
   const { settings, themeName, deepLink, groups } = useLoaderData<typeof loader>();
@@ -170,7 +295,17 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState(settings);
   const [dirty, setDirty] = useState(false);
+  // Une boutique qui a déjà des groupes travaille sur les produits liés :
+  // l'y déposer évite un clic à chaque visite. Calculé, donc stable au
+  // rendu serveur — un localStorage désynchroniserait l'hydratation.
+  const [mode, setMode] = useState<Mode>(groups.length > 0 ? "linked" : "variants");
   const [tab, setTab] = useState(0);
+  const onglets = ONGLETS[mode];
+  const actif = onglets[Math.min(tab, onglets.length - 1)].id;
+  const changerMode = (m: Mode) => {
+    setMode(m);
+    setTab(0);
+  };
 
   const set = useCallback(<K extends keyof typeof settings>(key: K, value: (typeof settings)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -218,7 +353,7 @@ export default function SettingsPage() {
       title="Settings"
       subtitle="Swatch appearance, dynamic title and theme integration"
       primaryAction={{
-        content: "Enregistrer",
+        content: "Save",
         onAction: save,
         loading: fetcher.state !== "idle",
         disabled: !dirty,
@@ -252,7 +387,7 @@ export default function SettingsPage() {
                   </Text>
                   <Text as="p" variant="bodySm" tone="subdued">
                     {form.enabled
-                      ? "Vos pastilles et vos galeries par coloris sont en ligne."
+                      ? "Your swatches and per-color galleries are live."
                       : "Nothing shows on your storefront while the app is turned off."}
                   </Text>
                 </BlockStack>
@@ -261,7 +396,7 @@ export default function SettingsPage() {
                     traverser la carte pour relier les deux. */}
                 <InlineStack gap="300" blockAlign="center" wrap={false}>
                   <Badge tone={form.enabled ? "success" : undefined}>
-                    {form.enabled ? "Actif" : "Inactif"}
+                    {form.enabled ? "On" : "Off"}
                   </Badge>
                   <Interrupteur actif={form.enabled} onChange={(v) => set("enabled", v)} />
                 </InlineStack>
@@ -282,8 +417,8 @@ export default function SettingsPage() {
                 }}
               >
                 <p>
-                  Vos clients voient toutes les photos du produit, quel que soit le coloris
-                  chosen. This is the core of Variantsy — swatches and titles keep working without it,
+                  Shoppers see every photo of the product, whatever color they pick. This is the
+                  core of Variantsy — swatches and titles keep working without it,
                   but the gallery no longer follows the color.
                 </p>
               </Banner>
@@ -302,7 +437,7 @@ export default function SettingsPage() {
                   onAction: save,
                   loading: fetcher.state !== "idle",
                 }}
-                secondaryAction={{ content: "Annuler", onAction: discard }}
+                secondaryAction={{ content: "Discard", onAction: discard }}
               >
                 <p>
                   Your changes appear in the preview, but not yet on your storefront.
@@ -315,18 +450,57 @@ export default function SettingsPage() {
                 carte imbriquée dans une autre — Polaris les aplatit, et la mise
                 en groupes ne se voyait pas. Posés sur le fond de la page, les
                 blocs redeviennent des cartes à part entière. */}
+            <SelecteurMode mode={mode} onChange={changerMode} nbGroupes={groups.length} />
+
             <Card padding="0">
-              <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted />
+              <Tabs
+                tabs={onglets as unknown as { id: string; content: string }[]}
+                selected={Math.min(tab, onglets.length - 1)}
+                onSelect={setTab}
+                fitted
+              />
             </Card>
 
+            {/* L'aperçu occupait un tiers de la page en colonne de droite et
+                écrasait les volets. En pleine largeur il ne dispute la place à
+                personne, et posé AVANT les réglages il est là dès l'arrivée :
+                sous eux, il fallait traverser toute la page pour voir l'effet
+                de ce qu'on venait de changer. Il n'a rien à montrer pendant
+                qu'on lit une notice ou qu'on compose un groupe. */}
+            {(actif === "apparence" || actif === "titre") && (
+              <Card>
+                <BlockStack gap="300">
+                  <InlineStack align="space-between" blockAlign="center">
+                    <Text as="h2" variant="headingMd">Preview</Text>
+                    <Text as="span" tone="subdued" variant="bodySm">Clickable</Text>
+                  </InlineStack>
+                  <SwatchPreview settings={form} />
+                  <Text as="p" tone="subdued" variant="bodySm">
+                    Indicative preview: type and spacing will follow your theme once live.
+                  </Text>
+                </BlockStack>
+              </Card>
+            )}
+
             <BlockStack gap="400">
-                  {tab === 3 && (
-                    <InstallationPanel themeName={themeName} deepLink={deepLink} />
+                  {actif === "installation" && (
+                    <InstallationPanel themeName={themeName} deepLink={deepLink} mode={mode} />
                   )}
-                  {tab === 1 && <ApparencePanel form={form} set={set} />}
-                  {tab === 2 && <TitrePanel form={form} set={set} />}
-                  {tab === 0 && <LiensProduitsPanel
+                  {actif === "apparence" && <ApparencePanel form={form} set={set} />}
+                  {actif === "titre" && <TitrePanel form={form} set={set} />}
+                  {actif === "groupes" && <LiensProduitsPanel
                       groups={groups}
+                      onPickProducts={async (dejaChoisis) => {
+                        const selection = await shopify.resourcePicker({
+                          type: "product",
+                          multiple: true,
+                          // Les fiches déjà dans le groupe reviennent cochées :
+                          // sans ça, rouvrir le sélecteur pour ajouter une
+                          // couleur effacerait toutes les autres.
+                          selectionIds: dejaChoisis.map((id) => ({ id })),
+                        });
+                        return (selection as ProduitChoisi[] | undefined) ?? null;
+                      }}
                       enregistrement={fetcher.state !== "idle"}
                       erreurs={
                         (fetcher.data as { groupErrors?: string[] } | undefined)
@@ -348,33 +522,10 @@ export default function SettingsPage() {
                       }}
                     />}
             </BlockStack>
+
           </BlockStack>
         </Layout.Section>
 
-        {/* L'aperçu n'a rien à montrer pendant qu'on lit un guide d'installation :
-            il occuperait un tiers de l'écran pour rien. */}
-        {tab !== 0 && tab !== 3 && (
-        <Layout.Section variant="oneThird">
-          <Box position="sticky" insetBlockStart="400">
-            <Card>
-              <BlockStack gap="300">
-                <InlineStack align="space-between" blockAlign="center">
-                  <Text as="h2" variant="headingMd">
-                    Preview
-                  </Text>
-                  <Text as="span" tone="subdued" variant="bodySm">
-                    Clickable
-                  </Text>
-                </InlineStack>
-                <SwatchPreview settings={form} />
-                <Text as="p" tone="subdued" variant="bodySm">
-                  Indicative preview: type and spacing will follow your theme once live.
-                </Text>
-              </BlockStack>
-            </Card>
-          </Box>
-        </Layout.Section>
-        )}
       </Layout>
     </Page>
   );
@@ -555,7 +706,7 @@ function ChoiceCards({
   options,
   onChange,
 }: {
-  label: string;
+  label?: string;
   help?: string;
   value: string;
   accent: string;
@@ -564,9 +715,15 @@ function ChoiceCards({
 }) {
   return (
     <BlockStack gap="300">
-      <SectionTitle help={help} accent={accent}>
-        {label}
-      </SectionTitle>
+      {label ? (
+        <SectionTitle help={help} accent={accent}>
+          {label}
+        </SectionTitle>
+      ) : help ? (
+        <Text as="p" tone="subdued" variant="bodySm">
+          {help}
+        </Text>
+      ) : null}
       <InlineStack gap="300" wrap>
         {options.map((option) => {
           const active = value === option.id;
@@ -828,17 +985,15 @@ function ApparencePanel({ form, set }: PanelProps) {
 
   return (
     <BlockStack gap="600">
-      <Bloc titre="How your colors are shown" raison="Swatches, text buttons or a dropdown — pick what fits your theme.">
+      <Bloc titre="How your colors are shown" raison="Swatches, text buttons or a dropdown — pick what fits your theme. Color options only: sizes stay text buttons in every case.">
         <ChoiceCards
-          label="How your colors are shown"
-          help="Applies to color options only. Sizes stay text buttons in every case."
           value={form.displayMode}
           accent={accent}
           onChange={(v) => set("displayMode", v)}
           options={[
             {
               id: "swatch",
-              label: "Pastilles",
+              label: "Swatches",
               preview: (
                 <span style={{ display: "flex", gap: 4 }}>
                   <Chip radius={radius} background="#1F3A5F" size={20} />
@@ -849,7 +1004,7 @@ function ApparencePanel({ form, set }: PanelProps) {
             },
             {
               id: "text",
-              label: "Boutons texte",
+              label: "Text buttons",
               preview: (
                 <span style={{ display: "flex", gap: 4 }}>
                   {["S", "M", "L"].map((t) => (
@@ -910,10 +1065,10 @@ function ApparencePanel({ form, set }: PanelProps) {
           accent={accent}
           onChange={(v) => set("shape", v)}
           options={[
-            { id: "circle", label: "Cercle", preview: <Chip radius="50%" background="#C9CFD6" /> },
+            { id: "circle", label: "Circle", preview: <Chip radius="50%" background="#C9CFD6" /> },
             {
               id: "rounded",
-              label: "Arrondi",
+              label: "Rounded",
               preview: <Chip radius={`${form.cornerRadius}px`} background="#C9CFD6" />,
             },
             { id: "square", label: "Square", preview: <Chip radius="0px" background="#C9CFD6" /> },
@@ -922,7 +1077,7 @@ function ApparencePanel({ form, set }: PanelProps) {
 
         {form.shape === "rounded" && (
           <RangeSlider
-            label={`Arrondi des angles — ${form.cornerRadius} px`}
+            label={`Corner radius — ${form.cornerRadius} px`}
             min={0}
             max={24}
             value={form.cornerRadius}
@@ -992,7 +1147,7 @@ function ApparencePanel({ form, set }: PanelProps) {
               ]}
             />
             <RangeSlider
-              label={`Arrondi des angles — ${form.controlRadius} px`}
+              label={`Corner radius — ${form.controlRadius} px`}
               min={0}
               max={20}
               value={form.controlRadius}
@@ -1001,7 +1156,7 @@ function ApparencePanel({ form, set }: PanelProps) {
               helpText={
                 form.displayMode === "dropdown"
                   ? "Corners of the dropdown."
-                  : "Angles des boutons."
+                  : "Corners of the buttons."
               }
             />
             {form.displayMode === "dropdown" && (
@@ -1019,7 +1174,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
             {enPastilles ? (
               <RangeSlider
-                label={`Taille — ${form.size} px`}
+                label={`Size — ${form.size} px`}
                 min={20}
                 max={96}
                 value={form.size}
@@ -1031,7 +1186,7 @@ function ApparencePanel({ form, set }: PanelProps) {
               <Box />
             )}
             <RangeSlider
-              label={`Espacement — ${form.gap} px`}
+              label={`Spacing — ${form.gap} px`}
               min={0}
               max={40}
               value={form.gap}
@@ -1048,14 +1203,13 @@ function ApparencePanel({ form, set }: PanelProps) {
           <>
 
         <ChoiceCards
-          label="How the chosen swatch is shown"
           value={form.selectedStyle}
           accent={accent}
           onChange={(v) => set("selectedStyle", v)}
           options={[
             {
               id: "ring",
-              label: "Anneau",
+              label: "Ring",
               preview: (
                 <Chip
                   radius={radius}
@@ -1066,7 +1220,7 @@ function ApparencePanel({ form, set }: PanelProps) {
             },
             {
               id: "border",
-              label: "Bordure",
+              label: "Border",
               preview: (
                 <Chip
                   radius={radius}
@@ -1077,7 +1231,7 @@ function ApparencePanel({ form, set }: PanelProps) {
             },
             {
               id: "shadow",
-              label: "Ombre",
+              label: "Shadow",
               preview: (
                 <Chip radius={radius} background="#C9CFD6" boxShadow={`0 2px 8px ${accent}66`} />
               ),
@@ -1101,7 +1255,7 @@ function ApparencePanel({ form, set }: PanelProps) {
         {form.selectedStyle !== "shadow" && (
           <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
             <RangeSlider
-              label={`Épaisseur du trait — ${form.selectedWidth} px`}
+              label={`Outline thickness — ${form.selectedWidth} px`}
               min={1}
               max={8}
               value={form.selectedWidth}
@@ -1110,7 +1264,7 @@ function ApparencePanel({ form, set }: PanelProps) {
             />
             {form.selectedStyle === "ring" ? (
               <RangeSlider
-                label={`Écart avec la pastille — ${form.selectedGap} px`}
+                label={`Gap from the swatch — ${form.selectedGap} px`}
                 min={0}
                 max={8}
                 value={form.selectedGap}
@@ -1124,7 +1278,7 @@ function ApparencePanel({ form, set }: PanelProps) {
         )}
 
         <RangeSlider
-          label={`Épaisseur de bordure — ${form.borderWidth} px`}
+          label={`Border thickness — ${form.borderWidth} px`}
           min={0}
           max={6}
           value={form.borderWidth}
@@ -1139,7 +1293,6 @@ function ApparencePanel({ form, set }: PanelProps) {
           <>
 
         <ChoiceCards
-          label="When a color is not defined"
           help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Blue, Beige, Terracotta."
           value={form.swatchFallback}
           accent={accent}
@@ -1184,7 +1337,7 @@ function ApparencePanel({ form, set }: PanelProps) {
 
         {form.swatchFallback === "image" && (
           <RangeSlider
-            label={`Taille des pastilles photo — ${form.photoScale} %`}
+            label={`Photo swatch size — ${form.photoScale} %`}
             min={100}
             max={220}
             step={10}
@@ -1201,7 +1354,7 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       </Bloc>
 
-      <Bloc titre="Words around the selector" raison="What the shopper reads above and under the swatches.">
+      <Bloc titre="Words and sold-out colors" raison="What the shopper reads around the selector, and what an unavailable color looks like.">
 
 
         <ChoiceCards
@@ -1231,8 +1384,8 @@ function ApparencePanel({ form, set }: PanelProps) {
         />
         {form.soldOutStyle === "hide" && (
           <Text as="p" variant="bodySm" tone="subdued">
-            Le client ne saura pas que ce coloris existe — il ne pourra donc pas demander son retour
-            en stock.
+            Shoppers will never know this color exists, so they cannot ask to be notified when it
+            is back in stock.
           </Text>
         )}
 
@@ -1339,37 +1492,37 @@ const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
   {
     nom: "Product with two options",
     vars: {
-      product_title: "Sweat en coton bio",
-      variant_title: "Bleu marine / M",
-      option1: "Bleu marine",
+      product_title: "Organic cotton sweatshirt",
+      variant_title: "Navy / M",
+      option1: "Navy",
       option2: "M",
       option3: "",
-      "option:couleur": "Bleu marine",
-      "option:taille": "M",
-      price: "59,00 €",
-      compare_at_price: "79,00 €",
-      sku: "SWT-001-BM-M",
+      "option:color": "Navy",
+      "option:size": "M",
+      price: "$59.00",
+      compare_at_price: "$79.00",
+      sku: "SWT-001-NV-M",
       barcode: "3760000000017",
-      vendor: "Atelier Nord",
-      product_type: "Sweat",
+      vendor: "Northfield",
+      product_type: "Sweatshirt",
     },
   },
   {
     nom: "Product with a single option",
     vars: {
-      product_title: "Tee-shirt en lin",
-      variant_title: "Écru",
-      option1: "Écru",
+      product_title: "Linen tee",
+      variant_title: "Ecru",
+      option1: "Ecru",
       option2: "",
       option3: "",
-      "option:couleur": "Écru",
-      "option:taille": "",
-      price: "39,00 €",
+      "option:color": "Ecru",
+      "option:size": "",
+      price: "$39.00",
       compare_at_price: "",
-      sku: "TSH-EC",
+      sku: "TEE-EC",
       barcode: "",
-      vendor: "Atelier Nord",
-      product_type: "Tee-shirt",
+      vendor: "Northfield",
+      product_type: "Tee",
     },
   },
 ];
@@ -1378,13 +1531,13 @@ const TITLE_FIELD_ID = "variantsy-title-template";
 
 /** Groupes de variables, pour ne pas jeter douze boutons d'un coup. */
 const VARIABLE_GROUPS: { titre: string; teinte: string; tokens: string[] }[] = [
-  { titre: "Produit", teinte: "#1F3A5F", tokens: ["{{product_title}}", "{{vendor}}", "{{product_type}}"] },
+  { titre: "Product", teinte: "#1F3A5F", tokens: ["{{product_title}}", "{{vendor}}", "{{product_type}}"] },
   {
-    titre: "Variante",
+    titre: "Variant",
     teinte: "#2E7D32",
     tokens: ["{{variant_title}}", "{{option1}}", "{{option2}}", "{{option3}}", "{{option:Color}}"],
   },
-  { titre: "Prix", teinte: "#C1614B", tokens: ["{{price}}", "{{compare_at_price}}"] },
+  { titre: "Price", teinte: "#C1614B", tokens: ["{{price}}", "{{compare_at_price}}"] },
   { titre: "References", teinte: "#6D5B8E", tokens: ["{{sku}}", "{{barcode}}"] },
 ];
 
@@ -1473,7 +1626,7 @@ function TitrePanel({ form, set }: PanelProps) {
           {/* Le résultat, rendu comme un vrai titre de fiche produit : c'est la
               seule façon de juger une longueur et une ponctuation. */}
           <BlockStack gap="300">
-            <SectionTitle accent={accent}>Ce que verront vos clients</SectionTitle>
+            <SectionTitle accent={accent}>What your shoppers will see</SectionTitle>
             <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
               {TITLE_EXAMPLES.map((exemple, index) => {
                 const rendu = renderTemplate(form.titleTemplate, exemple.vars);
@@ -1543,9 +1696,9 @@ function TitrePanel({ form, set }: PanelProps) {
                 <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="success">Sweat</Badge>
+                      <Badge tone="success">Sweatshirt</Badge>
                       <Text as="span" variant="bodyXs" tone="subdued">
-                        a une taille
+                        has a size
                       </Text>
                     </InlineStack>
                     <Text as="p" variant="bodyMd" fontWeight="medium">
@@ -1558,7 +1711,7 @@ function TitrePanel({ form, set }: PanelProps) {
 
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="critical">T-shirt</Badge>
+                      <Badge tone="critical">Tee</Badge>
                       <Text as="span" variant="bodyXs" tone="subdued">
                         has none
                       </Text>
@@ -1581,11 +1734,11 @@ function TitrePanel({ form, set }: PanelProps) {
               <BlockStack gap="400">
                 <BlockStack gap="200">
                   <Text as="p" variant="bodyXs" tone="subdued">
-                    La correction : encadrez la partie facultative
+                    The fix: wrap the optional part in brackets
                   </Text>
                   <Text as="p" variant="bodyMd">
                     <code>
-                      {"{{product_title}} — {{option1}}[[ — Taille {{option2}}]]"}
+                      {"{{product_title}} — {{option1}}[[ — Size {{option2}}]]"}
                     </code>
                   </Text>
                 </BlockStack>
@@ -1593,11 +1746,11 @@ function TitrePanel({ form, set }: PanelProps) {
                 <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="success">Sweat</Badge>
+                      <Badge tone="success">Sweatshirt</Badge>
                     </InlineStack>
                     <Text as="p" variant="bodyMd" fontWeight="medium">
                       {renderTemplate(
-                        "{{product_title}} — {{option1}}[[ — Taille {{option2}}]]",
+                        "{{product_title}} — {{option1}}[[ — Size {{option2}}]]",
                         TITLE_EXAMPLES[0].vars,
                       )}
                     </Text>
@@ -1605,16 +1758,16 @@ function TitrePanel({ form, set }: PanelProps) {
 
                   <BlockStack gap="150">
                     <InlineStack gap="150" blockAlign="center">
-                      <Badge tone="success">Tee-shirt</Badge>
+                      <Badge tone="success">Tee</Badge>
                     </InlineStack>
                     <Text as="p" variant="bodyMd" fontWeight="medium">
                       {renderTemplate(
-                        "{{product_title}} — {{option1}}[[ — Taille {{option2}}]]",
+                        "{{product_title}} — {{option1}}[[ — Size {{option2}}]]",
                         TITLE_EXAMPLES[1].vars,
                       )}
                     </Text>
                     <Text as="p" variant="bodyXs" tone="success">
-                      Tout le passage entre crochets a disparu.
+                      Everything inside the brackets is gone.
                     </Text>
                   </BlockStack>
                 </InlineGrid>
