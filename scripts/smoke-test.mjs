@@ -80,6 +80,20 @@ const PRODUCT = {
  * Produit dont le TITRE contient un nom de couleur, recopié par Shopify dans le
  * texte alternatif de chaque image — le cas réel qui vidait un groupe entier.
  */
+/** Produit sans aucune option : Shopify lui invente « Default Title ». */
+const PRODUCT_SANS_OPTION = {
+  id: 88,
+  title: "Cocotte bleu marine",
+  url: "/products/cocotte-bleue",
+  vendor: "Fonderie",
+  type: "Cookware",
+  media: [{ id: 8801, t: "image", alt: "", src: "https://example.com/x.jpg" }],
+  options: [{ name: "Title", position: 1, values: ["Default Title"] }],
+  variants: [
+    { id: 8811, o: ["Default Title"], m: 8801, a: true, p: "0", cp: null, sku: "", bc: "", t: "Default Title" },
+  ],
+};
+
 const PRODUCT_TITRE_COLORE = {
   id: 77,
   title: "Cocotte ronde en fonte beige",
@@ -1875,6 +1889,21 @@ section("Pastilles en collection");
     JSON.stringify(repli),
   );
   await pageAlt.close();
+
+  // --- « Default Title » n'est pas un titre ---------------------------------
+  // Shopify nomme ainsi la variante unique d'un produit sans option. Le
+  // recopier produisait « Cocotte bleu marine Default Title » — visible sur
+  // toutes les fiches liées, qui n'ont justement qu'une variante.
+  const pageSansOption = await openPage(PRODUCT_SANS_OPTION, PRODUCT_SANS_OPTION.variants[0]);
+  const titreSeul = await pageSansOption.evaluate(
+    () => document.querySelector("h1.product__title")?.textContent?.trim(),
+  );
+  check(
+    "« Default Title » ne se retrouve jamais dans le titre",
+    titreSeul === "Cocotte bleu marine",
+    JSON.stringify({ titreSeul }),
+  );
+  await pageSansOption.close();
 
   // --- Produits liés : un coloris par fiche ---------------------------------
   // La rangée porte les mêmes classes que les variantes pour hériter du même

@@ -1773,7 +1773,19 @@
   Variantsy.prototype.templateVars = function (variant) {
     var vars = {
       product_title: this.originalTitle,
-      variant_title: variant.t || variant.o.join(" / "),
+      // « Default Title » est le titre que Shopify donne à la variante unique
+      // d'un produit sans option. Ce n'est pas un nom : c'est l'absence de nom.
+      // Le recopier produisait « Cocotte bleu marine Default Title » sur toute
+      // fiche liée — celles-là mêmes qui n'ont qu'une variante.
+      variant_title: (function () {
+        if (variant.t && variant.t !== "Default Title") return variant.t;
+        // Le repli par les options reproduisait le problème : leur seule valeur
+        // est « Default Title » elle aussi.
+        var utiles = (variant.o || []).filter(function (v) {
+          return v && v !== "Default Title";
+        });
+        return utiles.join(" / ");
+      })(),
       option1: variant.o[0] || "",
       option2: variant.o[1] || "",
       option3: variant.o[2] || "",
