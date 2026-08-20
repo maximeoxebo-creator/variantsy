@@ -76,6 +76,29 @@ const PRODUCT = {
 };
 
 /** Aucune image assignée nativement : seul le texte alternatif peut grouper. */
+/**
+ * Produit dont le TITRE contient un nom de couleur, recopié par Shopify dans le
+ * texte alternatif de chaque image — le cas réel qui vidait un groupe entier.
+ */
+const PRODUCT_TITRE_COLORE = {
+  id: 77,
+  title: "Cocotte ronde en fonte beige",
+  url: "/products/cocotte-beige",
+  vendor: "Fonderie",
+  type: "Cookware",
+  media: [
+    { id: 7701, t: "image", alt: "Cocotte ronde en fonte beige", src: "https://example.com/b1.jpg" },
+    { id: 7702, t: "image", alt: "Cocotte ronde en fonte beige", src: "https://example.com/b2.jpg" },
+    { id: 7703, t: "image", alt: "Cocotte ronde en fonte beige", src: "https://example.com/n1.jpg" },
+    { id: 7704, t: "image", alt: "Cocotte ronde en fonte beige", src: "https://example.com/n2.jpg" },
+  ],
+  options: [{ name: "Couleur", position: 1, values: ["Beige", "Bleu marine"] }],
+  variants: [
+    { id: 7711, o: ["Beige"], m: 7701, a: true, p: "0", cp: null, sku: "", bc: "", t: "Beige" },
+    { id: 7712, o: ["Bleu marine"], m: 7703, a: true, p: "0", cp: null, sku: "", bc: "", t: "Bleu marine" },
+  ],
+};
+
 const PRODUCT_ALT_ONLY = {
   ...PRODUCT,
   media: [
@@ -1825,6 +1848,34 @@ section("Pastilles en collection");
     JSON.stringify(ancrage),
   );
 
+  // --- Le repli alt ne contredit pas les assignations natives ---------------
+  // Shopify recopie le titre du produit dans le texte alternatif de CHAQUE
+  // image. Sur un produit nommé « … en fonte beige », les quatorze photos
+  // contiennent « beige », y compris les bleu marine : le repli réattribuait à
+  // Beige tous les médias suivant l'assignation de Navy et vidait son groupe.
+  const pageAlt = await openPage(PRODUCT_TITRE_COLORE, PRODUCT_TITRE_COLORE.variants[0]);
+  // Le thème de test rend la galerie ET ses miniatures : compter les nœuds bruts
+  // ne dirait rien. On raisonne par MÉDIA — chacun doit être entièrement visible
+  // ou entièrement masqué.
+  const repli = await pageAlt.evaluate(() => {
+    const etat = (id) => {
+      const noeuds = [...document.querySelectorAll("[data-media-id]")].filter((e) =>
+        String(e.getAttribute("data-media-id")).endsWith(String(id)),
+      );
+      return noeuds.length > 0 && noeuds.every((e) => !e.closest(".variantsy-media-hidden"));
+    };
+    return { beige1: etat(7701), beige2: etat(7702), navy1: etat(7703), navy2: etat(7704) };
+  });
+  check(
+    "Un titre contenant un nom de couleur ne noie pas les groupes",
+    repli.beige1 === true &&
+      repli.beige2 === true &&
+      repli.navy1 === false &&
+      repli.navy2 === false,
+    JSON.stringify(repli),
+  );
+  await pageAlt.close();
+
   // --- Produits liés : un coloris par fiche ---------------------------------
   // La rangée porte les mêmes classes que les variantes pour hériter du même
   // habillage. Le moteur de variantes doit pourtant l'ignorer : sans cela il
@@ -1845,16 +1896,26 @@ section("Pastilles en collection");
       groupesVariantes: document.querySelectorAll(
         ".variantsy__group:not([data-variantsy-linked]) .variantsy__swatch",
       ).length,
+      // L'habillage DOIT être appliqué : exclure ces rangées de toute la
+      // peinture les privait de la bibliothèque de couleurs, et deux rangées
+      // côte à côte n'avaient pas la même apparence.
+      peintes: a.filter((x) => {
+        const v = x.querySelector(".variantsy__visual");
+        return v && (v.style.backgroundColor || v.style.backgroundImage);
+      }).length,
+      classeCouleur: g.classList.contains("variantsy__group--color"),
     };
   });
   check(
-    "La rangée de produits liés échappe au moteur de variantes",
+    "Les pastilles liées reçoivent l'habillage sans la logique de variantes",
     !lie.absent &&
       lie.nombre === 3 &&
       lie.liens === true &&
       lie.indisponibles === 0 &&
       lie.selectionIntacte === 1 &&
-      lie.groupesVariantes > 0,
+      lie.groupesVariantes > 0 &&
+      lie.peintes === 3 &&
+      lie.classeCouleur === true,
     JSON.stringify(lie),
   );
   await pageLiee.close();

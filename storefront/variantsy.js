@@ -700,9 +700,21 @@
       if (variant.m && owners[variant.m] === undefined) owners[variant.m] = variant.o[index];
     });
 
-    // 2. Repli sur le texte alternatif, sans écraser les assignations natives :
-    //    ce que le marchand a explicitement rattaché dans l'admin fait foi.
-    if (cfg.altFallback) {
+    // 2. Repli sur le texte alternatif — UNIQUEMENT si le marchand n'a rattaché
+    //    aucune image à aucune variante.
+    //
+    //    Protéger les seuls médias déjà assignés ne suffisait pas. Shopify
+    //    recopie le titre du produit dans le texte alternatif de CHAQUE image :
+    //    sur « IENA25 — Cocotte ronde en fonte beige », les quatorze photos
+    //    contiennent le mot « beige », y compris les bleu marine. Le repli
+    //    réattribuait donc à Beige tous les médias suivant l'assignation de
+    //    Navy, vidant son groupe — treize visibles sur quatorze.
+    //
+    //    Dès qu'une image est rattachée, l'ORDRE fait foi et le texte
+    //    alternatif se tait. Il ne sert plus qu'aux catalogues où rien n'est
+    //    assigné, ce pour quoi il avait été écrit.
+    var aDesAssignations = Object.keys(owners).length > 0;
+    if (cfg.altFallback && !aDesAssignations) {
       var fromAlt = altOwners(product, index, cfg);
       Object.keys(fromAlt).forEach(function (mediaId) {
         if (owners[mediaId] === undefined) owners[mediaId] = fromAlt[mediaId];
@@ -1358,6 +1370,45 @@
       if (!isColor) self.syncFontSizes(group);
     });
 
+    // --- Rangées de produits liés -----------------------------------------
+    // Elles sont exclues de la boucle ci-dessus, et c'est nécessaire : leurs
+    // pastilles sont des LIENS vers d'autres fiches, aucune variante ne leur
+    // répond, et les soumettre à la logique de disponibilité les marquait
+    // épuisées en effaçant la sélection posée par le thème.
+    //
+    // Mais les exclure ENTIÈREMENT les privait aussi de l'habillage : elles
+    // gardaient la photo posée par le Liquid et ignoraient la bibliothèque de
+    // couleurs, le mode d'affichage et le repli choisis par le marchand. Deux
+    // rangées côte à côte n'avaient pas la même apparence.
+    //
+    // On leur applique donc le VISUEL, et rien d'autre.
+    var liees = this.root.querySelectorAll(".variantsy__group[data-variantsy-linked]");
+    Array.prototype.forEach.call(liees, function (group) {
+      var optionName = normalize(group.getAttribute("data-option-name"));
+      var mode = style.displayMode || "swatch";
+      var asSwatch = mode === "swatch";
+
+      group.classList.toggle("variantsy__group--color", asSwatch);
+      group.classList.toggle("variantsy__group--text", !asSwatch);
+
+      Array.prototype.forEach.call(
+        group.querySelectorAll(".variantsy__swatch"),
+        function (lien) {
+          if (!asSwatch) return;
+          var visual = lien.querySelector(".variantsy__visual");
+          if (!visual) return;
+          // La photo de la fiche sœur, posée par le Liquid, sert de repli : on
+          // ne l'écrase que si la bibliothèque ou le dictionnaire sait faire
+          // mieux — une couleur franche vaut mieux qu'une vignette.
+          var avant = visual.style.backgroundImage;
+          self.applyVisual(visual, optionName, lien.getAttribute("data-variantsy-value"));
+          if (!visual.style.backgroundColor && !visual.style.backgroundImage && avant) {
+            visual.style.backgroundImage = avant;
+          }
+        },
+      );
+    });
+
     if (style.customCss) this.injectCustomCss(style.customCss);
   };
 
@@ -1888,6 +1939,48 @@
         /* noop */
       }
     }
+
+    if (this.groups) this.watchGallery(variant);
+  };
+
+  /**
+   * Réapplique le filtrage quand le thème complète sa galerie APRÈS nous.
+   *
+   * Savor — et beaucoup de thèmes récents — rendent la même galerie plusieurs
+   * fois : une grille pour le bureau, un carrousel pour le mobile, une vue
+   * zoomée. Ces rendus n'existent pas tous au moment où notre script tourne :
+   * sur un produit à quatorze médias, seuls quatre nœuds étaient marqués, et le
+   * client voyait les photos des autres coloris dans la grille.
+   *
+   * On observe donc l'arrivée de nouveaux nœuds — `childList` seulement. Écouter
+   * les attributs nous ferait réagir à nos propres classes, en boucle.
+   */
+  Variantsy.prototype.watchGallery = function (variant) {
+    var self = this;
+    var cible = this.collectMediaNodes().gallery || this.scope;
+    if (!cible || typeof MutationObserver === "undefined") return;
+
+    var enAttente = null;
+    var reappliquer = function () {
+      if (enAttente) return;
+      enAttente = setTimeout(function () {
+        enAttente = null;
+        try {
+          self.applyGallery(self.findVariantByOptions(self.selection) || variant);
+        } catch (error) {
+          /* une galerie récalcitrante ne doit pas emporter la page */
+        }
+      }, 60);
+    };
+
+    new MutationObserver(reappliquer).observe(cible, { childList: true, subtree: true });
+
+    // Filet indépendant de l'observateur : un thème qui rend sa grille avant
+    // notre script, mais après le parse du DOM, ne déclencherait aucune mutation.
+    if (document.readyState !== "complete") {
+      window.addEventListener("load", reappliquer, { once: true });
+    }
+    setTimeout(reappliquer, 400);
   };
 
   /* ---------------------------------------------------------------------- */

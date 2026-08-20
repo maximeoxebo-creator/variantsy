@@ -119,7 +119,7 @@ export function LiensProduitsPanel({
               value={brouillon.label}
               onChange={(label) => setBrouillon({ ...brouillon, label })}
               autoComplete="off"
-              helpText="Shown above the swatches on the product page, like Color or Finish."
+              helpText="Shown above the swatches on the product page. Type it exactly as the option is named on your products — Couleur, Color, Size — and the linked products join that row instead of forming a second one."
             />
 
             <InlineStack align="space-between" blockAlign="center">

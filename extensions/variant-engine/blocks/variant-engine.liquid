@@ -32,6 +32,14 @@
 -%}
 
 {%- if sp_enabled and product and product.variants.size > 1 -%}
+  {%- comment -%}
+    Les fiches sœurs sont lues une fois pour toutes : la boucle des options en a
+    besoin pour fusionner, et le repli autonome pour décider s'il doit exister.
+  {%- endcomment -%}
+  {%- assign vtsy_members = product.metafields.variantsy.group_members.value -%}
+  {%- assign vtsy_label = product.metafields.variantsy.group_label | default: 'Color' -%}
+  {%- assign vtsy_label_dc = vtsy_label | downcase | strip -%}
+  {%- assign vtsy_fused = false -%}
   <link rel="stylesheet" href="{{ 'variantsy.css' | asset_url }}" media="all">
 
   <div
@@ -184,6 +192,66 @@
               {%- endif -%}
             </button>
           {%- endfor -%}
+
+          {%- comment -%}
+            PRODUITS LIÉS, fusionnés dans la rangée de couleur.
+
+            Quand la fiche porte DÉJÀ une option de couleur, une seconde rangée
+            disait la même chose deux fois. Les fiches sœurs rejoignent donc
+            directement le sélecteur existant : le client voit un seul nuancier,
+            sans savoir — ni avoir à savoir — que certains coloris vivent sur
+            une autre fiche.
+
+            La fiche courante est exclue : elle est déjà représentée par ses
+            propres variantes.
+          {%- endcomment -%}
+          {%- comment -%}
+            On ne fusionne QUE si le groupe décrit le même axe que l'option.
+
+            Un groupe intitulé « Size » injecté dans un nuancier donnait
+            « Beige · Navy · 22 cm » : une taille au milieu des couleurs. Le
+            libellé du groupe doit donc correspondre au nom de l'option ; sinon
+            les fiches sœurs gardent leur propre rangée, plus bas.
+          {%- endcomment -%}
+          {%- comment -%}
+            Règle unique et prévisible : les libellés doivent être IDENTIQUES.
+
+            J'avais ajouté une tolérance — fusionner dès qu'un groupe s'appelle
+            « Color » et que l'option est reconnue comme une couleur. Elle
+            fusionnait un groupe de TAILLES intitulé « Color » par défaut dans
+            l'admin : le nuancier affichait « Beige · Navy · 22 cm ». L'app ne
+            peut pas deviner qu'une valeur n'est pas une couleur ; elle peut en
+            revanche exiger que le marchand nomme son groupe comme son option.
+          {%- endcomment -%}
+          {%- assign vtsy_same_axis = false -%}
+          {%- if vtsy_label_dc == opt_name_dc -%}{%- assign vtsy_same_axis = true -%}{%- endif -%}
+          {%- if vtsy_same_axis and vtsy_members and vtsy_members.size > 1 -%}
+            {%- assign vtsy_fused = true -%}
+            {%- for vtsy_handle in vtsy_members -%}
+              {%- unless vtsy_handle == product.handle -%}
+                {%- assign vtsy_sibling = all_products[vtsy_handle] -%}
+                {%- if vtsy_sibling and vtsy_sibling.handle != blank -%}
+                  {%- assign vtsy_value = vtsy_sibling.metafields.variantsy.group_value | default: vtsy_sibling.title -%}
+                  <a
+                    class="variantsy__swatch"
+                    href="{{ vtsy_sibling.url }}"
+                    aria-label="{{ vtsy_value | escape }}"
+                    title="{{ vtsy_value | escape }}"
+                    data-variantsy-value="{{ vtsy_value | escape }}"
+                    data-variantsy-linked-handle="{{ vtsy_sibling.handle }}"
+                  >
+                    <span
+                      class="variantsy__visual"
+                      aria-hidden="true"
+                      {%- if vtsy_sibling.featured_image %} style="background-image: url({{ vtsy_sibling.featured_image | image_url: width: 200 }})"{% endif -%}
+                    ></span>
+                    <span class="variantsy__text">{{ vtsy_value }}</span>
+                    <span class="variantsy__caption">{{ vtsy_value }}</span>
+                  </a>
+                {%- endif -%}
+              {%- endunless -%}
+            {%- endfor -%}
+          {%- endif -%}
         </div>
       </div>
     {%- endfor -%}
@@ -203,8 +271,7 @@
       change pas de variante. Le référencement de chaque produit est préservé —
       c'est tout l'intérêt par rapport à une app qui fusionnerait les fiches.
     {%- endcomment -%}
-    {%- assign vtsy_members = product.metafields.variantsy.group_members.value -%}
-    {%- if vtsy_members and vtsy_members.size > 1 -%}
+    {%- if vtsy_fused == false and vtsy_members and vtsy_members.size > 1 -%}
       <div
         class="variantsy__group variantsy__group--color variantsy__group--linked"
         data-variantsy-linked
