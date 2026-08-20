@@ -15,11 +15,13 @@ import { BlockStack, Text } from "@shopify/polaris";
 export const BLUE = "#2C5AA0";
 export const BEIGE = "#D8C3A5";
 
-/** Teinte d'une silhouette posée sur un aplat de couleur : blanche sur les
- *  fonds soutenus, sombre sur le beige, où le blanc s'effaçait. */
-export function teinteSilhouette(fond: string) {
-  return fond === BEIGE ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.34)";
-}
+/** Teinte d'une silhouette posée sur un aplat de couleur.
+ *
+ *  Une seule valeur, sans exception : la version précédente assombrissait la
+ *  silhouette sur le beige pour gagner du contraste, et le tee-shirt beige n'y
+ *  ressemblait plus aux autres. Un même vêtement doit se lire pareil d'un
+ *  schéma à l'autre — c'est ce qui prime ici sur le contraste. */
+export const TEINTE_SILHOUETTE = "rgba(255,255,255,.34)";
 
 /** Pastille étoilée : marque une photo assignée à une variante. */
 function Etoile() {
@@ -507,7 +509,7 @@ export function SchemaGroupe() {
                     background: f.couleur,
                   }}
                 >
-                  <Silhouette tint={teinteSilhouette(f.couleur)} />
+                  <Silhouette tint={TEINTE_SILHOUETTE} />
                 </span>
 
                 <span
@@ -816,7 +818,7 @@ export function SchemaAvantApres() {
               background: c,
             }}
           >
-            <Silhouette tint={teinteSilhouette(c)} />
+            <Silhouette tint={TEINTE_SILHOUETTE} />
           </span>
         ))}
       </span>
