@@ -2017,10 +2017,18 @@
 
     var endpoint = roots[0].getAttribute("data-endpoint") || "/apps/variantsy/settings";
 
+    // Le drapeau se pose AVANT l'appel réseau, pas dans sa réponse. Posé après,
+    // il n'empêchait rien : deux boot() lancés coup sur coup — et le script
+    // était chargé deux fois — trouvaient tous deux des racines non marquées,
+    // et chacun instanciait son moteur sur la même racine. D'où des écouteurs
+    // en double et deux observateurs de galerie.
+    Array.prototype.forEach.call(roots, function (root) {
+      root.setAttribute("data-variantsy-ready", "true");
+    });
+
     loadConfig(endpoint).then(function (config) {
       if (!config.enabled) return;
       Array.prototype.forEach.call(roots, function (root) {
-        root.setAttribute("data-variantsy-ready", "true");
         try {
           new Variantsy(root, config).start();
         } catch (error) {

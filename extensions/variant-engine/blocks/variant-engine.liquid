@@ -360,7 +360,12 @@
     {%- endif -%}
   </div>
 
-  <script src="{{ 'variantsy.js' | asset_url }}" defer></script>
+  {%- comment -%}
+    PAS de <script> ici : le schéma déclare déjà « javascript »: variantsy.js,
+    et Shopify l'injecte à ce titre. Les deux ensemble donnaient DEUX balises
+    vers la même URL — le fichier n'était téléchargé qu'une fois, mais exécuté
+    deux fois, sur chaque page produit.
+  {%- endcomment -%}
 {%- endif -%}
 
 {% schema %}

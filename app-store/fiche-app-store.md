@@ -11,9 +11,9 @@ qui n'y figuraient nulle part.
 
 Variantsy ‑ Images & Titles
 
-## Introduction  (92/100)
+## Introduction  (94/100)
 
-Give every color its own gallery and title. Or link one product page per color, on any plan.
+A variant holds one photo. Variantsy gives every color a whole gallery — and a title to match.
 
 ## App details  (497/500)
 
