@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Badge,
   Banner,
@@ -353,6 +354,135 @@ function SchemaAssignation() {
  * de reconnaître au lieu de chercher — et l'onglet « Applis », que presque tout
  * le monde manque parce qu'il n'est pas ouvert par défaut, saute aux yeux.
  */
+/**
+ * L'option Couleur, barrée : le geste que le marchand doit faire AVANT de
+ * grouper. Un schéma dit mieux qu'un paragraphe qu'il s'agit de supprimer.
+ */
+function SchemaRetraitOption() {
+  return (
+    <span
+      style={{
+        display: "block",
+        borderRadius: 14,
+        background: "#fff",
+        border: "1px solid var(--p-color-border-secondary)",
+        boxShadow: "0 1px 3px rgba(0,0,0,.06)",
+        overflow: "hidden",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          padding: "10px 14px",
+          background: "var(--p-color-bg-surface-secondary)",
+          borderBottom: "1px solid var(--p-color-border-secondary)",
+          fontSize: 12,
+          color: "var(--p-color-text-secondary)",
+        }}
+      >
+        Admin Shopify › Produits › votre produit › <strong>Variantes</strong>
+      </span>
+      <span style={{ display: "block", padding: 14 }}>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: "var(--p-color-bg-fill-critical-secondary)",
+            border: "1px solid var(--p-color-border-critical)",
+          }}
+        >
+          <span
+            style={{
+              flex: 1,
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: "line-through",
+              color: "var(--p-color-text-critical)",
+            }}
+          >
+            Couleur · Beige, Blue
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--p-color-text-critical)" }}>
+            à supprimer
+          </span>
+        </span>
+        <span style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+          {["Taille · 22, 25, 36", "Matière · Fonte"].map((autre) => (
+            <span
+              key={autre}
+              style={{
+                fontSize: 13,
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "var(--p-color-bg-surface-secondary)",
+                border: "1px solid var(--p-color-border-secondary)",
+                color: "var(--p-color-text-secondary)",
+              }}
+            >
+              {autre} — on n&apos;y touche pas
+            </span>
+          ))}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/** Trois fiches distinctes réunies par un groupe. */
+function SchemaGroupe() {
+  const fiches = [
+    { titre: "Cocotte · Blue", couleur: BLUE, actif: true },
+    { titre: "Cocotte · Beige", couleur: BEIGE, actif: false },
+    { titre: "Cocotte · Clay", couleur: "#C0715A", actif: false },
+  ];
+  return (
+    <span style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {fiches.map((f) => (
+        <span
+          key={f.titre}
+          style={{
+            flex: "1 1 150px",
+            borderRadius: 12,
+            background: "#fff",
+            border: f.actif
+              ? "2px solid var(--p-color-border-emphasis)"
+              : "1px solid var(--p-color-border-secondary)",
+            padding: 10,
+          }}
+        >
+          <span
+            style={{
+              display: "grid",
+              placeItems: "center",
+              height: 74,
+              borderRadius: 8,
+              background: f.couleur,
+            }}
+          >
+            <Silhouette tint="rgba(255,255,255,.34)" />
+          </span>
+          <span style={{ display: "block", fontSize: 12, fontWeight: 600, marginTop: 8 }}>
+            {f.titre}
+          </span>
+          <span
+            style={{
+              display: "block",
+              fontSize: 11,
+              color: "var(--p-color-text-secondary)",
+              marginTop: 2,
+            }}
+          >
+            /products/cocotte-{f.titre.split(" · ")[1].toLowerCase()}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function SchemaEditeurTheme() {
   const arbre = [
     { texte: "Product information", niveau: 0, actif: false },
@@ -479,45 +609,91 @@ export function InstallationPanel({
   themeName: string | null;
   deepLink: string | null;
 }) {
+  // Le choix de structure pilote toute la notice : les étapes d'un modèle
+  // n'ont aucun sens dans l'autre, et les afficher ensemble — ce qu'elle
+  // faisait — laissait le marchand ranger ses photos par variante alors qu'il
+  // venait de créer un groupe.
+  const [structure, setStructure] = useState<"variants" | "linked" | null>(null);
+
   return (
     <BlockStack gap="500">
 
 <Card>
-  <BlockStack gap="300">
-    <Text as="h2" variant="headingMd">Before anything else: how is your catalog built?</Text>
-    <Text as="p">
-      Variantsy supports two structures, and everything below depends on which one you
-      use. Decide per product — never both at once.
-    </Text>
-    <Box background="bg-surface-secondary" padding="400" borderRadius="300">
-      <BlockStack gap="300">
-        <BlockStack gap="100">
-          <Text as="p" variant="bodySm" fontWeight="semibold">
-            Colors as variants of one product
-          </Text>
-          <Text as="p" variant="bodySm" tone="subdued">
-            Keep your Color option. Assign the first photo of each color to its variant,
-            as shown in step 2. Variantsy filters the gallery and rewrites the title.
-          </Text>
-        </BlockStack>
-        <BlockStack gap="100">
-          <Text as="p" variant="bodySm" fontWeight="semibold">
-            One product per color, linked together
-          </Text>
-          <Text as="p" variant="bodySm" tone="subdued">
-            <strong>Remove the Color option</strong> from those products in the Shopify
-            admin, then group them on the Linked products tab. A product that keeps a
-            color option ignores its group — the same color would otherwise appear twice,
-            once as a variant and once as a link.
-          </Text>
-          <Text as="p" variant="bodySm" tone="subdued">
-            Your other options — size, material, length — stay untouched.
-          </Text>
-        </BlockStack>
-      </BlockStack>
-    </Box>
+  <BlockStack gap="400">
+    <BlockStack gap="150">
+      <Text as="h2" variant="headingMd">How is this catalog built?</Text>
+      <Text as="p" tone="subdued">
+        The steps below change completely depending on your answer. Pick one.
+      </Text>
+    </BlockStack>
+
+    <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+      {[
+        {
+          id: "variants" as const,
+          titre: "Colors are variants",
+          sous: "One product carries every color",
+          apercu: <SchemaOptions />,
+        },
+        {
+          id: "linked" as const,
+          titre: "Colors are separate products",
+          sous: "One page per color, linked together",
+          apercu: <SchemaGroupe />,
+        },
+      ].map((choix) => (
+        <button
+          key={choix.id}
+          type="button"
+          onClick={() => setStructure(choix.id)}
+          aria-pressed={structure === choix.id}
+          style={{
+            display: "block",
+            width: "100%",
+            textAlign: "left",
+            padding: 16,
+            borderRadius: 14,
+            cursor: "pointer",
+            background:
+              structure === choix.id
+                ? "var(--p-color-bg-surface-selected)"
+                : "var(--p-color-bg-surface)",
+            border:
+              structure === choix.id
+                ? "2px solid var(--p-color-border-emphasis)"
+                : "1px solid var(--p-color-border-secondary)",
+            // PIÈGE N°5 : reset du chrome natif sur tout bouton custom.
+            WebkitAppearance: "none",
+            appearance: "none",
+            outline: "none",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <span style={{ display: "block", fontSize: 15, fontWeight: 650 }}>{choix.titre}</span>
+          <span
+            style={{
+              display: "block",
+              fontSize: 13,
+              color: "var(--p-color-text-secondary)",
+              margin: "2px 0 14px",
+            }}
+          >
+            {choix.sous}
+          </span>
+          {choix.apercu}
+        </button>
+      ))}
+    </InlineGrid>
   </BlockStack>
 </Card>
+
+{structure === null && (
+  <Card>
+    <Text as="p" tone="subdued">
+      Choose a structure above to see the steps that apply to it.
+    </Text>
+  </Card>
+)}
 
 <Card>
   <BlockStack gap="300">
@@ -568,6 +744,7 @@ export function InstallationPanel({
 
 
 
+{structure === "variants" && (
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
@@ -666,10 +843,48 @@ export function InstallationPanel({
   </BlockStack>
 </Card>
 
+)}
+
+{structure === "linked" && (
+  <Card>
+    <BlockStack gap="400">
+      <InlineStack gap="200" blockAlign="center">
+        <Badge tone="info">Step 2</Badge>
+        <Text as="h2" variant="headingMd">Remove the color option</Text>
+      </InlineStack>
+      <SchemaRetraitOption />
+      <Text as="p" variant="bodySm" tone="subdued">
+        A product that keeps a color option ignores its group — the same color would
+        appear twice, once as a variant and once as a link. Your other options stay.
+      </Text>
+    </BlockStack>
+  </Card>
+)}
+
+{structure === "linked" && (
+  <Card>
+    <BlockStack gap="400">
+      <InlineStack gap="200" blockAlign="center">
+        <Badge tone="info">Step 3</Badge>
+        <Text as="h2" variant="headingMd">Group the products</Text>
+      </InlineStack>
+      <SchemaGroupe />
+      <Text as="p" variant="bodySm" tone="subdued">
+        On the Linked products tab, pick those pages and name the color each one stands
+        for. Every page then shows the whole range, and a click opens the right product.
+      </Text>
+      <InlineStack>
+        <Button url="/app">Go to Linked products</Button>
+      </InlineStack>
+    </BlockStack>
+  </Card>
+)}
+
+{structure !== null && (
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Step 3</Badge>
+      <Badge tone="info">{structure === "linked" ? "Step 4" : "Step 3"}</Badge>
       <Text as="h2" variant="headingMd">
         Adjust the style
       </Text>
@@ -683,7 +898,9 @@ export function InstallationPanel({
     </InlineStack>
   </BlockStack>
 </Card>
+)}
 
+{structure !== null && (
 <Card>
   <BlockStack gap="300">
     <Text as="h2" variant="headingMd">
@@ -702,6 +919,7 @@ export function InstallationPanel({
     </Text>
   </BlockStack>
 </Card>
+)}
               </BlockStack>
   );
 }
