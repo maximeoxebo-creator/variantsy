@@ -79,6 +79,24 @@ Variantsy — Variant Images, Swatches & Linked Products
 
 Give every product color its own photo gallery, swatches and title. Or link one product page per color. Works on any theme, no code required.
 
+## Plan features — « top features »  (40 caractères chacun)
+
+Champ distinct des « Feature 1-5 » ci-dessus : celui-ci décrit le plan
+tarifaire, huit lignes maximum, quarante caractères chacune.
+
+1. Unlimited products and variants        (31/40)
+2. A photo gallery for every color        (31/40)
+3. Gallery filtered to the chosen color   (36/40)
+4. Dynamic variant titles                 (22/40)
+5. Link one product page per color        (31/40)
+6. Swatches, buttons or dropdown          (29/40)
+7. Hides your theme's own selector        (31/40)
+8. Live preview, no theme code            (27/40)
+
+La ligne 5 remplace « Swatches on catalog pages » : les pastilles sur les pages
+de collection ont été retirées de l'app. Les lignes 7 et 8 occupent les deux
+emplacements restés libres.
+
 ## Category
 
 Selling products › Custom products › Product variants
