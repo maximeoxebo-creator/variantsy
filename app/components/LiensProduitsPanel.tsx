@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Badge, Banner, BlockStack, Box, Button, Card, EmptyState, InlineStack,
-  Text, TextField,
+  Badge, Banner, BlockStack, Box, Button, Card, EmptyState, InlineGrid,
+  InlineStack, Text, TextField,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import type { Group, GroupMember } from "../groups.server";
@@ -128,7 +128,7 @@ export function LiensProduitsPanel({
               value={brouillon.label}
               onChange={(label) => setBrouillon({ ...brouillon, label })}
               autoComplete="off"
-              helpText="Shown above the swatches on the product page. Type it exactly as the option is named on your products — Couleur, Color, Size — and the linked products join that row instead of forming a second one."
+              helpText="Shown above the swatches on the product page, the way a Shopify option name would be — Color, Finish, Leather."
             />
 
             <InlineStack align="space-between" blockAlign="center">
@@ -185,13 +185,18 @@ export function LiensProduitsPanel({
             )}
 
             {brouillon.members.some((m) => m.aDesCouleurs) && (
-              <Banner tone="warning" title="These products already have their own colors">
-                <Text as="p" variant="bodySm">
-                  Linked products are meant for catalogs where each color is a separate
-                  product. The ones you picked already carry a color option, so their
-                  swatches are handled by Variantsy already — grouping them shows a second
-                  row of swatches that says the same thing twice.
-                </Text>
+              <Banner tone="critical" title="These products still carry a color option">
+                <BlockStack gap="200">
+                  <Text as="p" variant="bodySm">
+                    Remove it in the Shopify admin before grouping them. As long as it is
+                    there, Variantsy ignores the group and nothing you set here will show
+                    on the storefront.
+                  </Text>
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    That is deliberate: a color present both as a variant and as a link
+                    would appear twice, and the shopper could not tell which is which.
+                  </Text>
+                </BlockStack>
               </Banner>
             )}
 
@@ -216,29 +221,87 @@ export function LiensProduitsPanel({
     <BlockStack gap="400">
       <BlockStack gap="200">
         <InlineStack gap="200" blockAlign="center">
-          <Text as="h3" variant="headingMd">One color per product?</Text>
-          <Badge tone="info">Any plan</Badge>
+          <Text as="h3" variant="headingMd">How is your catalog built?</Text>
+          <Badge tone="info">Works on any plan</Badge>
         </InlineStack>
         <Text as="p" variant="bodySm" tone="subdued">
-          Use this only when each color is a <strong>separate product</strong>. If a
-          product already carries a color option, Variantsy handles it on the Appearance
-          tab and you have nothing to do here.
+          There are two ways to sell the same item in several colors, and Variantsy
+          supports both. Pick one per product — never both, or the same color appears
+          twice.
         </Text>
       </BlockStack>
 
+      <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+        <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" fontWeight="semibold">
+              One product, colors as variants
+            </Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              The usual way. Your product carries a Color option, and each color has its
+              photos assigned to its variant. Variantsy filters the gallery to the chosen
+              color and rewrites the title.
+            </Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Nothing to do on this tab — everything is set under Appearance.
+            </Text>
+          </BlockStack>
+        </Box>
+
+        <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" fontWeight="semibold">
+              One product per color, linked together
+            </Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Each color is its own product page, with its own address, photos and stock.
+              Group them here and every page shows the whole range; a click opens the
+              right product.
+            </Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              This is what Shopify calls a combined listing — a feature reserved to Plus
+              plans. Variantsy gives it to every plan.
+            </Text>
+          </BlockStack>
+        </Box>
+      </InlineGrid>
+
+      <Banner tone="warning" title="Remove the color option from grouped products">
+        <BlockStack gap="200">
+          <Text as="p" variant="bodySm">
+            A product you group here must <strong>not</strong> also carry a Color option
+            in the Shopify admin. The two describe the same thing, so the shopper would
+            see the same color twice — once as a variant, once as a link — with no way to
+            tell them apart.
+          </Text>
+          <Text as="p" variant="bodySm">
+            Variantsy protects you from that: a product with a color option ignores its
+            group entirely. Which also means the group stays invisible until you remove
+            that option.
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            Keep your other options — size, material, length. Only the color one is in
+            conflict.
+          </Text>
+        </BlockStack>
+      </Banner>
+
       <Box background="bg-surface-secondary" padding="400" borderRadius="300">
         <BlockStack gap="200">
-          <Text as="p" variant="bodySm" fontWeight="semibold">How it works</Text>
+          <Text as="p" variant="bodySm" fontWeight="semibold">Grouping, step by step</Text>
           <Text as="p" variant="bodySm" tone="subdued">
-            1. Pick the products that are the same item in different colors.
+            1. In the Shopify admin, remove the Color option from each product you are
+            about to group. Its photos stay where they are.
           </Text>
           <Text as="p" variant="bodySm" tone="subdued">
-            2. Type the color each one stands for — Blue, Beige, Charcoal.
+            2. Come back here and pick those products.
           </Text>
           <Text as="p" variant="bodySm" tone="subdued">
-            3. Save. Every one of those product pages now shows the whole range, and a
-            click opens the right product. Nothing is merged: each keeps its own address,
-            and with it its search ranking, reviews and inbound links.
+            3. Type the color each one stands for — Blue, Beige, Charcoal.
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            4. Save. Nothing is merged: each product keeps its own address, and with it
+            its search ranking, reviews and inbound links.
           </Text>
         </BlockStack>
       </Box>

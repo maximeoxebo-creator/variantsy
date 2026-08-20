@@ -484,6 +484,43 @@ export function InstallationPanel({
 
 <Card>
   <BlockStack gap="300">
+    <Text as="h2" variant="headingMd">Before anything else: how is your catalog built?</Text>
+    <Text as="p">
+      Variantsy supports two structures, and everything below depends on which one you
+      use. Decide per product — never both at once.
+    </Text>
+    <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+      <BlockStack gap="300">
+        <BlockStack gap="100">
+          <Text as="p" variant="bodySm" fontWeight="semibold">
+            Colors as variants of one product
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            Keep your Color option. Assign the first photo of each color to its variant,
+            as shown in step 2. Variantsy filters the gallery and rewrites the title.
+          </Text>
+        </BlockStack>
+        <BlockStack gap="100">
+          <Text as="p" variant="bodySm" fontWeight="semibold">
+            One product per color, linked together
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            <strong>Remove the Color option</strong> from those products in the Shopify
+            admin, then group them on the Linked products tab. A product that keeps a
+            color option ignores its group — the same color would otherwise appear twice,
+            once as a variant and once as a link.
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            Your other options — size, material, length — stay untouched.
+          </Text>
+        </BlockStack>
+      </BlockStack>
+    </Box>
+  </BlockStack>
+</Card>
+
+<Card>
+  <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
       <Badge tone="info">Step 1</Badge>
       <Text as="h2" variant="headingMd">

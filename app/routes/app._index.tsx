@@ -148,11 +148,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { ok: true };
 };
 
+/*
+ * Ordre délibéré : les produits liés d'abord.
+ *
+ * C'est la décision de structure — un coloris par fiche, ou tous les coloris en
+ * variantes — et elle conditionne tout le reste. L'apparence et le titre
+ * s'ajustent ensuite. L'installation ferme la marche : elle se consulte une
+ * fois, au premier jour.
+ */
 const TABS = [
-  { id: "installation", content: "Installation", panelID: "panel-installation" },
+  { id: "liens", content: "Linked products", panelID: "panel-liens" },
   { id: "apparence", content: "Appearance", panelID: "panel-apparence" },
   { id: "titre", content: "Title", panelID: "panel-titre" },
-  { id: "combinees", content: "Linked products", panelID: "panel-combinees" },
+  { id: "installation", content: "Setup", panelID: "panel-installation" },
 ];
 
 export default function SettingsPage() {
@@ -305,12 +313,12 @@ export default function SettingsPage() {
             <Card padding="0">
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="500">
-                  {tab === 0 && (
+                  {tab === 3 && (
                     <InstallationPanel themeName={themeName} deepLink={deepLink} />
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
-                  {tab === 3 && <LiensProduitsPanel
+                  {tab === 0 && <LiensProduitsPanel
                       groups={groups}
                       enregistrement={fetcher.state !== "idle"}
                       erreurs={
