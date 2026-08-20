@@ -753,6 +753,64 @@ function VignetteApercu({ revele }: { revele: boolean }) {
   );
 }
 
+/**
+ * Bloc de réglages.
+ *
+ * L'onglet Apparence était une liste plate de douze réglages séparés par des
+ * traits : rien ne disait lesquels allaient ensemble, et il fallait tout lire
+ * pour trouver le bon. Chaque groupe porte désormais un titre, la raison pour
+ * laquelle il existe, et une illustration de ce qu'il change.
+ */
+function Bloc({
+  titre,
+  raison,
+  illustration,
+  children,
+}: {
+  titre: string;
+  raison: string;
+  illustration?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <BlockStack gap="500">
+        <InlineStack align="space-between" blockAlign="start" gap="400" wrap={false}>
+          <BlockStack gap="100">
+            <Text as="h3" variant="headingMd">
+              {titre}
+            </Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              {raison}
+            </Text>
+          </BlockStack>
+          {illustration}
+        </InlineStack>
+        <BlockStack gap="500">{children}</BlockStack>
+      </BlockStack>
+    </Card>
+  );
+}
+
+/** Aperçu miniature d'une rangée de pastilles, pour illustrer un bloc. */
+function ApercuRangee({ radius, accent }: { radius: string; accent: string }) {
+  return (
+    <span style={{ display: "flex", gap: 6, alignItems: "center", flex: "0 0 auto" }}>
+      <span
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: radius,
+          background: "#2C5AA0",
+          boxShadow: `0 0 0 2px var(--p-color-bg-surface), 0 0 0 4px ${accent}`,
+        }}
+      />
+      <span style={{ width: 22, height: 22, borderRadius: radius, background: "#D8C3A5" }} />
+      <span style={{ width: 22, height: 22, borderRadius: radius, background: "#C0715A" }} />
+    </span>
+  );
+}
+
 function ApparencePanel({ form, set }: PanelProps) {
   const radius =
     form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
@@ -764,494 +822,506 @@ function ApparencePanel({ form, set }: PanelProps) {
 
   return (
     <BlockStack gap="600">
-      <ChoiceCards
-        label="How your colors are shown"
-        help="Applies to color options only. Sizes stay text buttons in every case."
-        value={form.displayMode}
-        accent={accent}
-        onChange={(v) => set("displayMode", v)}
-        options={[
-          {
-            id: "swatch",
-            label: "Pastilles",
-            preview: (
-              <span style={{ display: "flex", gap: 4 }}>
-                <Chip radius={radius} background="#1F3A5F" size={20} />
-                <Chip radius={radius} background="#D8C3A5" size={20} />
-                <Chip radius={radius} background="#C1614B" size={20} />
-              </span>
-            ),
-          },
-          {
-            id: "text",
-            label: "Boutons texte",
-            preview: (
-              <span style={{ display: "flex", gap: 4 }}>
-                {["S", "M", "L"].map((t) => (
-                  <span
-                    key={t}
-                    style={{
-                      minWidth: 22,
-                      height: 22,
-                      lineHeight: "20px",
-                      textAlign: "center",
-                      fontSize: 11,
-                      borderRadius: 4,
-                      border: "1px solid #B0B7BF",
-                      color: "#4A4A4A",
-                    }}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </span>
-            ),
-          },
-          {
-            id: "dropdown",
-            label: "Dropdown",
-            preview: (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  width: 76,
-                  height: 24,
-                  padding: "0 7px",
-                  fontSize: 11,
-                  color: "#4A4A4A",
-                  borderRadius: 4,
-                  border: "1px solid #B0B7BF",
-                }}
-              >
-                Blue
-                <span style={{ fontSize: 8 }}>▼</span>
-              </span>
-            ),
-          },
-        ]}
-      />
-
-      <Divider />
-
-      {enPastilles && (
-        <>
-      <ChoiceCards
-        label="Swatch shape"
-        value={form.shape}
-        accent={accent}
-        onChange={(v) => set("shape", v)}
-        options={[
-          { id: "circle", label: "Cercle", preview: <Chip radius="50%" background="#C9CFD6" /> },
-          {
-            id: "rounded",
-            label: "Arrondi",
-            preview: <Chip radius={`${form.cornerRadius}px`} background="#C9CFD6" />,
-          },
-          { id: "square", label: "Square", preview: <Chip radius="0px" background="#C9CFD6" /> },
-        ]}
-      />
-
-      {form.shape === "rounded" && (
-        <RangeSlider
-          label={`Arrondi des angles — ${form.cornerRadius} px`}
-          min={0}
-          max={24}
-          value={form.cornerRadius}
-          onChange={(v) => set("cornerRadius", Number(v))}
-          output
+      <Bloc titre="How your colors are shown" raison="Swatches, text buttons or a dropdown — pick what fits your theme.">
+        <ChoiceCards
+          label="How your colors are shown"
+          help="Applies to color options only. Sizes stay text buttons in every case."
+          value={form.displayMode}
+          accent={accent}
+          onChange={(v) => set("displayMode", v)}
+          options={[
+            {
+              id: "swatch",
+              label: "Pastilles",
+              preview: (
+                <span style={{ display: "flex", gap: 4 }}>
+                  <Chip radius={radius} background="#1F3A5F" size={20} />
+                  <Chip radius={radius} background="#D8C3A5" size={20} />
+                  <Chip radius={radius} background="#C1614B" size={20} />
+                </span>
+              ),
+            },
+            {
+              id: "text",
+              label: "Boutons texte",
+              preview: (
+                <span style={{ display: "flex", gap: 4 }}>
+                  {["S", "M", "L"].map((t) => (
+                    <span
+                      key={t}
+                      style={{
+                        minWidth: 22,
+                        height: 22,
+                        lineHeight: "20px",
+                        textAlign: "center",
+                        fontSize: 11,
+                        borderRadius: 4,
+                        border: "1px solid #B0B7BF",
+                        color: "#4A4A4A",
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </span>
+              ),
+            },
+            {
+              id: "dropdown",
+              label: "Dropdown",
+              preview: (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: 76,
+                    height: 24,
+                    padding: "0 7px",
+                    fontSize: 11,
+                    color: "#4A4A4A",
+                    borderRadius: 4,
+                    border: "1px solid #B0B7BF",
+                  }}
+                >
+                  Blue
+                  <span style={{ fontSize: 8 }}>▼</span>
+                </span>
+              ),
+            },
+          ]}
         />
-      )}
-        </>
-      )}
 
-      {/* Réglages propres aux deux autres modes : jusqu'ici ils héritaient d'un
-          arrondi figé et d'une largeur maximale codée en dur, sans recours. */}
-      {!enPastilles && (
-        <BlockStack gap="400">
-          <ChoiceCards
-            label="How the chosen box is shown"
-            value={form.controlSelectedStyle}
-            accent={accent}
-            onChange={(v) => set("controlSelectedStyle", v)}
-            options={[
-              {
-                id: "outline",
-                label: "Outline",
-                preview: (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minWidth: 46,
-                      height: 28,
-                      padding: "0 10px",
-                      fontSize: 12,
-                      borderRadius: form.controlRadius,
-                      border: `2px solid ${accent}`,
-                      color: "#4A4A4A",
-                      background: "#fff",
-                    }}
-                  >
-                    M
-                  </span>
-                ),
-              },
-              {
-                id: "fill",
-                label: "Fond plein",
-                preview: (
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minWidth: 46,
-                      height: 28,
-                      padding: "0 10px",
-                      fontSize: 12,
-                      borderRadius: form.controlRadius,
-                      border: `1px solid ${accent}`,
-                      background: accent,
-                      color: contrasteSur(accent),
-                    }}
-                  >
-                    M
-                  </span>
-                ),
-              },
-            ]}
-          />
-          <RangeSlider
-            label={`Arrondi des angles — ${form.controlRadius} px`}
-            min={0}
-            max={20}
-            value={form.controlRadius}
-            onChange={(v) => set("controlRadius", Number(v))}
-            output
-            helpText={
-              form.displayMode === "dropdown"
-                ? "Corners of the dropdown."
-                : "Angles des boutons."
-            }
-          />
-          {form.displayMode === "dropdown" && (
-            <Checkbox
-              label="The dropdown fills the available width"
-              helpText="Otherwise it stops at 320 px, which suits most product pages."
-              checked={form.dropdownFullWidth}
-              onChange={(v) => set("dropdownFullWidth", v)}
-            />
-          )}
-        </BlockStack>
-      )}
+      </Bloc>
 
-      {form.displayMode !== "dropdown" && (
-        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-          {enPastilles ? (
-            <RangeSlider
-              label={`Taille — ${form.size} px`}
-              min={20}
-              max={96}
-              value={form.size}
-              onChange={(v) => set("size", Number(v))}
-              output
-              helpText="44 px minimum is recommended for touch."
-            />
-          ) : (
-            <Box />
-          )}
-          <RangeSlider
-            label={`Espacement — ${form.gap} px`}
-            min={0}
-            max={40}
-            value={form.gap}
-            onChange={(v) => set("gap", Number(v))}
-            output
-          />
-        </InlineGrid>
-      )}
 
-      {enPastilles && (
-        <>
-      <Divider />
-
-      <ChoiceCards
-        label="How the chosen swatch is shown"
-        value={form.selectedStyle}
-        accent={accent}
-        onChange={(v) => set("selectedStyle", v)}
-        options={[
-          {
-            id: "ring",
-            label: "Anneau",
-            preview: (
-              <Chip
-                radius={radius}
-                background="#C9CFD6"
-                boxShadow={`0 0 0 ${form.selectedGap}px #fff, 0 0 0 ${form.selectedGap + form.selectedWidth}px ${accent}`}
-              />
-            ),
-          },
-          {
-            id: "border",
-            label: "Bordure",
-            preview: (
-              <Chip
-                radius={radius}
-                background="#C9CFD6"
-                border={`${form.selectedWidth}px solid ${accent}`}
-              />
-            ),
-          },
-          {
-            id: "shadow",
-            label: "Ombre",
-            preview: (
-              <Chip radius={radius} background="#C9CFD6" boxShadow={`0 2px 8px ${accent}66`} />
-            ),
-          },
-        ]}
-      />
-        </>
-      )}
-
-      {/* Une seule couleur à découvert, et c'est celle qui se voit : le liseré
-          de sélection, ou l'ombre selon le style choisi. La bordure au repos
-          descend dans les avancés — elle reste utile, mais un gris discret
-          convient à presque tout le monde. */}
-      <ColorField
-        label="Selection color"
-        value={form.selectedColor}
-        onChange={(v) => set("selectedColor", v)}
-        help="Shade of the outline, thick border or shadow, depending on the style chosen above."
-      />
-
-      {form.selectedStyle !== "shadow" && (
-        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
-          <RangeSlider
-            label={`Épaisseur du trait — ${form.selectedWidth} px`}
-            min={1}
-            max={8}
-            value={form.selectedWidth}
-            onChange={(v) => set("selectedWidth", Number(v))}
-            output
-          />
-          {form.selectedStyle === "ring" ? (
-            <RangeSlider
-              label={`Écart avec la pastille — ${form.selectedGap} px`}
-              min={0}
-              max={8}
-              value={form.selectedGap}
-              onChange={(v) => set("selectedGap", Number(v))}
-              output
-            />
-          ) : (
-            <Box />
-          )}
-        </InlineGrid>
-      )}
-
-      <RangeSlider
-        label={`Épaisseur de bordure — ${form.borderWidth} px`}
-        min={0}
-        max={6}
-        value={form.borderWidth}
-        onChange={(v) => set("borderWidth", Number(v))}
-        output
-      />
-
-      {enPastilles && (
-        <>
-      <Divider />
-
-      <ChoiceCards
-        label="When a color is not defined"
-        help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Blue, Beige, Terracotta."
-        value={form.swatchFallback}
-        accent={accent}
-        onChange={(v) => set("swatchFallback", v)}
-        options={[
-          {
-            id: "color",
-            label: "A color guessed from the name",
-            preview: (
-              <span style={{ display: "flex", gap: 4 }}>
-                <Chip radius={radius} background="#1F3A5F" size={20} />
-                <Chip radius={radius} background="#D8C3A5" size={20} />
-                <Chip radius={radius} background="#C1614B" size={20} />
-              </span>
-            ),
-          },
-          {
-            id: "image",
-            label: "The product photo",
-            preview: (
-              <span style={{ display: "flex", gap: 4 }}>
-                <Chip
-                  radius={radius}
-                  background="linear-gradient(135deg,#8FA3B5 0 50%,#6E8296 50%)"
-                  size={20}
-                />
-                <Chip
-                  radius={radius}
-                  background="linear-gradient(135deg,#D6CCBB 0 50%,#B8AB94 50%)"
-                  size={20}
-                />
-                <Chip
-                  radius={radius}
-                  background="linear-gradient(135deg,#C79A88 0 50%,#A97462 50%)"
-                  size={20}
-                />
-              </span>
-            ),
-          },
-        ]}
-      />
-
-      {form.swatchFallback === "image" && (
-        <RangeSlider
-          label={`Taille des pastilles photo — ${form.photoScale} %`}
-          min={100}
-          max={220}
-          step={10}
-          value={form.photoScale}
-          onChange={(v) => set("photoScale", Number(v))}
-          output
-          helpText={`A photo shrunk to ${form.size} px is not recognizable, where a flat color is. Only swatches carrying a photo are enlarged — ${Math.round(
-            (form.size * form.photoScale) / 100,
-          )} px here.`}
-        />
-      )}
-        </>
-      )}
-
-      <Divider />
-
-      <Divider />
-
-      <ChoiceCards
-        label="When a color is sold out"
-        value={form.soldOutStyle}
-        accent={accent}
-        onChange={(v) => set("soldOutStyle", v)}
-        options={[
-          {
-            id: "strikethrough",
-            label: "Struck through",
-            preview: <Chip radius={radius} background="#C9CFD6" struck />,
-          },
-          {
-            id: "dim",
-            label: "Dimmed",
-            preview: <Chip radius={radius} background="#C9CFD6" opacity={0.35} />,
-          },
-          {
-            id: "hide",
-            label: "Removed",
-            preview: (
-              <Chip radius={radius} background="transparent" border="1px dashed #B0B7BF" />
-            ),
-          },
-        ]}
-      />
-      {form.soldOutStyle === "hide" && (
-        <Text as="p" variant="bodySm" tone="subdued">
-          Le client ne saura pas que ce coloris existe — il ne pourra donc pas demander son retour
-          en stock.
-        </Text>
-      )}
-
-      <Divider />
-
-      <BlockStack gap="300">
-        <SectionTitle accent={accent} help="What accompanies the selector, in words.">
-          Labels shown
-        </SectionTitle>
-        {/* Le nom SOUS la pastille n'a pas d'équivalent ailleurs : en boutons
-            texte le nom EST le bouton, et une liste affiche déjà sa valeur. */}
+      <Bloc titre="The selector itself" raison="Shape, size and the control your theme shows." illustration={<ApercuRangee radius={radius} accent={accent} />}>
         {enPastilles && (
-          <Checkbox
-            label="The color name under each swatch"
-            checked={form.showLabels}
-            onChange={(v) => set("showLabels", v)}
+          <>
+        <ChoiceCards
+          label="Swatch shape"
+          value={form.shape}
+          accent={accent}
+          onChange={(v) => set("shape", v)}
+          options={[
+            { id: "circle", label: "Cercle", preview: <Chip radius="50%" background="#C9CFD6" /> },
+            {
+              id: "rounded",
+              label: "Arrondi",
+              preview: <Chip radius={`${form.cornerRadius}px`} background="#C9CFD6" />,
+            },
+            { id: "square", label: "Square", preview: <Chip radius="0px" background="#C9CFD6" /> },
+          ]}
+        />
+
+        {form.shape === "rounded" && (
+          <RangeSlider
+            label={`Arrondi des angles — ${form.cornerRadius} px`}
+            min={0}
+            max={24}
+            value={form.cornerRadius}
+            onChange={(v) => set("cornerRadius", Number(v))}
+            output
           />
         )}
-        <Checkbox
-          label="The &ldquo;Color: Blue&rdquo; line above the selector"
-          checked={form.showOptionName}
-          onChange={(v) => set("showOptionName", v)}
-        />
-      </BlockStack>
+          </>
+        )}
 
-      {/* Tout ce qui suit fonctionne d'emblée sur la quasi-totalité des thèmes.
-          L'exposer laissait croire qu'il fallait s'en occuper — et allongeait
-          une page que le marchand traverse pour arrondir ses pastilles. */}
-      <Advanced id="avances">
-        <Text as="p" variant="bodySm" tone="subdued">
-          These are already on and look after themselves. Only touch them if something
-          behaves unexpectedly.
-        </Text>
+        {/* Réglages propres aux deux autres modes : jusqu'ici ils héritaient d'un
+            arrondi figé et d'une largeur maximale codée en dur, sans recours. */}
+        {!enPastilles && (
+          <BlockStack gap="400">
+            <ChoiceCards
+              label="How the chosen box is shown"
+              value={form.controlSelectedStyle}
+              accent={accent}
+              onChange={(v) => set("controlSelectedStyle", v)}
+              options={[
+                {
+                  id: "outline",
+                  label: "Outline",
+                  preview: (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 46,
+                        height: 28,
+                        padding: "0 10px",
+                        fontSize: 12,
+                        borderRadius: form.controlRadius,
+                        border: `2px solid ${accent}`,
+                        color: "#4A4A4A",
+                        background: "#fff",
+                      }}
+                    >
+                      M
+                    </span>
+                  ),
+                },
+                {
+                  id: "fill",
+                  label: "Fond plein",
+                  preview: (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 46,
+                        height: 28,
+                        padding: "0 10px",
+                        fontSize: 12,
+                        borderRadius: form.controlRadius,
+                        border: `1px solid ${accent}`,
+                        background: accent,
+                        color: contrasteSur(accent),
+                      }}
+                    >
+                      M
+                    </span>
+                  ),
+                },
+              ]}
+            />
+            <RangeSlider
+              label={`Arrondi des angles — ${form.controlRadius} px`}
+              min={0}
+              max={20}
+              value={form.controlRadius}
+              onChange={(v) => set("controlRadius", Number(v))}
+              output
+              helpText={
+                form.displayMode === "dropdown"
+                  ? "Corners of the dropdown."
+                  : "Angles des boutons."
+              }
+            />
+            {form.displayMode === "dropdown" && (
+              <Checkbox
+                label="The dropdown fills the available width"
+                helpText="Otherwise it stops at 320 px, which suits most product pages."
+                checked={form.dropdownFullWidth}
+                onChange={(v) => set("dropdownFullWidth", v)}
+              />
+            )}
+          </BlockStack>
+        )}
+
+        {form.displayMode !== "dropdown" && (
+          <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+            {enPastilles ? (
+              <RangeSlider
+                label={`Taille — ${form.size} px`}
+                min={20}
+                max={96}
+                value={form.size}
+                onChange={(v) => set("size", Number(v))}
+                output
+                helpText="44 px minimum is recommended for touch."
+              />
+            ) : (
+              <Box />
+            )}
+            <RangeSlider
+              label={`Espacement — ${form.gap} px`}
+              min={0}
+              max={40}
+              value={form.gap}
+              onChange={(v) => set("gap", Number(v))}
+              output
+            />
+          </InlineGrid>
+        )}
+
+      </Bloc>
+
+      <Bloc titre="The chosen one" raison="How the selected color stands out from the others." illustration={<ApercuRangee radius={radius} accent={accent} />}>
+        {enPastilles && (
+          <>
+
+        <ChoiceCards
+          label="How the chosen swatch is shown"
+          value={form.selectedStyle}
+          accent={accent}
+          onChange={(v) => set("selectedStyle", v)}
+          options={[
+            {
+              id: "ring",
+              label: "Anneau",
+              preview: (
+                <Chip
+                  radius={radius}
+                  background="#C9CFD6"
+                  boxShadow={`0 0 0 ${form.selectedGap}px #fff, 0 0 0 ${form.selectedGap + form.selectedWidth}px ${accent}`}
+                />
+              ),
+            },
+            {
+              id: "border",
+              label: "Bordure",
+              preview: (
+                <Chip
+                  radius={radius}
+                  background="#C9CFD6"
+                  border={`${form.selectedWidth}px solid ${accent}`}
+                />
+              ),
+            },
+            {
+              id: "shadow",
+              label: "Ombre",
+              preview: (
+                <Chip radius={radius} background="#C9CFD6" boxShadow={`0 2px 8px ${accent}66`} />
+              ),
+            },
+          ]}
+        />
+          </>
+        )}
+
+        {/* Une seule couleur à découvert, et c'est celle qui se voit : le liseré
+            de sélection, ou l'ombre selon le style choisi. La bordure au repos
+            descend dans les avancés — elle reste utile, mais un gris discret
+            convient à presque tout le monde. */}
         <ColorField
-          label="Border color at rest"
-          value={form.borderColor}
-          onChange={(v) => set("borderColor", v)}
+          label="Selection color"
+          value={form.selectedColor}
+          onChange={(v) => set("selectedColor", v)}
+          help="Shade of the outline, thick border or shadow, depending on the style chosen above."
         />
-        <Checkbox
-          label="Filter the gallery to the chosen color"
-          helpText="This is the core of Variantsy. Uncheck to fall back to the native behavior — one image per variant. The grouping itself is entirely automatic."
-          checked={form.galleryEnabled}
-          onChange={(v) => set("galleryEnabled", v)}
+
+        {form.selectedStyle !== "shadow" && (
+          <InlineGrid columns={{ xs: 1, sm: 2 }} gap="400">
+            <RangeSlider
+              label={`Épaisseur du trait — ${form.selectedWidth} px`}
+              min={1}
+              max={8}
+              value={form.selectedWidth}
+              onChange={(v) => set("selectedWidth", Number(v))}
+              output
+            />
+            {form.selectedStyle === "ring" ? (
+              <RangeSlider
+                label={`Écart avec la pastille — ${form.selectedGap} px`}
+                min={0}
+                max={8}
+                value={form.selectedGap}
+                onChange={(v) => set("selectedGap", Number(v))}
+                output
+              />
+            ) : (
+              <Box />
+            )}
+          </InlineGrid>
+        )}
+
+        <RangeSlider
+          label={`Épaisseur de bordure — ${form.borderWidth} px`}
+          min={0}
+          max={6}
+          value={form.borderWidth}
+          onChange={(v) => set("borderWidth", Number(v))}
+          output
         />
-        <Checkbox
-          label="Preload the image when a swatch is hovered"
-          helpText="The image change then feels instant on click."
-          checked={form.preloadOnHover}
-          onChange={(v) => set("preloadOnHover", v)}
+
+      </Bloc>
+
+      <Bloc titre="When a color has no shade" raison="What a value missing from your library falls back to.">
+        {enPastilles && (
+          <>
+
+        <ChoiceCards
+          label="When a color is not defined"
+          help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Blue, Beige, Terracotta."
+          value={form.swatchFallback}
+          accent={accent}
+          onChange={(v) => set("swatchFallback", v)}
+          options={[
+            {
+              id: "color",
+              label: "A color guessed from the name",
+              preview: (
+                <span style={{ display: "flex", gap: 4 }}>
+                  <Chip radius={radius} background="#1F3A5F" size={20} />
+                  <Chip radius={radius} background="#D8C3A5" size={20} />
+                  <Chip radius={radius} background="#C1614B" size={20} />
+                </span>
+              ),
+            },
+            {
+              id: "image",
+              label: "The product photo",
+              preview: (
+                <span style={{ display: "flex", gap: 4 }}>
+                  <Chip
+                    radius={radius}
+                    background="linear-gradient(135deg,#8FA3B5 0 50%,#6E8296 50%)"
+                    size={20}
+                  />
+                  <Chip
+                    radius={radius}
+                    background="linear-gradient(135deg,#D6CCBB 0 50%,#B8AB94 50%)"
+                    size={20}
+                  />
+                  <Chip
+                    radius={radius}
+                    background="linear-gradient(135deg,#C79A88 0 50%,#A97462 50%)"
+                    size={20}
+                  />
+                </span>
+              ),
+            },
+          ]}
         />
-        <Checkbox
-          label="Update the URL (?variant=…) on selection"
-          helpText="Lets you share a link that opens straight on the right color."
-          checked={form.updateUrl}
-          onChange={(v) => set("updateUrl", v)}
+
+        {form.swatchFallback === "image" && (
+          <RangeSlider
+            label={`Taille des pastilles photo — ${form.photoScale} %`}
+            min={100}
+            max={220}
+            step={10}
+            value={form.photoScale}
+            onChange={(v) => set("photoScale", Number(v))}
+            output
+            helpText={`A photo shrunk to ${form.size} px is not recognizable, where a flat color is. Only swatches carrying a photo are enlarged — ${Math.round(
+              (form.size * form.photoScale) / 100,
+            )} px here.`}
+          />
+        )}
+          </>
+        )}
+
+      </Bloc>
+
+      <Bloc titre="Words around the selector" raison="What the shopper reads above and under the swatches.">
+
+
+        <ChoiceCards
+          label="When a color is sold out"
+          value={form.soldOutStyle}
+          accent={accent}
+          onChange={(v) => set("soldOutStyle", v)}
+          options={[
+            {
+              id: "strikethrough",
+              label: "Struck through",
+              preview: <Chip radius={radius} background="#C9CFD6" struck />,
+            },
+            {
+              id: "dim",
+              label: "Dimmed",
+              preview: <Chip radius={radius} background="#C9CFD6" opacity={0.35} />,
+            },
+            {
+              id: "hide",
+              label: "Removed",
+              preview: (
+                <Chip radius={radius} background="transparent" border="1px dashed #B0B7BF" />
+              ),
+            },
+          ]}
         />
-        <Checkbox
-          label="Hide the theme's own variant selector"
-          helpText="Variantsy keeps driving it in the background: the cart always receives the right variant, even if another script listens to it."
-          checked={form.hideNativeSelector}
-          onChange={(v) => set("hideNativeSelector", v)}
-        />
-        <Checkbox
-          label="Change the main image on selection"
-          checked={form.swapImage}
-          onChange={(v) => set("swapImage", v)}
-        />
-        <TextField
-          label="Force certain options into swatches"
-          helpText="Variantsy recognizes a color option by its values, whatever its name. Fill this in only for a palette made entirely of in-house shades. Separate with commas."
-          value={form.colorOptionNames}
-          onChange={(v) => set("colorOptionNames", v)}
-          autoComplete="off"
-        />
-        <TextField
-          label="CSS selector of the block to hide"
-          value={form.nativeSelectorCss}
-          onChange={(v) => set("nativeSelectorCss", v)}
-          disabled={!form.hideNativeSelector}
-          autoComplete="off"
-          placeholder="Leave empty for automatic detection"
-        />
-        <TextField
-          label="CSS selector of the gallery"
-          value={form.imageSelectorCss}
-          onChange={(v) => set("imageSelectorCss", v)}
-          disabled={!form.swapImage}
-          autoComplete="off"
-          placeholder="Leave empty for automatic detection"
-        />
-      </Advanced>
+        {form.soldOutStyle === "hide" && (
+          <Text as="p" variant="bodySm" tone="subdued">
+            Le client ne saura pas que ce coloris existe — il ne pourra donc pas demander son retour
+            en stock.
+          </Text>
+        )}
+
+
+        <BlockStack gap="300">
+          <SectionTitle accent={accent} help="What accompanies the selector, in words.">
+            Labels shown
+          </SectionTitle>
+          {/* Le nom SOUS la pastille n'a pas d'équivalent ailleurs : en boutons
+              texte le nom EST le bouton, et une liste affiche déjà sa valeur. */}
+          {enPastilles && (
+            <Checkbox
+              label="The color name under each swatch"
+              checked={form.showLabels}
+              onChange={(v) => set("showLabels", v)}
+            />
+          )}
+          <Checkbox
+            label="The &ldquo;Color: Blue&rdquo; line above the selector"
+            checked={form.showOptionName}
+            onChange={(v) => set("showOptionName", v)}
+          />
+        </BlockStack>
+
+      </Bloc>
+
+      <Bloc titre="Behavior" raison="Everything here already works on almost every theme. Only touch it if something behaves unexpectedly.">
+        {/* Tout ce qui suit fonctionne d'emblée sur la quasi-totalité des thèmes.
+            L'exposer laissait croire qu'il fallait s'en occuper — et allongeait
+            une page que le marchand traverse pour arrondir ses pastilles. */}
+        <Advanced id="avances">
+          <Text as="p" variant="bodySm" tone="subdued">
+            These are already on and look after themselves. Only touch them if something
+            behaves unexpectedly.
+          </Text>
+          <ColorField
+            label="Border color at rest"
+            value={form.borderColor}
+            onChange={(v) => set("borderColor", v)}
+          />
+          <Checkbox
+            label="Filter the gallery to the chosen color"
+            helpText="This is the core of Variantsy. Uncheck to fall back to the native behavior — one image per variant. The grouping itself is entirely automatic."
+            checked={form.galleryEnabled}
+            onChange={(v) => set("galleryEnabled", v)}
+          />
+          <Checkbox
+            label="Preload the image when a swatch is hovered"
+            helpText="The image change then feels instant on click."
+            checked={form.preloadOnHover}
+            onChange={(v) => set("preloadOnHover", v)}
+          />
+          <Checkbox
+            label="Update the URL (?variant=…) on selection"
+            helpText="Lets you share a link that opens straight on the right color."
+            checked={form.updateUrl}
+            onChange={(v) => set("updateUrl", v)}
+          />
+          <Checkbox
+            label="Hide the theme's own variant selector"
+            helpText="Variantsy keeps driving it in the background: the cart always receives the right variant, even if another script listens to it."
+            checked={form.hideNativeSelector}
+            onChange={(v) => set("hideNativeSelector", v)}
+          />
+          <Checkbox
+            label="Change the main image on selection"
+            checked={form.swapImage}
+            onChange={(v) => set("swapImage", v)}
+          />
+          <TextField
+            label="Force certain options into swatches"
+            helpText="Variantsy recognizes a color option by its values, whatever its name. Fill this in only for a palette made entirely of in-house shades. Separate with commas."
+            value={form.colorOptionNames}
+            onChange={(v) => set("colorOptionNames", v)}
+            autoComplete="off"
+          />
+          <TextField
+            label="CSS selector of the block to hide"
+            value={form.nativeSelectorCss}
+            onChange={(v) => set("nativeSelectorCss", v)}
+            disabled={!form.hideNativeSelector}
+            autoComplete="off"
+            placeholder="Leave empty for automatic detection"
+          />
+          <TextField
+            label="CSS selector of the gallery"
+            value={form.imageSelectorCss}
+            onChange={(v) => set("imageSelectorCss", v)}
+            disabled={!form.swapImage}
+            autoComplete="off"
+            placeholder="Leave empty for automatic detection"
+          />
+        </Advanced>
+      </Bloc>
+
     </BlockStack>
   );
 }
