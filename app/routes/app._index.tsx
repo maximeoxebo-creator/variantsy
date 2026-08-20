@@ -69,17 +69,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?template=product`
         : null;
 
-  // Les pastilles de collection ne passent PAS par le même mécanisme que le
-  // bloc produit : c'est un « app embed », rangé ailleurs dans l'éditeur de
-  // thème. Sans ce second lien, un marchand cherche un bloc qui n'existe pas.
-  const embedLink =
-    themeId && extensionUuid
-      ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?context=apps&activateAppId=${extensionUuid}/collection`
-      : null;
-
   const groups = await listGroups(session.shop);
 
-  return { settings, themeName, deepLink, embedLink, groups };
+  return { settings, themeName, deepLink, groups };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -130,9 +122,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     swatchFallback: str("swatchFallback", DEFAULT_SETTINGS.swatchFallback),
     neutralColor: str("neutralColor", DEFAULT_SETTINGS.neutralColor),
     photoScale: Math.min(220, Math.max(100, int("photoScale", DEFAULT_SETTINGS.photoScale))),
-    collectionEnabled: bool("collectionEnabled"),
-    collectionPlacement: str("collectionPlacement", DEFAULT_SETTINGS.collectionPlacement),
-    collectionReveal: str("collectionReveal", DEFAULT_SETTINGS.collectionReveal),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
@@ -167,7 +156,7 @@ const TABS = [
 ];
 
 export default function SettingsPage() {
-  const { settings, themeName, deepLink, embedLink, groups } = useLoaderData<typeof loader>();
+  const { settings, themeName, deepLink, groups } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -317,7 +306,7 @@ export default function SettingsPage() {
               <Tabs tabs={TABS} selected={tab} onSelect={setTab} fitted>
                 <Box padding="500">
                   {tab === 0 && (
-                    <InstallationPanel themeName={themeName} deepLink={deepLink} embedLink={embedLink} />
+                    <InstallationPanel themeName={themeName} deepLink={deepLink} />
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
@@ -1132,65 +1121,6 @@ function ApparencePanel({ form, set }: PanelProps) {
       )}
 
       <Divider />
-
-      {/* Vignettes de collection : réglages à part, car ils ne concernent pas
-          la page produit. Ils vivent ici plutôt que dans un onglet dédié — trois
-          choix ne justifient pas un volet. */}
-      <BlockStack gap="300">
-        <InlineStack align="space-between" blockAlign="center" gap="400" wrap={false}>
-          <BlockStack gap="100">
-            <SectionTitle accent={accent}>Pastilles sur les pages de collection</SectionTitle>
-            <Text as="p" variant="bodySm" tone="subdued">
-              Colors appear on every card in your catalog. The product page is not affected
-              by this switch.
-            </Text>
-          </BlockStack>
-          <Interrupteur
-            actif={form.collectionEnabled}
-            quoi="les pastilles de collection"
-            onChange={(v) => set("collectionEnabled", v)}
-          />
-        </InlineStack>
-        {!form.collectionEnabled && (
-          <Text as="p" variant="bodySm" tone="subdued">
-            The &ldquo;Variantsy collections&rdquo; block can stay enabled in your theme:
-            nothing will show while this switch is off.
-          </Text>
-        )}
-      </BlockStack>
-
-      {form.collectionEnabled && (
-        <>
-      {(
-        <ChoiceCards
-          label="How the colors appear"
-          help="On the photo, the row can stay visible or appear only on hover."
-          value={form.collectionReveal}
-          accent={accent}
-          onChange={(v) => set("collectionReveal", v)}
-          options={[
-            {
-              id: "always",
-              label: "Toujours visibles",
-              preview: <VignetteApercu revele />,
-            },
-            {
-              id: "hover",
-              label: "Au survol",
-              preview: <VignetteApercu revele={false} />,
-            },
-          ]}
-        />
-      )}
-      {form.collectionReveal === "hover" && (
-        <Text as="p" variant="bodySm" tone="subdued">
-          On mobile the row stays visible: without a mouse there is no hover, and hiding it
-          would remove the feature for half your visitors. Worth checking whether your theme
-          already has a hover effect on cards — the two would compete for attention.
-        </Text>
-      )}
-        </>
-      )}
 
       <Divider />
 

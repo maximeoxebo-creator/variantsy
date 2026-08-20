@@ -42,6 +42,54 @@
 {%- if vtsy_members and vtsy_members.size > 1 -%}{%- assign vtsy_grouped = true -%}{%- endif -%}
 
 {%- if sp_enabled and product and product.variants.size > 1 or sp_enabled and product and vtsy_grouped -%}
+{%- comment -%}
+  Amorce de la configuration.
+
+  Le script du bloc est chargé en `defer` : il ne s'exécute qu'une fois le HTML
+  analysé, et ne demande la configuration qu'après s'être lui-même téléchargé —
+  mesuré sur une fiche réelle, la réponse arrivait à 1 seconde. Les pastilles
+  restaient grises et la galerie non filtrée jusque-là.
+
+  Ces quelques lignes lancent la requête AVANT tout téléchargement de script, et
+  les deux moteurs — page produit et collections — se partagent la promesse au
+  lieu d'en émettre chacun une.
+
+  Volontairement inline et minuscule : un fichier séparé annulerait le gain.
+{%- endcomment -%}
+<script>
+  window.__variantsy = window.__variantsy || {};
+  if (!window.__variantsy.config) {
+    (function () {
+      var cle = "variantsy:config:v3";
+      try {
+        var brut = window.sessionStorage.getItem(cle);
+        var env = brut ? JSON.parse(brut) : null;
+        if (env && Date.now() - env.t < 300000) {
+          window.__variantsy.config = Promise.resolve(env.c);
+          return;
+        }
+      } catch (e) {
+        /* navigation privée ou stockage plein : on passe par le réseau */
+      }
+      window.__variantsy.config = fetch("/apps/variantsy/settings", {
+        headers: { Accept: "application/json" },
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (cfg) {
+          try {
+            window.sessionStorage.setItem(cle, JSON.stringify({ t: Date.now(), c: cfg }));
+          } catch (e) {
+            /* noop */
+          }
+          return cfg;
+        });
+    })();
+  }
+</script>
+
   {%- comment -%}
     Les fiches sœurs sont lues une fois pour toutes : la boucle des options en a
     besoin pour fusionner, et le repli autonome pour décider s'il doit exister.

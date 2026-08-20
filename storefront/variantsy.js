@@ -298,6 +298,18 @@
     var cached = readCache();
     if (cached) return Promise.resolve(deepMerge(DEFAULT_CONFIG, cached));
 
+    // Requête déjà lancée par le bloc, avant même le téléchargement de ce
+    // fichier. Deux moteurs cohabitent sur une page produit — celui-ci et celui
+    // des collections — et ils partaient chacun chercher la configuration : la
+    // page émettait trois requêtes au lieu d'une, la dernière rendant la main
+    // après une seconde.
+    var partagee = window.__variantsy && window.__variantsy.config;
+    if (partagee) {
+      return partagee.then(function (data) {
+        return deepMerge(DEFAULT_CONFIG, data);
+      });
+    }
+
     var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
     var timeout = setTimeout(function () {
       if (controller) controller.abort();

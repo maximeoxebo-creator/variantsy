@@ -29,9 +29,6 @@ export type SettingsInput = {
   controlSelectedStyle: string;
   dropdownFullWidth: boolean;
   swatchFallback: string;
-  collectionEnabled: boolean;
-  collectionPlacement: string;
-  collectionReveal: string;
   photoScale: number;
   neutralColor: string;
   showLabels: boolean;
@@ -76,9 +73,6 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   controlSelectedStyle: "outline",
   dropdownFullWidth: false,
   swatchFallback: "image",
-  collectionEnabled: true,
-  collectionPlacement: "overlay",
-  collectionReveal: "always",
   photoScale: 100,
   neutralColor: "#ECECEC",
   showLabels: false,
@@ -199,9 +193,6 @@ export type StorefrontConfig = {
     controlSelectedStyle: string;
     dropdownFullWidth: boolean;
     swatchFallback: string;
-    collectionEnabled: boolean;
-    collectionPlacement: string;
-    collectionReveal: string;
     photoScale: number;
     neutralColor: string;
     showLabels: boolean;
@@ -275,9 +266,6 @@ export function toStorefrontConfig(
       controlSelectedStyle: settings.controlSelectedStyle,
       dropdownFullWidth: settings.dropdownFullWidth,
       swatchFallback: settings.swatchFallback,
-      collectionEnabled: settings.collectionEnabled,
-      collectionPlacement: settings.collectionPlacement,
-      collectionReveal: settings.collectionReveal,
       photoScale: settings.photoScale,
       neutralColor: settings.neutralColor,
       showLabels: settings.showLabels,

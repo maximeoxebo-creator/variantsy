@@ -475,11 +475,9 @@ function SchemaEditeurTheme() {
 export function InstallationPanel({
   themeName,
   deepLink,
-  embedLink,
 }: {
   themeName: string | null;
   deepLink: string | null;
-  embedLink: string | null;
 }) {
   return (
     <BlockStack gap="500">
@@ -489,7 +487,7 @@ export function InstallationPanel({
     <InlineStack gap="200" blockAlign="center">
       <Badge tone="info">Step 1</Badge>
       <Text as="h2" variant="headingMd">
-        Enable the block on the product page
+        Enable the block in your theme
       </Text>
     </InlineStack>
     <Text as="p">
@@ -532,57 +530,11 @@ export function InstallationPanel({
 </Card>
 
 
-<Card>
-  <BlockStack gap="300">
-    <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Step 2</Badge>
-      <Text as="h2" variant="headingMd">
-        Enable swatches on your collection pages
-      </Text>
-      <Badge>Optional</Badge>
-    </InlineStack>
-    <Text as="p">
-      Collection cards are rendered by your theme, inside a loop no app can reach. Swatches
-      therefore do not go through a block, but through an <strong>app embed</strong> — filed
-      elsewhere in the theme editor.
-    </Text>
-    <Banner tone="info">
-      <Text as="p" variant="bodySm">
-        This is the most common confusion: people look for &ldquo;Variantsy&rdquo; in the
-        block list of a collection page and cannot find it. That is expected — it is not
-        there.
-      </Text>
-    </Banner>
-    {embedLink && (
-      <InlineStack>
-        <Button variant="primary" url={embedLink} target="_blank">
-          Open app embeds
-        </Button>
-      </InlineStack>
-    )}
-    <List type="number">
-      <List.Item>
-        In the theme editor, scroll the left panel to the bottom and click
-        <strong>App embeds</strong> (the plug icon).
-      </List.Item>
-      <List.Item>
-        Turn on <strong>&ldquo;Variantsy collections&rdquo;</strong>.
-      </List.Item>
-      <List.Item>Save.</List.Item>
-    </List>
-    <Text as="p" variant="bodySm" tone="subdued">
-      Two switches control this display, and both must be on: this one loads the script,
-      and the one on the <strong>Appearance</strong> tab decides whether anything is drawn.
-      To turn catalog swatches off day to day, use the Appearance one — it does not send you
-      back to the theme editor.
-    </Text>
-  </BlockStack>
-</Card>
 
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Step 3</Badge>
+      <Badge tone="info">Step 2</Badge>
       <Text as="h2" variant="headingMd">
         Put your photos in order
       </Text>
@@ -680,7 +632,7 @@ export function InstallationPanel({
 <Card>
   <BlockStack gap="300">
     <InlineStack gap="200" blockAlign="center">
-      <Badge tone="info">Step 4</Badge>
+      <Badge tone="info">Step 3</Badge>
       <Text as="h2" variant="headingMd">
         Adjust the style
       </Text>

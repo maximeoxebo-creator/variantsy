@@ -33,7 +33,8 @@ const racine = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = join(racine, "storefront");
 const cible = join(racine, "extensions/variant-engine/assets");
 
-const fichiers = ["variantsy.js", "variantsy-collection.js"];
+// Un seul moteur depuis le retrait des pages de collection.
+const fichiers = ["variantsy.js"];
 
 const ko = (chemin) => (statSync(chemin).size / 1024).toFixed(1);
 
