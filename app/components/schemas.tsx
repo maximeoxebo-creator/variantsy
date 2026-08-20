@@ -726,107 +726,102 @@ export function SchemaEditeurTheme() {
  *  la notice, où elle enseigne un geste ; ici elle ne racontait rien.
  */
 export function SchemaAvantApres() {
+  // Version simplifiée. La précédente empilait des cadres de téléphone, leurs
+  // encoches et une rangée de pastilles par appareil : beaucoup de décor pour
+  // une idée simple, et illisible à la taille d'une carte. Il ne reste que ce
+  // qui porte le sens — deux galeries, et le coloris choisi en dessous.
   const VERT = "#8AA173";
   const TERRE = "#C0715A";
   const NOIR = "#2E2E2E";
-  const avant = [VERT, TERRE, TERRE, NOIR, NOIR, VERT];
-  const apres = [VERT, VERT, VERT, VERT];
 
-  const Telephone = ({
+  const Galerie = ({ photos }: { photos: string[] }) => (
+    <span
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 4,
+        // Hauteur commune : sans elle la galerie filtrée, plus courte, ne se
+        // comparait plus à l'autre.
+        minHeight: 104,
+        alignContent: "start",
+      }}
+    >
+      {photos.map((c, i) => (
+        <span
+          key={i}
+          style={{
+            display: "grid",
+            placeItems: "center",
+            height: 48,
+            borderRadius: 6,
+            background: c,
+          }}
+        >
+          <Silhouette tint="rgba(255,255,255,.36)" />
+        </span>
+      ))}
+    </span>
+  );
+
+  const Colonne = ({
     etiquette,
-    teinteEtiquette,
+    teinte,
     photos,
   }: {
     etiquette: string;
-    teinteEtiquette: string;
+    teinte: string;
     photos: string[];
   }) => (
     <span style={{ flex: "1 1 0", minWidth: 0, display: "block" }}>
       <span
         style={{
           display: "block",
-          width: "fit-content",
-          margin: "0 auto 4px",
-          padding: "1px 8px",
-          borderRadius: 999,
-          background: teinteEtiquette,
-          color: "#fff",
-          fontSize: 8,
+          marginBottom: 5,
+          fontSize: 9,
           fontWeight: 700,
           letterSpacing: ".06em",
+          color: teinte,
         }}
       >
         {etiquette}
       </span>
-      <span
-        style={{
-          display: "block",
-          border: "2px solid #1B2A22",
-          borderRadius: 12,
-          padding: 6,
-          background: "#fff",
-        }}
-      >
-        {/* L'encoche : suffit à faire lire « téléphone ». */}
-        <span
-          style={{
-            display: "block",
-            width: 26,
-            height: 2,
-            margin: "0 auto 5px",
-            borderRadius: 2,
-            background: "#1B2A22",
-          }}
-        />
-        <span
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 3,
-            // Hauteur figée : sans elle la colonne « après », plus courte,
-            // remontait la rangée de pastilles et les deux téléphones ne se
-            // comparaient plus.
-            minHeight: 96,
-            alignContent: "start",
-          }}
-        >
-          {photos.map((c, i) => (
-            <span
-              key={i}
-              style={{
-                display: "grid",
-                placeItems: "center",
-                height: 30,
-                borderRadius: 4,
-                background: c,
-              }}
-            >
-              <Silhouette tint="rgba(255,255,255,.36)" />
-            </span>
-          ))}
-        </span>
-        <span style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 6 }}>
-          {[VERT, TERRE, NOIR].map((c) => (
-            <span
-              key={c}
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: c,
-                boxShadow: c === VERT ? "0 0 0 1.5px #fff, 0 0 0 3px #1B7A4B" : "none",
-              }}
-            />
-          ))}
-        </span>
-      </span>
+      <Galerie photos={photos} />
     </span>
   );
 
   return (
-    <span style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <Telephone etiquette="BEFORE" teinteEtiquette={TERRE} photos={avant} />
-      <Telephone etiquette="AFTER" teinteEtiquette="#1B7A4B" photos={apres} />
+    <span style={{ display: "block" }}>
+      <span style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <Colonne
+          etiquette="BEFORE"
+          teinte={TERRE}
+          photos={[VERT, TERRE, TERRE, NOIR, NOIR, VERT]}
+        />
+        <Colonne etiquette="AFTER" teinte="#1B7A4B" photos={[VERT, VERT, VERT, VERT]} />
+      </span>
+
+      {/* Le coloris choisi, une seule fois : c'est lui qui explique le filtre. */}
+      <span
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 8,
+          marginTop: 10,
+        }}
+      >
+        {[VERT, TERRE, NOIR].map((c) => (
+          <span
+            key={c}
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              background: c,
+              boxShadow: c === VERT ? "0 0 0 2px #fff, 0 0 0 4px #1B7A4B" : "none",
+            }}
+          />
+        ))}
+      </span>
     </span>
   );
 }
