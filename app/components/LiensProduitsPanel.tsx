@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Badge, Banner, BlockStack, Box, Button, Card, EmptyState, InlineStack,
   Text, TextField,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import type { Group, GroupMember } from "../groups.server";
+
+type MembreEdite = GroupMember & { aDesCouleurs?: boolean };
 
 /* ==========================================================================
    Volet « Produits liés »
@@ -19,7 +21,7 @@ import type { Group, GroupMember } from "../groups.server";
    entrants. On ajoute un sélecteur qui mène d'une fiche à l'autre.
    ========================================================================== */
 
-type Brouillon = { id?: string; label: string; members: GroupMember[] };
+type Brouillon = { id?: string; label: string; members: MembreEdite[] };
 
 const VIDE: Brouillon = { label: "Color", members: [] };
 
@@ -39,6 +41,21 @@ export function LiensProduitsPanel({
   const shopify = useAppBridge();
   const [brouillon, setBrouillon] = useState<Brouillon | null>(null);
 
+  // Refermer l'éditeur quand l'enregistrement aboutit. Sans cela le marchand
+  // reste devant son formulaire, sans savoir si c'est passé, et n'a aucun
+  // chemin visible vers un second groupe.
+  const enCours = useRef(false);
+  useEffect(() => {
+    if (enregistrement) {
+      enCours.current = true;
+      return;
+    }
+    if (enCours.current) {
+      enCours.current = false;
+      if (erreurs.length === 0) setBrouillon(null);
+    }
+  }, [enregistrement, erreurs.length]);
+
   const choisirProduits = async () => {
     const selection = await shopify.resourcePicker({
       type: "product",
@@ -51,13 +68,23 @@ export function LiensProduitsPanel({
     const anciens = new Map((brouillon?.members ?? []).map((m) => [m.id, m]));
     setBrouillon((b) => ({
       ...(b ?? VIDE),
-      members: selection.map((p: { id: string; handle: string; title: string }) => ({
-        id: p.id,
-        handle: p.handle,
-        title: p.title,
-        // On conserve le coloris déjà saisi ; le titre n'est qu'une amorce.
-        value: anciens.get(p.id)?.value ?? p.title,
-      })),
+      members: selection.map(
+        (p: { id: string; handle: string; title: string; options?: { name: string }[] }) => ({
+          id: p.id,
+          handle: p.handle,
+          title: p.title,
+          // Volontairement VIDE, jamais le titre du produit : pré-remplir avec
+          // « ALMA25 — Cocotte ronde en fonte bleu marine » donnait une pastille
+          // dont le libellé était la fiche entière, et personne ne pensait à le
+          // corriger. Un champ vide se remplit ; un champ faux se recopie.
+          value: anciens.get(p.id)?.value ?? "",
+          // Sert uniquement à avertir : ce produit gère déjà ses coloris en
+          // variantes, le grouper ferait doublon.
+          aDesCouleurs: (p.options ?? []).some((o) =>
+            /colou?r|couleur|farbe|kleur|colore/i.test(o.name),
+          ),
+        }),
+      ),
     }));
   };
 
@@ -148,6 +175,17 @@ export function LiensProduitsPanel({
               </Text>
             )}
 
+            {brouillon.members.some((m) => m.aDesCouleurs) && (
+              <Banner tone="warning" title="These products already have their own colors">
+                <Text as="p" variant="bodySm">
+                  Linked products are meant for catalogs where each color is a separate
+                  product. The ones you picked already carry a color option, so their
+                  swatches are handled by Variantsy already — grouping them shows a second
+                  row of swatches that says the same thing twice.
+                </Text>
+              </Banner>
+            )}
+
             <InlineStack gap="200">
               <Button
                 variant="primary"
@@ -173,12 +211,28 @@ export function LiensProduitsPanel({
           <Badge tone="info">Any plan</Badge>
         </InlineStack>
         <Text as="p" variant="bodySm" tone="subdued">
-          Variantsy works inside a single product. If each of your colors is a separate
-          product, group them here: every page then shows the whole range, and a click
-          leads to the right one. Each product keeps its own address, so its search
-          ranking, reviews and inbound links stay where they are.
+          Use this only when each color is a <strong>separate product</strong>. If a
+          product already carries a color option, Variantsy handles it on the Appearance
+          tab and you have nothing to do here.
         </Text>
       </BlockStack>
+
+      <Box background="bg-surface-secondary" padding="400" borderRadius="300">
+        <BlockStack gap="200">
+          <Text as="p" variant="bodySm" fontWeight="semibold">How it works</Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            1. Pick the products that are the same item in different colors.
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            2. Type the color each one stands for — Blue, Beige, Charcoal.
+          </Text>
+          <Text as="p" variant="bodySm" tone="subdued">
+            3. Save. Every one of those product pages now shows the whole range, and a
+            click opens the right product. Nothing is merged: each keeps its own address,
+            and with it its search ranking, reviews and inbound links.
+          </Text>
+        </BlockStack>
+      </Box>
 
       {groups.length === 0 ? (
         <Card>
