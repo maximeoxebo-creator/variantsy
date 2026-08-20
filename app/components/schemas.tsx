@@ -15,6 +15,12 @@ import { BlockStack, Text } from "@shopify/polaris";
 export const BLUE = "#2C5AA0";
 export const BEIGE = "#D8C3A5";
 
+/** Teinte d'une silhouette posée sur un aplat de couleur : blanche sur les
+ *  fonds soutenus, sombre sur le beige, où le blanc s'effaçait. */
+export function teinteSilhouette(fond: string) {
+  return fond === BEIGE ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.34)";
+}
+
 /** Pastille étoilée : marque une photo assignée à une variante. */
 function Etoile() {
   return (
@@ -501,7 +507,7 @@ export function SchemaGroupe() {
                     background: f.couleur,
                   }}
                 >
-                  <Silhouette tint="rgba(255,255,255,.34)" />
+                  <Silhouette tint={teinteSilhouette(f.couleur)} />
                 </span>
 
                 <span
@@ -810,7 +816,7 @@ export function SchemaAvantApres() {
               background: c,
             }}
           >
-            <Silhouette tint={c === BEIGE ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.36)"} />
+            <Silhouette tint={teinteSilhouette(c)} />
           </span>
         ))}
       </span>
