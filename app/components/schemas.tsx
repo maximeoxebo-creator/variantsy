@@ -743,9 +743,9 @@ export function SchemaEditeurTheme() {
  *  la notice, où elle enseigne un geste ; ici elle ne racontait rien.
  */
 export function SchemaAvantApres() {
-  const VERT = "#8AA173";
-  const TERRE = "#C0715A";
-  const NOIR = "#2E2E2E";
+  const ARGILE = "#C0715A";
+  // Le coloris retenu par le client, celui que le filtre conserve.
+  const CHOISI = BLUE;
 
   const Zone = ({
     etiquette,
@@ -768,7 +768,9 @@ export function SchemaAvantApres() {
         background: "#fff",
         // Le cadre délimite les deux situations : sans lui les deux grilles
         // se lisaient comme une seule galerie de dix photos.
-        border: accentue ? `1.5px solid ${teinte}` : "1px solid var(--p-color-border-secondary)",
+        border: accentue
+          ? "1.5px solid var(--p-color-border-emphasis)"
+          : "1px solid var(--p-color-border-secondary)",
       }}
     >
       <span
@@ -808,7 +810,7 @@ export function SchemaAvantApres() {
               background: c,
             }}
           >
-            <Silhouette tint="rgba(255,255,255,.36)" />
+            <Silhouette tint={c === BEIGE ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.36)"} />
           </span>
         ))}
       </span>
@@ -823,20 +825,20 @@ export function SchemaAvantApres() {
             filtrage, pas sur un rangement fantaisiste. */}
         <Zone
           etiquette="WITHOUT VARIANTSY"
-          teinte={TERRE}
-          photos={[VERT, VERT, TERRE, TERRE, NOIR, NOIR]}
+          teinte="var(--p-color-text-secondary)"
+          photos={[CHOISI, CHOISI, BEIGE, BEIGE, ARGILE, ARGILE]}
         />
         <Zone
           etiquette="WITH VARIANTSY"
-          teinte="#1B7A4B"
-          photos={[VERT, VERT, VERT, VERT]}
+          teinte="var(--p-color-text-emphasis)"
+          photos={[CHOISI, CHOISI, CHOISI, CHOISI]}
           accentue
         />
       </span>
 
       {/* Le coloris choisi, une seule fois : c'est lui qui explique le filtre. */}
       <span style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
-        {[VERT, TERRE, NOIR].map((c) => (
+        {[CHOISI, BEIGE, ARGILE].map((c) => (
           <span
             key={c}
             style={{
@@ -844,7 +846,10 @@ export function SchemaAvantApres() {
               height: 14,
               borderRadius: "50%",
               background: c,
-              boxShadow: c === VERT ? "0 0 0 2px #fff, 0 0 0 4px #1B7A4B" : "none",
+              boxShadow:
+                c === CHOISI
+                  ? "0 0 0 2px #fff, 0 0 0 4px var(--p-color-border-emphasis)"
+                  : "none",
             }}
           />
         ))}
