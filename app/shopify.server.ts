@@ -48,12 +48,26 @@ const shopify = shopifyApp({
    * au jeton de rafraîchissement stocké en base (colonnes `refreshToken` et
    * `refreshTokenExpires`), valable 90 jours.
    *
-   * `unstable_newEmbeddedAuthStrategy` et `removeRest` ont disparu en v4 :
-   * l'échange de jeton y est le comportement par défaut, et l'API REST a été
-   * retirée pour de bon — il n'y a plus rien à désactiver.
+   * `removeRest` a bien disparu en v4 : l'API REST a été retirée pour de bon,
+   * il n'y a plus rien à désactiver.
+   *
+   * `unstable_newEmbeddedAuthStrategy`, EN REVANCHE, EXISTE TOUJOURS en 4.2.1
+   * — un commentaire précédent affirmait le contraire, à tort. Sans lui,
+   * `shopifyApp()` instancie `AuthCodeFlowStrategy` et non
+   * `TokenExchangeStrategy` (voir le branchement dans shopify-app.js), et
+   * `login()` renvoie vers /auth au lieu du chemin d'installation gérée. La
+   * librairie le signale à chaque démarrage :
+   *   « Future flag unstable_newEmbeddedAuthStrategy is disabled. »
+   *
+   * Les conditions sont réunies — `embedded = true` et les scopes déclarés
+   * dans shopify.app.toml sans `use_legacy_install_flow`, c'est-à-dire
+   * l'installation gérée par Shopify — donc il est activé. L'app échange
+   * désormais le jeton de session d'App Bridge contre un jeton d'accès, sans
+   * le détour par la redirection OAuth.
    */
   future: {
     expiringOfflineAccessTokens: true,
+    unstable_newEmbeddedAuthStrategy: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
