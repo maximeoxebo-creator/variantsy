@@ -434,9 +434,9 @@ export function SchemaGroupe() {
   // un CÂBLAGE qui descend de ces rangées vers une barre commune. Les « ↔ »
   // seuls suggéraient un va-et-vient, pas un sélecteur partagé.
   const fiches = [
-    { nom: "Blue", couleur: BLUE },
-    { nom: "Beige", couleur: BEIGE },
-    { nom: "Clay", couleur: "#C0715A" },
+    { nom: "Blue", couleur: BLUE, sku: "COC-BLU", stock: 12 },
+    { nom: "Beige", couleur: BEIGE, sku: "COC-BEI", stock: 4 },
+    { nom: "Clay", couleur: "#C0715A", sku: "COC-CLA", stock: 9 },
   ];
 
   return (
@@ -518,6 +518,20 @@ export function SchemaGroupe() {
                   Cocotte · {f.nom}
                 </span>
 
+                <span
+                  style={{
+                    display: "block",
+                    marginTop: 2,
+                    fontSize: 8,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    color: "var(--p-color-text-secondary)",
+                  }}
+                >
+                  {f.sku} · {f.stock} left
+                </span>
+
                 {/* La rangée identique sur les trois pages, détachée sur sa
                     propre bande : c'est elle qui relie, elle ne doit pas se
                     lire comme un détail de la fiche. */}
@@ -556,7 +570,7 @@ export function SchemaGroupe() {
 
       {/* Le câblage : trois montants qui descendent des rangées de pastilles
           et se rejoignent sur une barre commune. */}
-      <span style={{ display: "block", position: "relative", height: 22, marginTop: 2 }}>
+      <span style={{ display: "block", position: "relative", height: 34, marginTop: 2 }}>
         {[16.7, 50, 83.3].map((x) => (
           <span
             key={x}
@@ -591,6 +605,9 @@ export function SchemaGroupe() {
           }}
         >
           one selector · three pages
+        <span style={{ display: "block", marginTop: 1 }}>
+          each with its own SKU, barcode and stock
+        </span>
         </span>
       </span>
     </span>
@@ -726,89 +743,99 @@ export function SchemaEditeurTheme() {
  *  la notice, où elle enseigne un geste ; ici elle ne racontait rien.
  */
 export function SchemaAvantApres() {
-  // Version simplifiée. La précédente empilait des cadres de téléphone, leurs
-  // encoches et une rangée de pastilles par appareil : beaucoup de décor pour
-  // une idée simple, et illisible à la taille d'une carte. Il ne reste que ce
-  // qui porte le sens — deux galeries, et le coloris choisi en dessous.
   const VERT = "#8AA173";
   const TERRE = "#C0715A";
   const NOIR = "#2E2E2E";
 
-  const Galerie = ({ photos }: { photos: string[] }) => (
-    <span
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 4,
-        // Hauteur commune : sans elle la galerie filtrée, plus courte, ne se
-        // comparait plus à l'autre.
-        minHeight: 104,
-        alignContent: "start",
-      }}
-    >
-      {photos.map((c, i) => (
-        <span
-          key={i}
-          style={{
-            display: "grid",
-            placeItems: "center",
-            height: 48,
-            borderRadius: 6,
-            background: c,
-          }}
-        >
-          <Silhouette tint="rgba(255,255,255,.36)" />
-        </span>
-      ))}
-    </span>
-  );
-
-  const Colonne = ({
+  const Zone = ({
     etiquette,
     teinte,
     photos,
+    accentue,
   }: {
     etiquette: string;
     teinte: string;
     photos: string[];
+    accentue?: boolean;
   }) => (
-    <span style={{ flex: "1 1 0", minWidth: 0, display: "block" }}>
+    <span
+      style={{
+        flex: "1 1 0",
+        minWidth: 0,
+        display: "block",
+        padding: 8,
+        borderRadius: 10,
+        background: "#fff",
+        // Le cadre délimite les deux situations : sans lui les deux grilles
+        // se lisaient comme une seule galerie de dix photos.
+        border: accentue ? `1.5px solid ${teinte}` : "1px solid var(--p-color-border-secondary)",
+      }}
+    >
       <span
         style={{
           display: "block",
-          marginBottom: 5,
-          fontSize: 9,
+          marginBottom: 6,
+          fontSize: 8,
           fontWeight: 700,
-          letterSpacing: ".06em",
+          letterSpacing: ".04em",
           color: teinte,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
         }}
       >
         {etiquette}
       </span>
-      <Galerie photos={photos} />
+      <span
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 4,
+          // Hauteur commune : sans elle la galerie filtrée, plus courte, ne se
+          // comparait plus à l'autre.
+          minHeight: 104,
+          alignContent: "start",
+        }}
+      >
+        {photos.map((c, i) => (
+          <span
+            key={i}
+            style={{
+              display: "grid",
+              placeItems: "center",
+              height: 48,
+              borderRadius: 6,
+              background: c,
+            }}
+          >
+            <Silhouette tint="rgba(255,255,255,.36)" />
+          </span>
+        ))}
+      </span>
     </span>
   );
 
   return (
     <span style={{ display: "block" }}>
-      <span style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <Colonne
-          etiquette="BEFORE"
+      <span style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+        {/* Les coloris se suivent au lieu d'être panachés : c'est l'ordre
+            réel d'une galerie Shopify, et le contraste porte alors sur le
+            filtrage, pas sur un rangement fantaisiste. */}
+        <Zone
+          etiquette="WITHOUT VARIANTSY"
           teinte={TERRE}
-          photos={[VERT, TERRE, TERRE, NOIR, NOIR, VERT]}
+          photos={[VERT, VERT, TERRE, TERRE, NOIR, NOIR]}
         />
-        <Colonne etiquette="AFTER" teinte="#1B7A4B" photos={[VERT, VERT, VERT, VERT]} />
+        <Zone
+          etiquette="WITH VARIANTSY"
+          teinte="#1B7A4B"
+          photos={[VERT, VERT, VERT, VERT]}
+          accentue
+        />
       </span>
 
       {/* Le coloris choisi, une seule fois : c'est lui qui explique le filtre. */}
-      <span
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 8,
-          marginTop: 10,
-        }}
-      >
+      <span style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
         {[VERT, TERRE, NOIR].map((c) => (
           <span
             key={c}
