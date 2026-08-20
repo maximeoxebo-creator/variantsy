@@ -31,12 +31,21 @@
   assign sp_color_names = 'color,colour,couleur,farbe,kleur,colore' | split: ','
 -%}
 
-{%- if sp_enabled and product and product.variants.size > 1 -%}
+{%- comment -%}
+  Les fiches sœurs sont lues AVANT le garde-fou : un produit à une seule
+  variante n'avait rien à choisir, donc le bloc ne se rendait pas. C'est
+  précisément le cas des produits liés — une couleur par fiche —, et la
+  fonctionnalité ne s'affichait donc jamais là où elle sert.
+{%- endcomment -%}
+{%- assign vtsy_members = product.metafields.variantsy.group_members.value -%}
+{%- assign vtsy_grouped = false -%}
+{%- if vtsy_members and vtsy_members.size > 1 -%}{%- assign vtsy_grouped = true -%}{%- endif -%}
+
+{%- if sp_enabled and product and product.variants.size > 1 or sp_enabled and product and vtsy_grouped -%}
   {%- comment -%}
     Les fiches sœurs sont lues une fois pour toutes : la boucle des options en a
     besoin pour fusionner, et le repli autonome pour décider s'il doit exister.
   {%- endcomment -%}
-  {%- assign vtsy_members = product.metafields.variantsy.group_members.value -%}
   {%- assign vtsy_label = product.metafields.variantsy.group_label | default: 'Color' -%}
 
   {%- comment -%}
@@ -164,6 +173,13 @@
     </script>
 
     {%- for option in product.options_with_values -%}
+      {%- comment -%}
+        Shopify nomme « Title » l'option fictive d'un produit qui n'en a aucune,
+        avec pour seule valeur « Default Title ». La rendre afficherait un
+        sélecteur à un bouton, intitulé Title — visible seulement depuis que les
+        produits liés font entrer ici des fiches sans option.
+      {%- endcomment -%}
+      {%- if option.values.size < 2 and option.name == 'Title' -%}{%- continue -%}{%- endif -%}
       {%- liquid
         assign opt_name_dc = option.name | downcase
         assign is_color = false
