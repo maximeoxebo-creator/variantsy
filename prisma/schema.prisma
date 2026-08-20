@@ -196,6 +196,33 @@ model ShopSettings {
   @@index([shop])
 }
 
+/// Groupe de produits liés — un coloris par fiche produit.
+///
+/// La VÉRITÉ vit dans les métadonnées des produits, pas ici : le storefront les
+/// lit en Liquid, sans appel réseau, et elles survivent à une désinstallation.
+/// Cette table n'est qu'un INDEX, pour que l'admin liste les groupes sans
+/// balayer tout le catalogue — Shopify ne sait pas chercher un produit par
+/// métadonnée.
+///
+/// Conséquence assumée : si un marchand efface une métadonnée à la main, l'index
+/// et la réalité divergent. L'écran relit donc les produits avant d'afficher.
+model ProductGroup {
+  id        String   @id @default(cuid())
+  shop      String
+  /// Identifiant écrit dans la métadonnée `variantsy.group`.
+  key       String
+  /// Nom de l'option affiché au-dessus des pastilles (« Color », « Finish »…).
+  label     String   @default("Color")
+  /// [{ id, handle, title, value }] — l'ordre est celui d'affichage.
+  members   Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shop, key])
+  @@index([shop])
+}
+
 /// Mapping d'une valeur d'option (ex. "Bleu marine") vers un rendu visuel.
 /// Scope = boutique entière, pour ne pas avoir à re-configurer produit par produit.
 model SwatchValue {

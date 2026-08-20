@@ -24,9 +24,10 @@ import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
 import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
+import { listGroups, saveGroup, deleteGroup } from "../groups.server";
 import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
-import { ListesCombineesPanel } from "../components/ListesCombineesPanel";
+import { LiensProduitsPanel } from "../components/LiensProduitsPanel";
 
 /** Thème publié : sert au lien direct vers l'éditeur, dans l'onglet Installation. */
 const PUBLISHED_THEME_QUERY = `#graphql
@@ -76,12 +77,32 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ? `https://admin.shopify.com/store/${shopHandle}/themes/${themeId}/editor?context=apps&activateAppId=${extensionUuid}/collection`
       : null;
 
-  return { settings, themeName, deepLink, embedLink };
+  const groups = await listGroups(session.shop);
+
+  return { settings, themeName, deepLink, embedLink, groups };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const form = await request.formData();
+
+  // Une seule route sert les réglages ET les groupes : l'app tient sur une page
+  // à onglets, et deux routes d'action obligeraient à sortir de cette page.
+  const intention = form.get("_intent");
+
+  if (intention === "group-save") {
+    const resultat = await saveGroup(admin, session.shop, {
+      id: (form.get("id") as string) || undefined,
+      label: (form.get("label") as string) || "Color",
+      members: JSON.parse((form.get("members") as string) || "[]"),
+    });
+    return { ok: resultat.ok, groupErrors: resultat.errors, kind: "group" as const };
+  }
+
+  if (intention === "group-delete") {
+    await deleteGroup(admin, session.shop, form.get("id") as string);
+    return { ok: true, groupErrors: [], kind: "group-deleted" as const };
+  }
 
   const bool = (key: string) => form.get(key) === "true";
   const int = (key: string, fallback: number) => {
@@ -146,7 +167,7 @@ const TABS = [
 ];
 
 export default function SettingsPage() {
-  const { settings, themeName, deepLink, embedLink } = useLoaderData<typeof loader>();
+  const { settings, themeName, deepLink, embedLink, groups } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -165,7 +186,16 @@ export default function SettingsPage() {
   }, [dirty, shopify]);
 
   useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.ok) {
+    if (fetcher.state !== "idle" || !fetcher.data?.ok) return;
+    // La même action sert les réglages et les groupes : sans cette distinction,
+    // enregistrer un groupe annonçait « Settings saved » et effaçait l'état
+    // « modifications non enregistrées » du formulaire de réglages.
+    const kind = (fetcher.data as { kind?: string }).kind;
+    if (kind === "group") {
+      shopify.toast.show("Group saved");
+    } else if (kind === "group-deleted") {
+      shopify.toast.show("Group deleted");
+    } else {
       setDirty(false);
       shopify.toast.show("Settings saved");
     }
@@ -291,7 +321,28 @@ export default function SettingsPage() {
                   )}
                   {tab === 1 && <ApparencePanel form={form} set={set} />}
                   {tab === 2 && <TitrePanel form={form} set={set} />}
-                  {tab === 3 && <ListesCombineesPanel />}
+                  {tab === 3 && <LiensProduitsPanel
+                      groups={groups}
+                      enregistrement={fetcher.state !== "idle"}
+                      erreurs={
+                        (fetcher.data as { groupErrors?: string[] } | undefined)
+                          ?.groupErrors ?? []
+                      }
+                      onSave={(b) => {
+                        const data = new FormData();
+                        data.append("_intent", "group-save");
+                        if (b.id) data.append("id", b.id);
+                        data.append("label", b.label);
+                        data.append("members", JSON.stringify(b.members));
+                        fetcher.submit(data, { method: "POST" });
+                      }}
+                      onDelete={(id) => {
+                        const data = new FormData();
+                        data.append("_intent", "group-delete");
+                        data.append("id", id);
+                        fetcher.submit(data, { method: "POST" });
+                      }}
+                    />}
                 </Box>
               </Tabs>
             </Card>
