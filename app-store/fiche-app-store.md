@@ -162,14 +162,14 @@ pages », devenue mensongère.
   Une seule doit figurer, et c'est elle qui doit porter le groupe de produits
   liés décrit à l'étape 3.
 
-## Testing instructions  (2804/2800)
+## Testing instructions  (2795/2800)
 
 Variantsy adds color swatches to product pages, gives each color its own set of photos, and rewrites the product title as the shopper chooses. It also links separate product pages that are the same item in another color.
 
 STORE ACCESS
 - Demo store: simple-popup-test.myshopify.com
 - Storefront password: see the Test account section.
-- No app account or separate login is required.
+- No app account or login is required.
 
 WHAT IS ALREADY SET UP
 - The Variantsy app block is enabled on the product template of the published theme (Savor).
