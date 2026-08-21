@@ -158,11 +158,30 @@ async function ecrire(
       { ownerId: m.id, namespace: NAMESPACE, key: "group_value", type: "single_line_text_field", value: m.value },
       { ownerId: m.id, namespace: NAMESPACE, key: "group_label", type: "single_line_text_field", value: group.label },
       { ownerId: m.id, namespace: NAMESPACE, key: "group_members", type: "json", value: JSON.stringify(handles) },
-      // Chaîne vide plutôt qu'omission : une métadonnée laissée en place
-      // garderait l'ancienne couleur d'un coloris renommé.
-      { ownerId: m.id, namespace: NAMESPACE, key: "group_color", type: "single_line_text_field", value: couleur ?? "" },
+      // La couleur n'est écrite que si elle a été résolue. `metafieldsSet`
+      // REFUSE une chaîne vide — « Value can't be blank » — donc effacer une
+      // couleur devenue caduque passe par une suppression, plus bas.
+      ...(couleur
+        ? [{ ownerId: m.id, namespace: NAMESPACE, key: "group_color", type: "single_line_text_field", value: couleur }]
+        : []),
     ];
   });
+
+  // Les fiches dont la couleur ne se résout plus doivent PERDRE la leur :
+  // laissée en place, elle peindrait la pastille d'un coloris renommé avec la
+  // teinte de l'ancien.
+  const sansCouleur = group.members.filter((m) => !couleurs.get(m.value));
+  if (sansCouleur.length) {
+    await admin.graphql(DELETE, {
+      variables: {
+        metafields: sansCouleur.map((m) => ({
+          ownerId: m.id,
+          namespace: NAMESPACE,
+          key: "group_color",
+        })),
+      },
+    });
+  }
 
   // `metafieldsSet` plafonne à 25 métadonnées par appel : cinq par fiche depuis
   // l'ajout de la couleur, donc cinq fiches. Un groupe de vingt coloris

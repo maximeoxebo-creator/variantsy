@@ -219,7 +219,10 @@ export function LiensProduitsPanel({
                     value={m.value}
                     onChange={(v) => majValeur(m.id, v)}
                     autoComplete="off"
-                    placeholder="Blue"
+                    // Le libellé du champ EST le nom de l'option, qui peut être
+                    // « Size » ou « Finish » : suggérer « Blue » y était absurde.
+                    // L'indication reprend donc ce nom et dit quoi faire.
+                    placeholder={`Type the ${etiquette.toLowerCase()} this page stands for`}
                   />
                 </BlockStack>
               </Box>
