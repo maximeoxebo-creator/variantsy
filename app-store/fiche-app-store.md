@@ -162,7 +162,7 @@ pages », devenue mensongère.
   Une seule doit figurer, et c'est elle qui doit porter le groupe de produits
   liés décrit à l'étape 3.
 
-## Testing instructions  (2815/2800)
+## Testing instructions  (2804/2800)
 
 Variantsy adds color swatches to product pages, gives each color its own set of photos, and rewrites the product title as the shopper chooses. It also links separate product pages that are the same item in another color.
 
@@ -202,5 +202,5 @@ WHAT IS ALREADY SET UP
 - The demo store has an active Pro subscription so that the admin can be reviewed.
 
 NOTES
-- Variantsy adds nothing to collection or catalog pages; it works on product pages only.
+- Variantsy adds nothing to collection pages; it works on product pages only.
 - Uninstalling removes the storefront code entirely; no theme file is ever modified.
