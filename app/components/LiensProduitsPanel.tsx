@@ -40,9 +40,10 @@ export type ProduitChoisi = {
 };
 
 type MembreEdite = GroupMember & {
-  /** Sert uniquement à avertir : ce produit gère déjà ses coloris en
-   *  variantes, le grouper ferait doublon. */
-  aDesCouleurs?: boolean;
+  /** Noms d'options de la fiche, gardés pour détecter un conflit AVEC LE NOM
+   *  DU GROUPE — lequel peut changer après le choix des produits, d'où un
+   *  calcul au rendu plutôt qu'au moment du choix. */
+  options?: string[];
   /** Vignette du sélecteur. Non enregistrée : à la réouverture d'un groupe on
    *  retombe sur le carré neutre, ce qui n'empêche rien. */
   image?: string;
@@ -115,7 +116,7 @@ export function LiensProduitsPanel({
         // dont le libellé était la fiche entière, et personne ne pensait à le
         // corriger. Un champ vide se remplit ; un champ faux se recopie.
         value: anciens.get(p.id)?.value ?? "",
-        aDesCouleurs: (p.options ?? []).some((o) => RE_COULEUR.test(o.name)),
+        options: (p.options ?? []).map((o) => o.name),
         image: p.images?.[0]?.originalSrc ?? p.images?.[0]?.url ?? anciens.get(p.id)?.image,
       })),
     }));
@@ -131,7 +132,20 @@ export function LiensProduitsPanel({
 
   /* ---------------------------------------------------------------- éditeur */
   if (brouillon) {
-    const enConflit = brouillon.members.filter((m) => m.aDesCouleurs);
+    // Conflit seulement si l'option de la fiche DIT LA MÊME CHOSE que le
+    // groupe. Le test portait sur « la fiche a-t-elle une option de couleur »,
+    // sans regarder le sujet du groupe : un groupe de tailles posé sur des
+    // fiches qui ont par ailleurs une couleur était signalé à tort, et le
+    // storefront le supprimait pour de bon.
+    const nomGroupe = brouillon.label.trim().toLowerCase();
+    const groupeEstCouleur = RE_COULEUR.test(nomGroupe);
+    const enConflit = brouillon.members.filter((m) =>
+      (m.options ?? []).some(
+        (o) =>
+          o.trim().toLowerCase() === nomGroupe ||
+          (groupeEstCouleur && RE_COULEUR.test(o)),
+      ),
+    );
     const complet =
       brouillon.members.length >= 2 && brouillon.members.every((m) => m.value.trim());
     // Le nom de l'option étiquette chaque champ de valeur, comme le fait
@@ -213,7 +227,9 @@ export function LiensProduitsPanel({
                         écrasait le badge, dont le texte se coupait en deux
                         lignes. Ce groupe ne rétrécit plus. */}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                      {m.aDesCouleurs && <Badge tone="critical">Color option</Badge>}
+                      {enConflit.some((c) => c.id === m.id) && (
+                      <Badge tone="critical">Conflicting option</Badge>
+                    )}
                       <Button
                         variant="tertiary"
                         icon={MinusCircleIcon}
@@ -240,13 +256,14 @@ export function LiensProduitsPanel({
 
         {/* Dit là où ça s'applique, et seulement quand ça s'applique. */}
         {enConflit.length > 0 && (
-          <Banner tone="critical" title="Remove the color option from these products">
+          <Banner tone="critical" title={`Remove the "${etiquette}" option from these products`}>
             <BlockStack gap="300">
               <Text as="p" variant="bodySm">
                 {enConflit.map((m) => m.title).join(", ")} still carr
-                {enConflit.length > 1 ? "y" : "ies"} a color option in the Shopify admin, so
-                the same color would show twice. Variantsy ignores a group until you
-                remove it.
+                {enConflit.length > 1 ? "y" : "ies"} an option that says the same thing as
+                this group, so the same value would show twice. Variantsy ignores a group
+                until you remove it. Options about something else — a size next to a color
+                group — are fine and stay.
               </Text>
               <SchemaRetraitOption />
             </BlockStack>

@@ -118,16 +118,46 @@
     une fiche à une seule couleur. C'est ce que dit déjà l'avertissement de
     l'admin ; le storefront applique désormais la même logique.
   {%- endcomment -%}
+  {%- comment -%}
+    Il n'y a conflit que si l'option de la fiche DIT LA MÊME CHOSE que le
+    groupe. La règle comparait auparavant les options à la liste des noms de
+    couleur, sans regarder le sujet du groupe : un groupe de TAILLES posé sur
+    des fiches qui ont, par ailleurs, une option Couleur se voyait supprimé
+    alors que les deux sont orthogonaux. Taille et couleur ne se doublonnent
+    pas.
+
+    Deux cas de conflit, donc :
+      1. une option porte exactement le nom du groupe ;
+      2. le groupe parle de couleur ET la fiche a une option de couleur — ce
+         second cas reste nécessaire, « Color » et « Couleur » désignant la
+         même chose sans se ressembler.
+  {%- endcomment -%}
+  {%- assign vtsy_label_dc = vtsy_label | downcase | strip -%}
+  {%- assign vtsy_label_couleur = false -%}
+  {%- for candidate in sp_color_names -%}
+    {%- assign vtsy_candidate = candidate | strip -%}
+    {%- if vtsy_candidate == vtsy_label_dc -%}
+      {%- assign vtsy_label_couleur = true -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor -%}
+
   {%- assign vtsy_has_color = false -%}
   {%- for vtsy_opt in product.options_with_values -%}
     {%- assign vtsy_opt_dc = vtsy_opt.name | downcase | strip -%}
-    {%- for candidate in sp_color_names -%}
-      {%- assign vtsy_candidate = candidate | strip -%}
-      {%- if vtsy_candidate == vtsy_opt_dc -%}
-        {%- assign vtsy_has_color = true -%}
-        {%- break -%}
-      {%- endif -%}
-    {%- endfor -%}
+    {%- if vtsy_opt_dc == vtsy_label_dc -%}
+      {%- assign vtsy_has_color = true -%}
+      {%- break -%}
+    {%- endif -%}
+    {%- if vtsy_label_couleur -%}
+      {%- for candidate in sp_color_names -%}
+        {%- assign vtsy_candidate = candidate | strip -%}
+        {%- if vtsy_candidate == vtsy_opt_dc -%}
+          {%- assign vtsy_has_color = true -%}
+          {%- break -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
   {%- endfor -%}
   <link rel="stylesheet" href="{{ 'variantsy.css' | asset_url }}" media="all">
 
