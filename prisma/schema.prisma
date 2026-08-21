@@ -49,81 +49,81 @@ model Session {
 
 /// Réglages globaux d'une boutique. Une ligne par shop.
 model ShopSettings {
-  id        String   @id @default(cuid())
-  shop      String   @unique
+  id   String @id @default(cuid())
+  shop String @unique
 
   /// Interrupteur maître : si false, l'extension ne rend rien côté storefront.
-  enabled   Boolean  @default(true)
+  enabled Boolean @default(true)
 
   // --- Apparence des swatches -------------------------------------------
   /// "circle" | "square" | "rounded"
-  shape          String  @default("circle")
+  shape                String  @default("circle")
   /// Taille en px du swatch (côté ou diamètre)
-  size           Int     @default(40)
+  size                 Int     @default(40)
   /// Espacement en px entre swatches
-  gap            Int     @default(10)
+  gap                  Int     @default(10)
   /// Épaisseur de la bordure au repos, en px
-  borderWidth    Int     @default(1)
-  borderColor    String  @default("#D9D9D9")
+  borderWidth          Int     @default(1)
+  borderColor          String  @default("#D9D9D9")
   /// Style de l'état sélectionné : "ring" | "border" | "shadow"
-  selectedStyle  String  @default("ring")
-  selectedColor  String  @default("#111111")
+  selectedStyle        String  @default("ring")
+  selectedColor        String  @default("#111111")
   /// Épaisseur du trait de sélection, en px. S'applique à l'anneau comme à la
   /// bordure épaisse, qui étaient tous deux figés à 2 px avant ce réglage.
-  selectedWidth  Int     @default(2)
+  selectedWidth        Int     @default(2)
   /// Écart entre la pastille et l'anneau, en px. À 0 l'anneau colle au swatch.
   /// N'a d'effet que sur le style "ring".
-  selectedGap    Int     @default(2)
+  selectedGap          Int     @default(2)
   /// Rayon des coins quand shape = "rounded", en px. Ignoré sinon.
-  cornerRadius   Int     @default(8)
+  cornerRadius         Int     @default(8)
   /// Rendu des options de couleur côté storefront :
   /// "swatch"   → pastilles (défaut)
   /// "text"     → boutons texte, sans pastille
   /// "dropdown" → liste déroulante
-  displayMode    String  @default("swatch")
+  displayMode          String  @default("swatch")
   /// Arrondi des boutons texte et de la liste déroulante, en px.
   /// Sans objet en mode pastilles, où `cornerRadius` fait ce travail.
-  controlRadius  Int     @default(6)
+  controlRadius        Int     @default(6)
   /// Aspect de la case choisie, hors mode pastilles :
   /// "outline" → liseré coloré (défaut)
   /// "fill"    → fond plein, texte contrasté automatiquement
   /// "none"    → aucun accent, la liste garde la bordure neutre du thème
-  controlSelectedStyle String @default("outline")
+  controlSelectedStyle String  @default("outline")
   /// La liste déroulante occupe toute la largeur disponible.
-  dropdownFullWidth Boolean @default(false)
+  dropdownFullWidth    Boolean @default(false)
   /// Que faire d'une valeur sans couleur associée dans la bibliothèque :
   /// "image"   → afficher la photo de la variante (défaut historique)
   /// "color"   → rester en pastille de couleur, devinée depuis le nom
   /// "neutral" → rester en pastille, toujours de la teinte neutre
-  swatchFallback String @default("image")
+  swatchFallback       String  @default("image")
   /// Afficher les pastilles sur les pages de collection.
   /// Doublon assumé de la case du même nom dans l'éditeur de thème : celle-ci
   /// empêche le rendu, celle-là empêche le chargement du script. Un marchand
   /// cherche ce réglage dans l'app, pas dans son thème — et beaucoup n'ouvrent
   /// jamais l'éditeur après l'installation.
-  collectionEnabled Boolean @default(true)
+  collectionEnabled    Boolean @default(true)
   /// Où poser la rangée de pastilles sur une vignette de collection :
   /// "overlay" → en surimpression sur la photo (défaut)
   /// "below"   → sous le bloc de texte
-  collectionPlacement String @default("overlay")
+  collectionPlacement  String  @default("overlay")
   /// Quand la rangée apparaît, en surimpression uniquement :
   /// "always" → toujours visible (défaut)
   /// "hover"  → au survol de la vignette
   /// Le survol est élégant sur un thème sobre, mais il entre en concurrence
   /// avec les thèmes qui échangent eux-mêmes la photo au survol. D'où le choix
   /// laissé au marchand plutôt qu'un parti pris.
-  collectionReveal String @default("always")
+  collectionReveal     String  @default("always")
   /// Agrandissement des pastilles qui affichent une photo, en pourcentage.
   /// Une photo a besoin de plus de place qu'un aplat pour être reconnaissable.
-  photoScale     Int     @default(100)
+  photoScale           Int     @default(100)
   /// Teinte servie quand aucune couleur n'a pu être déterminée.
-  neutralColor   String  @default("#ECECEC")
+  neutralColor         String  @default("#ECECEC")
   /// Afficher le libellé de la valeur sous le swatch
-  showLabels     Boolean @default(false)
+  showLabels           Boolean @default(false)
   /// Afficher "Couleur : Bleu marine" au-dessus des swatches
-  showOptionName Boolean @default(true)
+  showOptionName       Boolean @default(true)
   /// Nombre max de swatches avant repli "+N"
-  maxVisible     Int     @default(0)
+  maxVisible           Int     @default(0)
 
   // --- Comportement -------------------------------------------------------
   /// "dim" | "strikethrough" | "hide" — traitement des variantes indisponibles
@@ -139,36 +139,36 @@ model ShopSettings {
 
   // --- Image produit ------------------------------------------------------
   /// Changer l'image principale à la sélection
-  swapImage           Boolean @default(true)
+  swapImage        Boolean @default(true)
   /// Sélecteur CSS de la galerie principale. Vide = auto-détection multi-thèmes.
-  imageSelectorCss    String  @default("")
+  imageSelectorCss String  @default("")
 
   // --- Galerie multi-images par variante ----------------------------------
   /// Filtrer la galerie pour n'afficher que les médias de la variante choisie.
   /// C'est LA fonctionnalité principale : Shopify ne permet nativement qu'une
   /// seule image par variante.
-  galleryEnabled      Boolean @default(true)
+  galleryEnabled   Boolean @default(true)
   /// Option qui porte le groupage. "auto" = celle sur laquelle des images sont
   /// réellement assignées (dans 95 % des cas : la couleur).
   /// "auto" | "option1" | "option2" | "option3"
-  groupBy             String  @default("auto")
+  groupBy          String  @default("auto")
   /// Sort des médias placés AVANT la première image assignée (packshot générique,
   /// guide des tailles, vidéo de marque).
   /// "append" = visibles pour toutes les variantes
   /// "first"  = visibles uniquement sur le premier groupe
   /// "hide"   = jamais visibles quand un groupe est actif
-  commonMediaMode     String  @default("append")
+  commonMediaMode  String  @default("append")
   /// Repli : rattacher un média à une variante si son texte alternatif contient
   /// la valeur d'option. Utile quand le marchand ne peut pas réordonner ses médias.
-  altFallback         Boolean @default(true)
+  altFallback      Boolean @default(true)
   /// Préfixe exigé dans le texte alternatif (ex. "#" pour ne matcher que
   /// "#bleu marine"). Vide = simple recherche de la valeur dans le texte.
-  altPrefix           String  @default("")
+  altPrefix        String  @default("")
   /// Sélecteur CSS de la liste de miniatures. Vide = auto-détection.
-  thumbSelectorCss    String  @default("")
+  thumbSelectorCss String  @default("")
   /// Ne pas filtrer si toutes les variantes partagent le même groupe : évite de
   /// masquer des images sur un produit mal configuré.
-  skipSingleGroup     Boolean @default(true)
+  skipSingleGroup  Boolean @default(true)
 
   // --- Titre dynamique ----------------------------------------------------
   /// Réécrire le titre produit à la sélection
@@ -185,10 +185,29 @@ model ShopSettings {
 
   /// Noms d'options traitées comme "couleur" (donc rendues en pastille/vignette),
   /// séparés par des virgules. Le reste est rendu en boutons texte.
-  colorOptionNames    String  @default("Color,Colour,Couleur,Farbe,Kleur,Colore,Color/Couleur")
+  colorOptionNames String @default("Color,Colour,Couleur,Farbe,Kleur,Colore,Color/Couleur")
 
   /// CSS additionnel injecté par le merchant (plan payant uniquement).
-  customCss           String  @default("")
+  customCss String @default("")
+
+  // --- Réglages propres aux produits liés ---------------------------------
+  /// Les pastilles de produits liés suivent-elles leur PROPRE apparence ?
+  ///
+  /// À false — le défaut, et l'état de toutes les boutiques existantes — elles
+  /// héritent des réglages ci-dessus, exactement comme avant l'introduction de
+  /// ces colonnes. Aucun storefront ne change tant que le marchand ne bascule
+  /// pas l'interrupteur.
+  linkedOverride Boolean @default(false)
+
+  /// Surcharge d'apparence, mêmes clés que le bloc `style` envoyé au
+  /// storefront. JSON plutôt que vingt-et-une colonnes dupliquées : le jeu
+  /// évolue à chaque fonctionnalité, et le dupliquer en dur condamnait à
+  /// migrer deux fois à chaque ajout.
+  linkedStyle Json?
+
+  /// Surcharge du titre dynamique : updateTitle, titleTemplate,
+  /// titleSelectorCss, updateDocumentTitle.
+  linkedTitle Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -207,14 +226,14 @@ model ShopSettings {
 /// Conséquence assumée : si un marchand efface une métadonnée à la main, l'index
 /// et la réalité divergent. L'écran relit donc les produits avant d'afficher.
 model ProductGroup {
-  id        String   @id @default(cuid())
-  shop      String
+  id      String @id @default(cuid())
+  shop    String
   /// Identifiant écrit dans la métadonnée `variantsy.group`.
-  key       String
+  key     String
   /// Nom de l'option affiché au-dessus des pastilles (« Color », « Finish »…).
-  label     String   @default("Color")
+  label   String @default("Color")
   /// [{ id, handle, title, value }] — l'ordre est celui d'affichage.
-  members   Json
+  members Json
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -226,7 +245,7 @@ model ProductGroup {
 /// Mapping d'une valeur d'option (ex. "Bleu marine") vers un rendu visuel.
 /// Scope = boutique entière, pour ne pas avoir à re-configurer produit par produit.
 model SwatchValue {
-  id         String  @id @default(cuid())
+  id         String @id @default(cuid())
   shop       String
   /// Nom de l'option, normalisé en minuscules (ex. "couleur")
   optionName String
@@ -236,13 +255,13 @@ model SwatchValue {
   label      String
 
   /// "color" | "gradient" | "image"
-  kind       String  @default("color")
-  colorHex   String? // kind = color / gradient (couleur 1)
-  colorHex2  String? // kind = gradient (couleur 2)
-  imageUrl   String? // kind = image (fichier hébergé sur Shopify Files)
+  kind      String  @default("color")
+  colorHex  String? // kind = color / gradient (couleur 1)
+  colorHex2 String? // kind = gradient (couleur 2)
+  imageUrl  String? // kind = image (fichier hébergé sur Shopify Files)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([shop, optionName, value])
   @@index([shop])

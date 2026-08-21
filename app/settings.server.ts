@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type { ShopSettings, SwatchValue } from "@prisma/client";
 import prisma, { withRetry } from "./db.server";
 import { normalize } from "./shared";
@@ -114,15 +115,33 @@ export async function getSettings(shop: string): Promise<ShopSettings> {
   });
 }
 
+/** Les surcharges « produits liés » ne font pas partie de SettingsInput :
+ *  celui-ci décrit le repli servi quand la base est injoignable, et une
+ *  surcharge absente s'y traduit simplement par un héritage. */
+export type SurchargesLiees = {
+  linkedOverride?: boolean;
+  linkedStyle?: Record<string, unknown> | null;
+  linkedTitle?: Record<string, unknown> | null;
+};
+
 export async function updateSettings(
   shop: string,
-  data: Partial<SettingsInput>,
+  data: Partial<SettingsInput> & SurchargesLiees,
 ): Promise<ShopSettings> {
+  // Prisma refuse un `null` nu sur une colonne JSON nullable : il attend
+  // `Prisma.DbNull`. La traduction se fait ici, une fois, pour que les
+  // appelants continuent d'écrire `null` comme partout ailleurs.
+  const prepare = <T extends SurchargesLiees>(o: T) => ({
+    ...o,
+    ...(o.linkedStyle === null ? { linkedStyle: Prisma.DbNull } : {}),
+    ...(o.linkedTitle === null ? { linkedTitle: Prisma.DbNull } : {}),
+  });
+  const propre = prepare(data);
   return withRetry(() =>
     prisma.shopSettings.upsert({
       where: { shop },
-      create: { shop, ...DEFAULT_SETTINGS, ...data },
-      update: data,
+      create: { shop, ...DEFAULT_SETTINGS, ...propre },
+      update: propre,
     }),
   );
 }
@@ -222,6 +241,20 @@ export type StorefrontConfig = {
     thumbSelectorCss: string;
     skipSingleGroup: boolean;
   };
+  /**
+   * Apparence propre aux pastilles de produits liés. ABSENT quand le marchand
+   * n'a rien détaché : le storefront retombe alors sur `style`, ce qui garde
+   * le comportement d'avant cette fonctionnalité sans aucune condition à
+   * écrire côté client.
+   */
+  styleLinked?: StorefrontConfig["style"];
+  /** Idem pour le titre dynamique sur une fiche liée. */
+  titleLinked?: {
+    updateTitle: boolean;
+    titleTemplate: string;
+    titleSelectorCss: string;
+    updateDocumentTitle: boolean;
+  };
   colorOptions: string[];
   /** clé = `${optionName}::${value}` normalisés */
   swatches: Record<string, { kind: string; c1?: string; c2?: string; img?: string }>;
@@ -247,32 +280,55 @@ export function toStorefrontConfig(
       ...(v.imageUrl ? { img: v.imageUrl } : {}),
     };
   }
+  // Les colonnes de surcharge n'existent que sur la ligne Prisma, pas sur
+  // SettingsInput — d'où l'accès prudent.
+  const brut = settings as Partial<ShopSettings>;
+  const detache = brut.linkedOverride === true;
+
+  const style: StorefrontConfig["style"] = {
+    shape: settings.shape,
+    size: settings.size,
+    gap: settings.gap,
+    borderWidth: settings.borderWidth,
+    borderColor: settings.borderColor,
+    selectedStyle: settings.selectedStyle,
+    selectedColor: settings.selectedColor,
+    selectedWidth: settings.selectedWidth,
+    selectedGap: settings.selectedGap,
+    cornerRadius: settings.cornerRadius,
+    displayMode: settings.displayMode,
+    controlRadius: settings.controlRadius,
+    controlSelectedStyle: settings.controlSelectedStyle,
+    dropdownFullWidth: settings.dropdownFullWidth,
+    swatchFallback: settings.swatchFallback,
+    photoScale: settings.photoScale,
+    neutralColor: settings.neutralColor,
+    showLabels: settings.showLabels,
+    showOptionName: settings.showOptionName,
+    maxVisible: settings.maxVisible,
+    customCss: settings.customCss,
+  };
+
+  const titre = {
+    updateTitle: settings.updateTitle,
+    titleTemplate: settings.titleTemplate,
+    titleSelectorCss: settings.titleSelectorCss,
+    updateDocumentTitle: settings.updateDocumentTitle,
+  };
+
   return {
     v: 1,
     enabled: settings.enabled,
-    style: {
-      shape: settings.shape,
-      size: settings.size,
-      gap: settings.gap,
-      borderWidth: settings.borderWidth,
-      borderColor: settings.borderColor,
-      selectedStyle: settings.selectedStyle,
-      selectedColor: settings.selectedColor,
-      selectedWidth: settings.selectedWidth,
-      selectedGap: settings.selectedGap,
-      cornerRadius: settings.cornerRadius,
-      displayMode: settings.displayMode,
-      controlRadius: settings.controlRadius,
-      controlSelectedStyle: settings.controlSelectedStyle,
-      dropdownFullWidth: settings.dropdownFullWidth,
-      swatchFallback: settings.swatchFallback,
-      photoScale: settings.photoScale,
-      neutralColor: settings.neutralColor,
-      showLabels: settings.showLabels,
-      showOptionName: settings.showOptionName,
-      maxVisible: settings.maxVisible,
-      customCss: settings.customCss,
-    },
+    style,
+    // Fusion plutôt que remplacement : une surcharge partielle — le marchand
+    // n'a changé que la forme — hérite du reste au lieu de repartir des
+    // valeurs d'usine.
+    ...(detache
+      ? {
+          styleLinked: { ...style, ...((brut.linkedStyle as object) ?? {}) },
+          titleLinked: { ...titre, ...((brut.linkedTitle as object) ?? {}) },
+        }
+      : {}),
     behavior: {
       soldOutStyle: settings.soldOutStyle,
       hideNativeSelector: settings.hideNativeSelector,

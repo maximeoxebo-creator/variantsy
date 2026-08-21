@@ -104,6 +104,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return Number.isFinite(raw) ? raw : fallback;
   };
   const str = (key: string, fallback: string) => (form.get(key) as string) ?? fallback;
+  const jsonOuNull = (key: string) => {
+    const brut = form.get(key);
+    if (typeof brut !== "string" || !brut || brut === "null") return null;
+    try {
+      const v: unknown = JSON.parse(brut);
+      return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  };
 
   await updateSettings(session.shop, {
     enabled: bool("enabled"),
@@ -145,6 +155,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     altPrefix: str("altPrefix", ""),
     thumbSelectorCss: str("thumbSelectorCss", ""),
     skipSingleGroup: bool("skipSingleGroup"),
+    linkedOverride: bool("linkedOverride"),
+    // Surcharges des produits liés. On refuse silencieusement un JSON illisible
+    // plutôt que de faire échouer tout l'enregistrement : le reste des réglages
+    // du marchand n'a pas à en pâtir.
+    linkedStyle: jsonOuNull("linkedStyle"),
+    linkedTitle: jsonOuNull("linkedTitle"),
   });
 
   return { ok: true };
@@ -177,6 +193,22 @@ const ONGLETS = {
 } as const;
 
 type Mode = keyof typeof ONGLETS;
+
+/** Réglages qui peuvent avoir une valeur propre aux produits liés.
+ *  Mêmes clés que les blocs `style` et titre envoyés au storefront : les
+ *  laisser dériver ferait éditer un réglage qui n'atteindrait jamais la
+ *  boutique. */
+const CLES_STYLE = [
+  "shape", "size", "gap", "borderWidth", "borderColor", "selectedStyle",
+  "selectedColor", "selectedWidth", "selectedGap", "cornerRadius", "displayMode",
+  "controlRadius", "controlSelectedStyle", "dropdownFullWidth", "swatchFallback",
+  "photoScale", "neutralColor", "showLabels", "showOptionName", "maxVisible",
+  "customCss",
+] as const;
+
+const CLES_TITRE = [
+  "updateTitle", "titleTemplate", "titleSelectorCss", "updateDocumentTitle",
+] as const;
 
 /** Les deux fonctionnalités de l'app, posées dès l'arrivée.
  *
@@ -307,6 +339,37 @@ export default function SettingsPage() {
     setTab(0);
   };
 
+  // Les produits liés n'ont leur propre habillage que si le marchand l'a
+  // demandé. Tant qu'il ne l'a pas fait, les volets éditent les réglages
+  // communs — donc rien ne change pour les boutiques existantes.
+  const f = form as Record<string, unknown>;
+  const detache = mode === "linked" && f.linkedOverride === true;
+
+  const surcharge = {
+    ...((f.linkedStyle as Record<string, unknown>) ?? {}),
+    ...((f.linkedTitle as Record<string, unknown>) ?? {}),
+  };
+  // La surcharge est partielle : ce qu'elle ne dit pas est hérité, ce qui
+  // évite de repartir des valeurs d'usine quand on détache.
+  const vue = detache ? ({ ...form, ...surcharge } as typeof form) : form;
+
+  const ecrire = (cle: string, valeur: unknown) => {
+    if (!detache) return set(cle as never, valeur as never);
+    const cible = (CLES_STYLE as readonly string[]).includes(cle)
+      ? "linkedStyle"
+      : (CLES_TITRE as readonly string[]).includes(cle)
+        ? "linkedTitle"
+        : null;
+    // Un réglage hors des deux listes reste commun : le comportement, la
+    // galerie et les noms d'options ne dépendent pas du modèle de catalogue.
+    if (!cible) return set(cle as never, valeur as never);
+    setForm((p) => ({
+      ...p,
+      [cible]: { ...(((p as Record<string, unknown>)[cible] as object) ?? {}), [cle]: valeur },
+    }));
+    setDirty(true);
+  };
+
   const set = useCallback(<K extends keyof typeof settings>(key: K, value: (typeof settings)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
@@ -338,6 +401,12 @@ export default function SettingsPage() {
     Object.entries(form).forEach(([key, value]) => {
       if (value === null || value === undefined) return;
       if (key === "id" || key === "shop" || key === "createdAt" || key === "updatedAt") return;
+      // Les surcharges sont des objets : String() en aurait fait
+      // « [object Object] », et le réglage se serait perdu en silence.
+      if (key === "linkedStyle" || key === "linkedTitle") {
+        data.append(key, JSON.stringify(value));
+        return;
+      }
       data.append(key, String(value));
     });
     fetcher.submit(data, { method: "POST" });
@@ -474,7 +543,7 @@ export default function SettingsPage() {
                     <Text as="h2" variant="headingMd">Preview</Text>
                     <Text as="span" tone="subdued" variant="bodySm">Clickable</Text>
                   </InlineStack>
-                  <SwatchPreview settings={form} />
+                  <SwatchPreview settings={vue} />
                   <Text as="p" tone="subdued" variant="bodySm">
                     Indicative preview: type and spacing will follow your theme once live.
                   </Text>
@@ -482,12 +551,52 @@ export default function SettingsPage() {
               </Card>
             )}
 
+            {mode === "linked" && (actif === "apparence" || actif === "titre") && (
+              <Card>
+                <InlineStack align="space-between" blockAlign="center" gap="400">
+                  <BlockStack gap="100">
+                    <Text as="h3" variant="headingSm">Independent settings</Text>
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      {detache
+                        ? "Linked products have their own look. Product variants are untouched."
+                        : "Linked products follow the Product variants settings. Turn this on to give them their own."}
+                    </Text>
+                  </BlockStack>
+                  <Interrupteur
+                    actif={detache}
+                    onChange={(v) => {
+                      // En détachant, on part des valeurs COURANTES et non de
+                      // celles d'usine : le marchand ne voit pas son storefront
+                      // sauter au moment où il bascule l'interrupteur.
+                      setForm((p) => {
+                        const q = p as Record<string, unknown>;
+                        if (!v) return { ...p, linkedOverride: false } as typeof p;
+                        const style = Object.fromEntries(
+                          CLES_STYLE.map((c) => [c, q[c]]),
+                        );
+                        const titre = Object.fromEntries(
+                          CLES_TITRE.map((c) => [c, q[c]]),
+                        );
+                        return {
+                          ...p,
+                          linkedOverride: true,
+                          linkedStyle: { ...style, ...((q.linkedStyle as object) ?? {}) },
+                          linkedTitle: { ...titre, ...((q.linkedTitle as object) ?? {}) },
+                        } as typeof p;
+                      });
+                      setDirty(true);
+                    }}
+                  />
+                </InlineStack>
+              </Card>
+            )}
+
             <BlockStack gap="400">
                   {actif === "installation" && (
                     <InstallationPanel themeName={themeName} deepLink={deepLink} mode={mode} />
                   )}
-                  {actif === "apparence" && <ApparencePanel form={form} set={set} />}
-                  {actif === "titre" && <TitrePanel form={form} set={set} />}
+                  {actif === "apparence" && <ApparencePanel form={vue} set={ecrire as never} />}
+                  {actif === "titre" && <TitrePanel form={vue} set={ecrire as never} />}
                   {actif === "groupes" && <LiensProduitsPanel
                       groups={groups}
                       onPickProducts={async (dejaChoisis) => {

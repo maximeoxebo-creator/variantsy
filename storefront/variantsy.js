@@ -1284,49 +1284,44 @@
     return false;
   };
 
-  Variantsy.prototype.paint = function () {
-    var self = this;
-    var style = this.config.style;
-    var behavior = this.config.behavior;
+  /**
+   * Écrit l'habillage d'un jeu de réglages sur un élément, sous forme de
+   * variables CSS et d'attributs.
+   *
+   * Extrait de paint() pour servir DEUX fois : sur la racine, et sur la rangée
+   * de produits liés quand le marchand lui a donné son propre style. Les
+   * variables CSS cascadent, donc les réécrire sur la rangée suffit à
+   * n'affecter qu'elle. Une seule implémentation évite que les deux jeux
+   * divergent au prochain réglage ajouté.
+   */
+  function appliquerHabillage(el, style) {
+    el.setAttribute("data-selected-style", style.selectedStyle);
+    el.setAttribute("data-control-selected", style.controlSelectedStyle || "outline");
+    el.setAttribute("data-show-labels", style.showLabels ? "true" : "false");
+    el.setAttribute("data-show-option-name", style.showOptionName ? "true" : "false");
 
-    this.root.setAttribute("data-selected-style", style.selectedStyle);
-    this.root.setAttribute("data-sold-out", behavior.soldOutStyle);
-    this.root.style.setProperty("--vtsy-size", style.size + "px");
-    this.root.style.setProperty("--vtsy-gap", style.gap + "px");
-    this.root.style.setProperty("--vtsy-border-width", style.borderWidth + "px");
-    this.root.style.setProperty("--vtsy-border-color", style.borderColor);
-    this.root.style.setProperty("--vtsy-selected-color", style.selectedColor);
-    this.root.style.setProperty(
-      "--vtsy-selected-width",
-      num(style.selectedWidth, 2) + "px",
-    );
-    this.root.style.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
-    this.root.style.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
+    var v = el.style;
+    v.setProperty("--vtsy-size", style.size + "px");
+    v.setProperty("--vtsy-gap", style.gap + "px");
+    v.setProperty("--vtsy-border-width", style.borderWidth + "px");
+    v.setProperty("--vtsy-border-color", style.borderColor);
+    v.setProperty("--vtsy-selected-color", style.selectedColor);
+    v.setProperty("--vtsy-selected-width", num(style.selectedWidth, 2) + "px");
+    v.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
+    v.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
     // Taille des seules pastilles qui portent une photo : un aplat de couleur
     // reste lisible à 40 px, une photo de produit non.
-    this.root.style.setProperty(
+    v.setProperty(
       "--vtsy-photo-size",
       Math.round((num(style.size, 40) * num(style.photoScale, 100)) / 100) + "px",
     );
-    this.root.setAttribute("data-control-selected", style.controlSelectedStyle || "outline");
-    // Ces deux affichages étaient pilotés par le bloc Liquid, donc figés au
-    // rendu et invisibles depuis l'app. Ils sont désormais rendus toujours et
-    // masqués ici : changer le réglage produit un effet immédiat.
-    this.root.setAttribute("data-show-labels", style.showLabels ? "true" : "false");
-    this.root.setAttribute("data-show-option-name", style.showOptionName ? "true" : "false");
     // Le texte doit rester lisible sur le fond plein, quelle que soit la teinte
     // choisie par le marchand : on la mesure au lieu de parier sur du blanc.
-    this.root.style.setProperty(
-      "--vtsy-selected-contrast",
-      contrasteSur(style.selectedColor) ,
-    );
+    v.setProperty("--vtsy-selected-contrast", contrasteSur(style.selectedColor));
     // « auto » laisse la liste se dimensionner sur son contenu ; « 100% »
     // l'étend à la largeur disponible.
-    this.root.style.setProperty(
-      "--vtsy-control-width",
-      style.dropdownFullWidth ? "100%" : "auto",
-    );
-    this.root.style.setProperty(
+    v.setProperty("--vtsy-control-width", style.dropdownFullWidth ? "100%" : "auto");
+    v.setProperty(
       "--vtsy-radius",
       style.shape === "square"
         ? "0px"
@@ -1334,6 +1329,15 @@
           ? num(style.cornerRadius, 8) + "px"
           : "50%",
     );
+  }
+
+  Variantsy.prototype.paint = function () {
+    var self = this;
+    var style = this.config.style;
+    var behavior = this.config.behavior;
+
+    appliquerHabillage(this.root, style);
+    this.root.setAttribute("data-sold-out", behavior.soldOutStyle);
 
     // La rangée « produits liés » porte les mêmes classes pour hériter du même
     // habillage, mais ce ne sont PAS des variantes : ses pastilles sont des
@@ -1394,10 +1398,19 @@
     // rangées côte à côte n'avaient pas la même apparence.
     //
     // On leur applique donc le VISUEL, et rien d'autre.
+    // Apparence propre aux produits liés, quand le marchand l'a détachée.
+    // Absente, on retombe sur `style` : les variables CSS de la racine
+    // s'appliquent alors telles quelles, sans rien réécrire.
+    var styleLie = this.config.styleLinked || style;
+
     var liees = this.root.querySelectorAll(".variantsy__group[data-variantsy-linked]");
     Array.prototype.forEach.call(liees, function (group) {
+      // Les variables CSS cascadent : posées sur la rangée, elles ne débordent
+      // pas sur les pastilles de variantes voisines.
+      if (self.config.styleLinked) appliquerHabillage(group, styleLie);
+
       var optionName = normalize(group.getAttribute("data-option-name"));
-      var mode = style.displayMode || "swatch";
+      var mode = styleLie.displayMode || "swatch";
       var asSwatch = mode === "swatch";
 
       group.classList.toggle("variantsy__group--color", asSwatch);
@@ -1413,7 +1426,12 @@
           // ne l'écrase que si la bibliothèque ou le dictionnaire sait faire
           // mieux — une couleur franche vaut mieux qu'une vignette.
           var avant = visual.style.backgroundImage;
-          self.applyVisual(visual, optionName, lien.getAttribute("data-variantsy-value"));
+          self.applyVisual(
+            visual,
+            optionName,
+            lien.getAttribute("data-variantsy-value"),
+            styleLie,
+          );
           if (!visual.style.backgroundColor && !visual.style.backgroundImage && avant) {
             visual.style.backgroundImage = avant;
           }
@@ -1425,7 +1443,7 @@
   };
 
   /** Applique la couleur / l'image d'un swatch depuis la bibliothèque marchand. */
-  Variantsy.prototype.applyVisual = function (visual, optionName, value) {
+  Variantsy.prototype.applyVisual = function (visual, optionName, value, styleForce) {
     var key = optionName + "::" + normalize(value);
     var swatch = this.config.swatches[key];
 
@@ -1443,7 +1461,7 @@
     }
 
     if (!swatch) {
-      var style = this.config.style || {};
+      var style = styleForce || this.config.style || {};
       var neutral = style.neutralColor || "#ECECEC";
       var mode = style.swatchFallback || "image";
 
@@ -1628,7 +1646,7 @@
       ["url", this.config.behavior.updateUrl ? this.updateUrl : null],
       ["galerie", this.groups ? this.applyGallery : null],
       ["image", !this.groups && this.config.behavior.swapImage ? this.updateImage : null],
-      ["titre", this.config.behavior.updateTitle ? this.updateTitle : null],
+      ["titre", this.reglagesTitre().updateTitle ? this.updateTitle : null],
     ];
 
     for (var i = 0; i < steps.length; i++) {
@@ -1820,8 +1838,24 @@
    * `originalTitle` est mémorisé au premier passage : sans cela, le template
    * repartirait du titre déjà réécrit et concatènerait à l'infini.
    */
+  /**
+   * Réglages de titre applicables à CETTE fiche.
+   *
+   * Une fiche qui porte une rangée de produits liés relève du second jeu quand
+   * le marchand l'a détaché ; toutes les autres gardent les réglages communs.
+   * La présence de la rangée est le seul signal disponible côté client, et
+   * c'est le bon : la règle d'exclusivité garantit qu'une fiche ne peut pas
+   * relever des deux modèles à la fois.
+   */
+  Variantsy.prototype.reglagesTitre = function () {
+    if (this.config.titleLinked && this.root.querySelector("[data-variantsy-linked]")) {
+      return this.config.titleLinked;
+    }
+    return this.config.behavior;
+  };
+
   Variantsy.prototype.updateTitle = function (variant) {
-    var behavior = this.config.behavior;
+    var behavior = this.reglagesTitre();
     var element = queryFirst(this.scope, TITLE_SELECTORS, behavior.titleSelectorCss);
 
     if (this.originalTitle === null) {
@@ -1956,7 +1990,7 @@
         this.restoreGallery();
       }
     }
-    if (this.config.behavior.updateTitle) {
+    if (this.reglagesTitre().updateTitle) {
       try {
         this.updateTitle(variant);
       } catch (error) {

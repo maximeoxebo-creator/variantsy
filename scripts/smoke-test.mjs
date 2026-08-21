@@ -337,6 +337,11 @@ async function openPage(product, currentVariant, configOverrides = {}) {
     style: { ...BASE_CONFIG.style, ...(configOverrides.style || {}) },
     ...(configOverrides.colors ? { colors: configOverrides.colors } : {}),
     ...(configOverrides.swatches ? { swatches: configOverrides.swatches } : {}),
+    // Apparence propre aux produits liés : absente, la rangée hérite de
+    // `style`, ce qui est le comportement par défaut.
+    ...(configOverrides.styleLinked
+      ? { styleLinked: { ...BASE_CONFIG.style, ...configOverrides.styleLinked } }
+      : {}),
   };
 
   // Playwright évalue les routes de la plus récente à la plus ancienne : la
@@ -1523,6 +1528,57 @@ section("Couleurs natives Shopify");
   );
   await page3.close();
 }
+section("Apparence indépendante des produits liés");
+{
+  const pageIndep = await openPage(PRODUCT, PRODUCT.variants[0], {
+    liens: true,
+    style: { size: 40, shape: "circle" },
+    styleLinked: { size: 64, shape: "square" },
+  });
+  const mesures = await pageIndep.evaluate(() => {
+    const lire = (el, v) => el && getComputedStyle(el).getPropertyValue(v).trim();
+    const racine = document.querySelector("[data-variantsy]");
+    const liee = document.querySelector(".variantsy__group[data-variantsy-linked]");
+    const variante = document.querySelector(".variantsy__group:not([data-variantsy-linked])");
+    return {
+      racineTaille: lire(racine, "--vtsy-size"),
+      racineRayon: lire(racine, "--vtsy-radius"),
+      lieeTaille: lire(liee, "--vtsy-size"),
+      lieeRayon: lire(liee, "--vtsy-radius"),
+      varianteTaille: lire(variante, "--vtsy-size"),
+    };
+  });
+  check(
+    "La rangée liée prend sa propre taille",
+    mesures.lieeTaille === "64px",
+    JSON.stringify(mesures),
+  );
+  check(
+    "La rangée liée prend sa propre forme",
+    mesures.lieeRayon === "0px",
+    JSON.stringify(mesures),
+  );
+  check(
+    "Les pastilles de variantes gardent la leur",
+    mesures.varianteTaille === "40px" && mesures.racineRayon === "50%",
+    JSON.stringify(mesures),
+  );
+  await pageIndep.close();
+
+  // Sans second jeu, la rangée liée doit suivre les réglages communs : c'est
+  // l'état de toutes les boutiques qui n'ont rien détaché.
+  const pageHeritee = await openPage(PRODUCT, PRODUCT.variants[0], {
+    liens: true,
+    style: { size: 52 },
+  });
+  const heritee = await pageHeritee.evaluate(() => {
+    const liee = document.querySelector(".variantsy__group[data-variantsy-linked]");
+    return getComputedStyle(liee).getPropertyValue("--vtsy-size").trim();
+  });
+  check("Sans surcharge, la rangée liée hérite", heritee === "52px", heritee);
+  await pageHeritee.close();
+}
+
 section("Santé générale");
 check("Aucune erreur JS sur l'ensemble des scénarios", consoleErrors.length === 0, consoleErrors.join(" | "));
 
