@@ -50,7 +50,11 @@ type MembreEdite = GroupMember & {
 
 type Brouillon = { id?: string; label: string; members: MembreEdite[] };
 
-const VIDE: Brouillon = { label: "Color", members: [] };
+// Le champ démarre VIDE, pour que son texte indicatif se voie. Il portait
+// « Color » comme valeur réelle : l'indication était donc invisible, et le
+// marchand qui vend des finitions gardait « Color » sans se poser la question.
+// Laissé vide à l'enregistrement, il retombe sur « Color » côté serveur.
+const VIDE: Brouillon = { label: "", members: [] };
 
 export function LiensProduitsPanel({
   groups,
