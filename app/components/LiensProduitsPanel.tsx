@@ -153,7 +153,11 @@ export function LiensProduitsPanel({
             value={brouillon.label}
             onChange={(label) => setBrouillon({ ...brouillon, label })}
             autoComplete="off"
-            placeholder="Color"
+            // « Color » seul laissait croire que le champ n'accepte que ça,
+            // alors qu'il nomme l'option affichée au-dessus des pastilles et
+            // sert ensuite d'étiquette à chaque valeur. Trois exemples le
+            // disent mieux qu'une phrase.
+            placeholder="Name the option — Color, Finish, Material"
           />
         </Card>
 
