@@ -157,12 +157,12 @@ pages », devenue mensongère.
 - App icon 1200×1200 — icones/variantsy-icon-W1.png, à téléverser au Partner Dashboard
 - Demo store URL — la boutique est encore protégée par mot de passe
 - Screencast URL — vidéo de 3 à 8 minutes, obligatoire
-- UN GROUPE DE PRODUITS LIÉS configuré sur la boutique de démonstration :
-  l'étape 3 des instructions de test demande à l'examinateur de l'ouvrir. Sans
-  lui, la fonctionnalité mise en avant par la planche 03 et la feature 4 n'est
-  pas vérifiable.
+- Confirmer QUELLE boutique sert de démonstration. Les instructions de test
+  nomment simple-popup-test ; l'installation a été validée sur zeppelin-demo.
+  Une seule doit figurer, et c'est elle qui doit porter le groupe de produits
+  liés décrit à l'étape 3.
 
-## Testing instructions  (2698/2800)
+## Testing instructions  (2815/2800)
 
 Variantsy adds color swatches to product pages, gives each color its own set of photos, and rewrites the product title as the shopper chooses. It also links separate product pages that are the same item in another color.
 
@@ -186,10 +186,10 @@ WHAT IS ALREADY SET UP
 - The template is set in the app, on the Title tab. Fields left empty are dropped, so no dangling separators appear.
 
 3. LINKED PRODUCTS
-- Some catalogs sell one color per product page rather than as variants. Variantsy groups those pages so each one shows the whole range.
-- In the app, choose "Linked products" at the top of the page, then open the Groups tab to see the configured group.
-- On the storefront, open one of the grouped products. The swatch row leads to the other pages; each keeps its own URL, SKU and stock.
-- A product that still carries a color option is ignored on purpose, so the same color never appears twice. The app warns about it in the editor.
+- Some catalogs sell one variation per product page: one per color, or one per size. Variantsy groups those pages so each shows the whole range.
+- In the app, choose "Linked products" at the top of the page, then open the Groups tab. The demo store has a group built on size: the ALMA casserole in 22, 25 and 36 cm.
+- On the storefront, open one of those three products. The row leads to the other two; each page keeps its own URL, SKU and stock.
+- A product whose own options already say what the group says is ignored, so a value never shows twice. Options about something else - a size next to a color group - stay. The editor flags real conflicts.
 
 4. ADMIN - SETTINGS
 - Open the app from the store admin.
