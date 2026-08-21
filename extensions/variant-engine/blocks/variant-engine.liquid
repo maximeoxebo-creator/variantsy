@@ -147,17 +147,17 @@
 
       Le repli garde ces valeurs d'usine, pour une boutique qui n'a pas encore
       enregistré ses réglages une seule fois.
-    {%- endcomment -%}
-    {%- if vtsy_style.css != blank -%}
+    {%- endcomment %}
+    {% if vtsy_style.css != blank %}
       data-selected-style="{{ vtsy_style.selectedStyle }}"
       data-control-selected="{{ vtsy_style.controlSelected }}"
       data-show-labels="{% if vtsy_style.showLabels %}true{% else %}false{% endif %}"
       data-show-option-name="{% if vtsy_style.showOptionName %}true{% else %}false{% endif %}"
       data-sold-out="{{ vtsy_style.soldOut }}"
       style="{{ vtsy_style.css }}"
-    {%- else -%}
+    {% else %}
       style="--vtsy-size: 40px; --vtsy-gap: 10px; --vtsy-radius: 50%;"
-    {%- endif -%}
+    {% endif %}
   >
     {%- comment -%}
       Données produit sérialisées de façon compacte.
@@ -338,7 +338,7 @@
     {%- if vtsy_has_color == false and vtsy_members and vtsy_members.size > 1 -%}
       <div
         class="variantsy__group variantsy__group--color variantsy__group--linked"
-        {%- if vtsy_style.cssLinked != blank %} style="{{ vtsy_style.cssLinked }}"{% endif -%}
+        {% if vtsy_style.cssLinked != blank %}style="{{ vtsy_style.cssLinked }}"{% endif %}
         data-variantsy-linked
         data-option-name="{{ vtsy_label | escape }}"
       >
