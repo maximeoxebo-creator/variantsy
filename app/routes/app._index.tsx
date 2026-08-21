@@ -353,20 +353,51 @@ export default function SettingsPage() {
   // évite de repartir des valeurs d'usine quand on détache.
   const vue = detache ? ({ ...form, ...surcharge } as typeof form) : form;
 
+  /** Recopie les valeurs communes courantes dans une surcharge. */
+  const graine = (cles: readonly string[], source: Record<string, unknown>) =>
+    Object.fromEntries(cles.map((c) => [c, source[c]]));
+
   const ecrire = (cle: string, valeur: unknown) => {
-    if (!detache) return set(cle as never, valeur as never);
     const cible = (CLES_STYLE as readonly string[]).includes(cle)
       ? "linkedStyle"
       : (CLES_TITRE as readonly string[]).includes(cle)
         ? "linkedTitle"
         : null;
-    // Un réglage hors des deux listes reste commun : le comportement, la
-    // galerie et les noms d'options ne dépendent pas du modèle de catalogue.
-    if (!cible) return set(cle as never, valeur as never);
-    setForm((p) => ({
-      ...p,
-      [cible]: { ...(((p as Record<string, unknown>)[cible] as object) ?? {}), [cle]: valeur },
-    }));
+
+    // Hors du mode « produits liés », ou pour un réglage qui ne se dédouble pas
+    // — comportement, galerie, noms d'options — on écrit les réglages communs.
+    if (mode !== "linked" || !cible) return set(cle as never, valeur as never);
+
+    setForm((p) => {
+      const q = p as Record<string, unknown>;
+      // Premier changement fait depuis l'onglet des produits liés alors que
+      // l'interrupteur est encore éteint : on détache TOUT SEUL.
+      //
+      // Sans ça, le marchand réglait l'apparence des fiches liées et voyait
+      // celle des variantes bouger avec — il fallait avoir repéré un
+      // interrupteur pour que l'écran fasse ce qu'il annonce. Éditer depuis cet
+      // onglet EST la demande de détachement.
+      if (q.linkedOverride === true) {
+        return {
+          ...p,
+          [cible]: { ...((q[cible] as object) ?? {}), [cle]: valeur },
+        } as typeof p;
+      }
+      // On recopie l'intégralité des deux jeux, pas seulement la clé touchée :
+      // une surcharge partielle continuerait de suivre les réglages communs
+      // pour tout le reste, ce qui surprend une fois qu'on se croit détaché.
+      return {
+        ...p,
+        linkedOverride: true,
+        linkedStyle: { ...graine(CLES_STYLE, q), ...((q.linkedStyle as object) ?? {}) },
+        linkedTitle: { ...graine(CLES_TITRE, q), ...((q.linkedTitle as object) ?? {}) },
+        [cible]: {
+          ...graine(cible === "linkedStyle" ? CLES_STYLE : CLES_TITRE, q),
+          ...((q[cible] as object) ?? {}),
+          [cle]: valeur,
+        },
+      } as typeof p;
+    });
     setDirty(true);
   };
 
@@ -559,7 +590,7 @@ export default function SettingsPage() {
                     <Text as="p" variant="bodySm" tone="subdued">
                       {detache
                         ? "Linked products have their own look. Product variants are untouched."
-                        : "Linked products follow the Product variants settings. Turn this on to give them their own."}
+                        : "Linked products follow the Product variants settings. Changing anything on this tab gives them their own."}
                     </Text>
                   </BlockStack>
                   <Interrupteur

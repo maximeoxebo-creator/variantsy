@@ -61,7 +61,14 @@ function json(
 ) {
   const cacheControl =
     cache === "cdn"
-      ? "public, max-age=0, s-maxage=60, stale-while-revalidate=600"
+      ? // 5 min de fraîcheur, puis 24 h pendant lesquelles le CDN sert la
+        // version périmée INSTANTANÉMENT et se rafraîchit derrière.
+        //
+        // L'ancienne fenêtre de 10 min laissait toute boutique calme retomber
+        // sur une fonction froide : mesuré à 8 secondes, pendant lesquelles
+        // l'acheteur voit les pastilles sans leur couleur définitive. Le
+        // marchand, lui, attend au pire un rechargement pour voir son réglage.
+        "public, max-age=0, s-maxage=300, stale-while-revalidate=86400"
       : cache === "short"
         ? "public, max-age=0, s-maxage=10"
         : "no-store";
