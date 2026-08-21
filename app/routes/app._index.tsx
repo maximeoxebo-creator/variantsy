@@ -24,6 +24,7 @@ import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
 import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
+import { publierStyle } from "../publier-style.server";
 import { listGroups, saveGroup, deleteGroup } from "../groups.server";
 import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
@@ -162,6 +163,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     linkedStyle: jsonOuNull("linkedStyle"),
     linkedTitle: jsonOuNull("linkedTitle"),
   });
+
+  // Le bloc Liquid lit cette métadonnée pour habiller les pastilles dès le
+  // premier rendu. Publiée après l'enregistrement, jamais avant : une
+  // métadonnée en avance sur la base décrirait un réglage qui n'existe pas.
+  await publierStyle(admin, session.shop);
 
   return { ok: true };
 };

@@ -91,6 +91,13 @@
 </script>
 
   {%- comment -%}
+    Apparence publiée par l'app. Lue une seule fois : Liquid ne met pas en
+    cache les accès aux métadonnées, et la racine comme la rangée liée en ont
+    besoin.
+  {%- endcomment -%}
+  {%- assign vtsy_style = shop.metafields.variantsy.style.value -%}
+
+  {%- comment -%}
     Les fiches sœurs sont lues une fois pour toutes : la boucle des options en a
     besoin pour fusionner, et le repli autonome pour décider s'il doit exister.
   {%- endcomment -%}
@@ -132,10 +139,25 @@
     data-endpoint="/apps/variantsy/settings"
     data-current-variant="{{ product.selected_or_first_available_variant.id }}"
     {%- comment -%}
-      Valeurs de premier rendu. Le JS les remplace par celles de l'app dès que
-      la config est disponible — instantanément si elle est déjà en cache.
+      L'apparence du marchand, publiée par l'app dans une métadonnée de
+      boutique à chaque enregistrement. Le bloc écrivait jusqu'ici les valeurs
+      D'USINE, que le JS remplaçait une fois la configuration arrivée : une
+      boutique réglée à 20 px affichait ses pastilles au double avant de les
+      voir rétrécir, et la mise en page sautait sous les yeux de l'acheteur.
+
+      Le repli garde ces valeurs d'usine, pour une boutique qui n'a pas encore
+      enregistré ses réglages une seule fois.
     {%- endcomment -%}
-    style="--vtsy-size: 40px; --vtsy-gap: 10px; --vtsy-radius: 50%;"
+    {%- if vtsy_style.css != blank -%}
+      data-selected-style="{{ vtsy_style.selectedStyle }}"
+      data-control-selected="{{ vtsy_style.controlSelected }}"
+      data-show-labels="{% if vtsy_style.showLabels %}true{% else %}false{% endif %}"
+      data-show-option-name="{% if vtsy_style.showOptionName %}true{% else %}false{% endif %}"
+      data-sold-out="{{ vtsy_style.soldOut }}"
+      style="{{ vtsy_style.css }}"
+    {%- else -%}
+      style="--vtsy-size: 40px; --vtsy-gap: 10px; --vtsy-radius: 50%;"
+    {%- endif -%}
   >
     {%- comment -%}
       Données produit sérialisées de façon compacte.
@@ -316,6 +338,7 @@
     {%- if vtsy_has_color == false and vtsy_members and vtsy_members.size > 1 -%}
       <div
         class="variantsy__group variantsy__group--color variantsy__group--linked"
+        {%- if vtsy_style.cssLinked != blank %} style="{{ vtsy_style.cssLinked }}"{% endif -%}
         data-variantsy-linked
         data-option-name="{{ vtsy_label | escape }}"
       >
