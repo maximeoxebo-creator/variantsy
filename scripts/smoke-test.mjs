@@ -1612,6 +1612,44 @@ section("Pastilles liées peintes par le Liquid");
   await pagePeinte.close();
 }
 
+section("Liste déroulante des produits liés");
+{
+  const pageListe = await openPage(PRODUCT, PRODUCT.variants[0], {
+    liens: true,
+    styleLinked: { displayMode: "dropdown" },
+  });
+  const liste = await pageListe.evaluate(() => {
+    const groupe = document.querySelector("[data-variantsy-linked]");
+    const select = groupe.querySelector(".variantsy__select");
+    if (!select) return null;
+    return {
+      options: Array.from(select.options).map((o) => ({ t: o.textContent, v: o.value })),
+      choisie: select.value,
+      pastillesMasquees: getComputedStyle(
+        groupe.querySelector(".variantsy__options"),
+      ).display,
+    };
+  });
+  check("Une liste déroulante est fabriquée", liste !== null, String(liste));
+  check(
+    "Ses options mènent aux fiches sœurs",
+    liste !== null && liste.options.length === 3 &&
+      liste.options.every((o) => o.v.startsWith("/products/")),
+    JSON.stringify(liste?.options),
+  );
+  check(
+    "La fiche courante est présélectionnée",
+    liste !== null && liste.choisie === "/products/cocotte-beige",
+    String(liste?.choisie),
+  );
+  check(
+    "Les pastilles cèdent la place à la liste",
+    liste !== null && liste.pastillesMasquees === "none",
+    String(liste?.pastillesMasquees),
+  );
+  await pageListe.close();
+}
+
 section("Santé générale");
 check("Aucune erreur JS sur l'ensemble des scénarios", consoleErrors.length === 0, consoleErrors.join(" | "));
 

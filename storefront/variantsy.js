@@ -903,6 +903,42 @@
     });
   };
 
+  /**
+   * Liste déroulante d'une rangée de PRODUITS LIÉS.
+   *
+   * Le mode « dropdown » ne concernait que les variantes : une rangée liée
+   * retombait silencieusement en boutons texte, et le réglage n'avait aucun
+   * effet visible. La différence de fond avec buildDropdown : ces pastilles
+   * sont des LIENS vers d'autres fiches, donc changer de valeur NAVIGUE au
+   * lieu de sélectionner une variante.
+   */
+  Variantsy.prototype.buildDropdownLie = function (group) {
+    var liens = group.querySelectorAll(".variantsy__swatch");
+    if (!liens.length) return;
+
+    var existing = group.querySelector(".variantsy__select");
+    if (!existing) {
+      existing = document.createElement("select");
+      existing.className = "variantsy__select";
+      existing.setAttribute("aria-label", group.getAttribute("data-option-name") || "");
+      existing.addEventListener("change", function () {
+        if (existing.value) window.location.href = existing.value;
+      });
+      var host = group.querySelector(".variantsy__options") || group;
+      host.parentNode.insertBefore(existing, host.nextSibling);
+    }
+
+    existing.innerHTML = "";
+    Array.prototype.forEach.call(liens, function (lien) {
+      var option = document.createElement("option");
+      // La valeur de l'option est l'ADRESSE : c'est elle qu'on suit au change.
+      option.value = lien.getAttribute("href") || "";
+      option.textContent = lien.getAttribute("data-variantsy-value") || "";
+      if (lien.classList.contains("is-selected")) option.selected = true;
+      existing.appendChild(option);
+    });
+  };
+
   Variantsy.prototype.applyGallery = function (variant) {
     if (!this.groups) return;
 
@@ -1415,6 +1451,8 @@
 
       group.classList.toggle("variantsy__group--color", asSwatch);
       group.classList.toggle("variantsy__group--text", !asSwatch);
+      group.classList.toggle("variantsy__group--dropdown", mode === "dropdown");
+      if (mode === "dropdown") self.buildDropdownLie(group);
 
       Array.prototype.forEach.call(
         group.querySelectorAll(".variantsy__swatch"),
