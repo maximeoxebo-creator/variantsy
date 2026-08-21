@@ -205,7 +205,7 @@ function groupHtml(option, selected) {
  * Le fixture doit la reproduire fidèlement — c'est justement cette ressemblance
  * qui piégeait le moteur de variantes.
  */
-function buildLinkedRow() {
+function buildLinkedRow(peinte) {
   const membres = [
     { h: "cocotte-bleue", v: "Blue", self: false },
     { h: "cocotte-beige", v: "Beige", self: true },
@@ -217,7 +217,11 @@ function buildLinkedRow() {
         <a class="variantsy__swatch${m.self ? " is-selected" : ""}" href="/products/${m.h}"
            role="listitem" aria-current="${m.self ? "page" : "false"}"
            data-variantsy-value="${m.v}" data-variantsy-linked-handle="${m.h}">
-          <span class="variantsy__visual" aria-hidden="true"></span>
+          <span class="variantsy__visual" aria-hidden="true"${
+            peinte && m.v === peinte.valeur
+              ? ` data-variantsy-peint style="background-color: ${peinte.hex}"`
+              : ""
+          }></span>
           <span class="variantsy__text">${m.v}</span>
           <span class="variantsy__caption">${m.v}</span>
         </a>`,
@@ -292,7 +296,7 @@ function buildHtml(product, currentVariant, options = {}) {
            data-endpoint="/apps/variantsy/settings" data-current-variant="${currentVariant.id}">
         <script type="application/json" data-variantsy-data>${JSON.stringify(product)}</script>
         ${product.options.map((option) => groupHtml(option, selected)).join("")}
-        ${options.liens ? buildLinkedRow() : ""}
+        ${options.liens ? buildLinkedRow(options.peinte) : ""}
       </div>
 
       <form action="/cart/add" method="post">
@@ -356,7 +360,12 @@ async function openPage(product, currentVariant, configOverrides = {}) {
   // sessionStorage est partagé par origine : on le vide pour que chaque scénario
   // reparte de sa propre config et non du cache du scénario précédent.
   await page.evaluate(() => window.sessionStorage.clear());
-  await page.setContent(buildHtml(product, currentVariant, { liens: configOverrides.liens }));
+  await page.setContent(
+    buildHtml(product, currentVariant, {
+      liens: configOverrides.liens,
+      peinte: configOverrides.peinte,
+    }),
+  );
   await page.addScriptTag({ content: js });
   await page.waitForFunction(() => document.querySelector("[data-variantsy-ready]") !== null);
   await page.waitForTimeout(120);
@@ -1577,6 +1586,30 @@ section("Apparence indépendante des produits liés");
   });
   check("Sans surcharge, la rangée liée hérite", heritee === "52px", heritee);
   await pageHeritee.close();
+}
+
+section("Pastilles liées peintes par le Liquid");
+{
+  // La couleur vient de la métadonnée du groupe, posée à l'enregistrement.
+  // Le JS doit la laisser telle quelle : la recalculer aboutirait à la même
+  // teinte, mais un aller-retour réseau plus tard — c'est exactement le
+  // clignotement qu'on cherche à supprimer.
+  const pagePeinte = await openPage(PRODUCT, PRODUCT.variants[0], {
+    liens: true,
+    peinte: { valeur: "Blue", hex: "rgb(31, 58, 95)" },
+    style: { swatchFallback: "color" },
+    swatches: { "color::blue": { kind: "color", c1: "#C0392B" } },
+  });
+  const fond = await pagePeinte.evaluate(() => {
+    const lien = document.querySelector('[data-variantsy-linked] [data-variantsy-value="Blue"]');
+    return getComputedStyle(lien.querySelector(".variantsy__visual")).backgroundColor;
+  });
+  check(
+    "La couleur posée par le Liquid survit au passage du JS",
+    fond === "rgb(31, 58, 95)",
+    fond,
+  );
+  await pagePeinte.close();
 }
 
 section("Santé générale");

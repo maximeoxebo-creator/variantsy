@@ -345,10 +345,20 @@
                 data-variantsy-value="{{ vtsy_value | escape }}"
                 data-variantsy-linked-handle="{{ vtsy_sibling.handle }}"
               >
+                {%- comment -%}
+                  La couleur est résolue à l'enregistrement du groupe et rangée
+                  dans une métadonnée : la pastille est donc peinte du premier
+                  coup, sans attendre la configuration. Sans elle on posait la
+                  photo de la fiche sœur, et le navigateur la remplaçait par la
+                  couleur une fois l'aller-retour terminé — d'où des pastilles
+                  qui changeaient sous les yeux de l'acheteur.
+                {%- endcomment -%}
+                {%- assign vtsy_teinte = vtsy_sibling.metafields.variantsy.group_color -%}
                 <span
                   class="variantsy__visual"
                   aria-hidden="true"
-                  {%- if vtsy_sibling.featured_image %} style="background-image: url({{ vtsy_sibling.featured_image | image_url: width: 200 }})"{% endif -%}
+                  {%- if vtsy_teinte != blank %} data-variantsy-peint style="background-color: {{ vtsy_teinte }}"
+                  {%- elsif vtsy_sibling.featured_image %} style="background-image: url({{ vtsy_sibling.featured_image | image_url: width: 200 }})"{% endif -%}
                 ></span>
                 <span class="variantsy__text">{{ vtsy_value }}</span>
                 <span class="variantsy__caption">{{ vtsy_value }}</span>

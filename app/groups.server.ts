@@ -1,4 +1,6 @@
 import prisma, { withRetry } from "./db.server";
+import { getSettings, listSwatchValues, normalize } from "./settings.server";
+import { guessColor } from "./colors";
 
 /**
  * Produits liés — un coloris par fiche produit.
@@ -79,23 +81,96 @@ const DELETE = `#graphql
 `;
 
 /** Les quatre clés écrites sur chaque fiche d'un groupe. */
-const CLES = ["group", "group_value", "group_label", "group_members"] as const;
+const CLES = [
+  "group", "group_value", "group_label", "group_members", "group_color",
+] as const;
 
-async function ecrire(admin: GraphqlAdmin, group: Omit<Group, "id">): Promise<string[]> {
-  const handles = group.members.map((m) => m.handle);
-  const metafields = group.members.flatMap((m) => [
-    { ownerId: m.id, namespace: NAMESPACE, key: "group", type: "single_line_text_field", value: group.key },
-    { ownerId: m.id, namespace: NAMESPACE, key: "group_value", type: "single_line_text_field", value: m.value },
-    { ownerId: m.id, namespace: NAMESPACE, key: "group_label", type: "single_line_text_field", value: group.label },
-    { ownerId: m.id, namespace: NAMESPACE, key: "group_members", type: "json", value: JSON.stringify(handles) },
+/**
+ * Couleur définitive d'un coloris, résolue À L'ENREGISTREMENT.
+ *
+ * Elle voyage dans une métadonnée pour que le Liquid peigne la pastille du
+ * premier coup. Sans elle, le bloc posait la PHOTO de la fiche sœur et le
+ * navigateur attendait la configuration — un aller-retour mesuré à huit
+ * secondes sur une fonction froide — avant de la remplacer par la couleur.
+ * L'acheteur voyait donc les pastilles changer sous ses yeux.
+ *
+ * La cascade reproduit exactement celle du storefront, sans quoi le JS
+ * corrigerait ensuite ce que le Liquid vient de poser, et le clignotement
+ * reviendrait par l'autre bout :
+ *   1. la bibliothèque du marchand, qui prime toujours ;
+ *   2. la devinette d'après le nom, mais UNIQUEMENT si le marchand a demandé
+ *      des pastilles de couleur — en mode photo, il veut ses photos.
+ * Rien de résolu : on n'écrit pas, et la photo garde sa place.
+ */
+async function resoudreCouleurs(
+  shop: string,
+  label: string,
+  valeurs: string[],
+): Promise<Map<string, string>> {
+  const couleurs = new Map<string, string>();
+  const [reglages, bibliotheque] = await Promise.all([
+    getSettings(shop),
+    listSwatchValues(shop),
   ]);
 
-  // `metafieldsSet` plafonne à 25 métadonnées par appel : quatre par fiche, donc
-  // six fiches. Un groupe de vingt coloris dépasserait sans ce découpage.
+  const parCle = new Map(
+    bibliotheque.map((v) => [`${v.optionName}::${v.value}`, v]),
+  );
+  const nomOption = normalize(label);
+
+  for (const valeur of valeurs) {
+    const brute = valeur.trim();
+    if (!brute) continue;
+    // Une valeur qui EST déjà un code couleur se suffit à elle-même.
+    if (/^#[0-9a-f]{3,8}$/i.test(brute)) {
+      couleurs.set(valeur, brute);
+      continue;
+    }
+    const entree = parCle.get(`${nomOption}::${normalize(brute)}`);
+    if (entree?.colorHex) {
+      couleurs.set(valeur, entree.colorHex);
+      continue;
+    }
+    if (reglages.swatchFallback === "color") {
+      const devinee = guessColor(brute);
+      if (devinee) couleurs.set(valeur, devinee);
+    }
+  }
+  return couleurs;
+}
+
+async function ecrire(
+  admin: GraphqlAdmin,
+  shop: string,
+  group: Omit<Group, "id">,
+): Promise<string[]> {
+  const handles = group.members.map((m) => m.handle);
+  const couleurs = await resoudreCouleurs(
+    shop,
+    group.label,
+    group.members.map((m) => m.value),
+  );
+
+  const metafields = group.members.flatMap((m) => {
+    const couleur = couleurs.get(m.value);
+    return [
+      { ownerId: m.id, namespace: NAMESPACE, key: "group", type: "single_line_text_field", value: group.key },
+      { ownerId: m.id, namespace: NAMESPACE, key: "group_value", type: "single_line_text_field", value: m.value },
+      { ownerId: m.id, namespace: NAMESPACE, key: "group_label", type: "single_line_text_field", value: group.label },
+      { ownerId: m.id, namespace: NAMESPACE, key: "group_members", type: "json", value: JSON.stringify(handles) },
+      // Chaîne vide plutôt qu'omission : une métadonnée laissée en place
+      // garderait l'ancienne couleur d'un coloris renommé.
+      { ownerId: m.id, namespace: NAMESPACE, key: "group_color", type: "single_line_text_field", value: couleur ?? "" },
+    ];
+  });
+
+  // `metafieldsSet` plafonne à 25 métadonnées par appel : cinq par fiche depuis
+  // l'ajout de la couleur, donc cinq fiches. Un groupe de vingt coloris
+  // dépasserait sans ce découpage.
   const erreurs: string[] = [];
-  for (let i = 0; i < metafields.length; i += 24) {
+  for (let i = 0; i < metafields.length; i += 25) {
     const response = await admin.graphql(SET, {
-      variables: { metafields: metafields.slice(i, i + 24) },
+      variables: { metafields: metafields.slice(i, i + 25) },
     });
     const body = (await response.json()) as {
       data?: { metafieldsSet?: { userErrors: { message: string }[] } };
@@ -141,7 +216,7 @@ export async function saveGroup(
     }
   }
 
-  const erreurs = await ecrire(admin, { key, label, members });
+  const erreurs = await ecrire(admin, shop, { key, label, members });
   if (erreurs.length) return { ok: false, errors: erreurs };
 
   // Les fiches retirées du groupe doivent perdre leurs métadonnées, sinon elles

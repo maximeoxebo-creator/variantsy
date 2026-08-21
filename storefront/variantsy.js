@@ -1425,6 +1425,11 @@
           // La photo de la fiche sœur, posée par le Liquid, sert de repli : on
           // ne l'écrase que si la bibliothèque ou le dictionnaire sait faire
           // mieux — une couleur franche vaut mieux qu'une vignette.
+          // Déjà peinte par le Liquid depuis la métadonnée : le JS résoudrait
+          // la même couleur, mais un cran plus tard. Y toucher ne ferait que
+          // rétablir le clignotement qu'on vient de supprimer.
+          if (visual.hasAttribute("data-variantsy-peint")) return;
+
           var avant = visual.style.backgroundImage;
           self.applyVisual(
             visual,
