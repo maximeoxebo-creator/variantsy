@@ -897,7 +897,7 @@
       var option = document.createElement("option");
       option.value = value;
       var unavailable = button.getAttribute("data-unavailable") === "true";
-      option.textContent = unavailable ? value + " — indisponible" : value;
+      option.textContent = unavailable ? value + " — sold out" : value;
       if (value === current) option.selected = true;
       existing.appendChild(option);
     });
@@ -1733,7 +1733,11 @@
         if (!button.getAttribute("data-variantsy-label")) {
           button.setAttribute("data-variantsy-label", label.textContent.trim());
         }
-        label.textContent = "Rupture de stock";
+        // « Sold out » est la formulation de Shopify et des thèmes officiels.
+        // Le libellé d'origine du thème est conservé dans un attribut et
+        // rétabli dès qu'une variante disponible est choisie : on n'écrase
+        // jamais définitivement le texte du marchand.
+        label.textContent = "Sold out";
       } else if (button.getAttribute("data-variantsy-label")) {
         label.textContent = button.getAttribute("data-variantsy-label");
       }
