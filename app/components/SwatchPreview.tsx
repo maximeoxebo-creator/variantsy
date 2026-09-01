@@ -59,6 +59,18 @@ const DEMO_SIZE = "M";
 export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
   const [selected, setSelected] = useState(1);
 
+  // « auto » est une consigne pour le storefront, où la feuille de style dérive
+  // la teinte de currentColor. Ce n'est PAS une couleur CSS : passée telle
+  // quelle, elle produisait des déclarations invalides et l'aperçu perdait son
+  // anneau de sélection comme ses bordures — le marchand ne voyait plus quelle
+  // pastille était choisie. L'aperçu simule une boutique claire, le cas de très
+  // loin le plus courant, et montre donc ce que « auto » y donne.
+  const estAuto = (v: string) => !v || v.trim().toLowerCase() === "auto";
+  const couleurSelection = estAuto(settings.selectedColor) ? "#111111" : settings.selectedColor;
+  const couleurBordure = estAuto(settings.borderColor)
+    ? "rgba(0, 0, 0, 0.22)"
+    : settings.borderColor;
+
   // Doit rester aligné sur le calcul de --vtsy-radius dans variantsy.js :
   // un aperçu qui ment au marchand est pire que pas d'aperçu du tout.
   const radius =
@@ -131,16 +143,16 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
             padding: "0 44px 0 14px",
             border: `${Math.max(1, settings.borderWidth)}px solid ${
               settings.controlSelectedStyle === "none"
-                ? settings.borderColor
-                : settings.selectedColor
+                ? couleurBordure
+                : couleurSelection
             }`,
             borderRadius: settings.controlRadius,
             background:
-              settings.controlSelectedStyle === "fill" ? settings.selectedColor : "#fff",
+              settings.controlSelectedStyle === "fill" ? couleurSelection : "#fff",
             font: "inherit",
             color:
               settings.controlSelectedStyle === "fill"
-                ? contrasteSur(settings.selectedColor)
+                ? contrasteSur(couleurSelection)
                 : "#1A1A1A",
             cursor: "pointer",
             // La flèche native du navigateur se place où elle veut : l'aperçu
@@ -179,17 +191,17 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                   borderRadius: settings.controlRadius,
                   background:
                     isSelected && settings.controlSelectedStyle === "fill"
-                      ? settings.selectedColor
+                      ? couleurSelection
                       : "#fff",
                   // « Aucun » doit vraiment n'appliquer aucun accent : la case
                   // choisie garde la bordure des autres.
                   border:
                     isSelected && settings.controlSelectedStyle !== "none"
-                      ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
-                      : `${settings.borderWidth}px solid ${settings.borderColor}`,
+                      ? `${settings.selectedWidth}px solid ${couleurSelection}`
+                      : `${settings.borderWidth}px solid ${couleurBordure}`,
                   color:
                     isSelected && settings.controlSelectedStyle === "fill"
-                      ? contrasteSur(settings.selectedColor)
+                      ? contrasteSur(couleurSelection)
                       : value.available
                         ? "#1A1A1A"
                         : "#9A9A9A",
@@ -223,9 +235,9 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
             isSelected && settings.selectedStyle === "ring"
               ? `0 0 0 ${settings.selectedGap}px #fff, 0 0 0 ${
                   settings.selectedGap + settings.selectedWidth
-                }px ${settings.selectedColor}`
+                }px ${couleurSelection}`
               : isSelected && settings.selectedStyle === "shadow"
-                ? `0 2px 8px ${settings.selectedColor}66`
+                ? `0 2px 8px ${couleurSelection}66`
                 : "none";
 
           return (
@@ -254,7 +266,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                   background: value.color,
                   border:
                     isSelected && settings.selectedStyle === "border"
-                      ? `${settings.selectedWidth}px solid ${settings.selectedColor}`
+                      ? `${settings.selectedWidth}px solid ${couleurSelection}`
                       : // En mode anneau, la bordure neutre de la pastille
                         // choisie s'efface : sinon elle dessine un SECOND
                         // contour collé à l'anneau. `transparent` et non `0`,
@@ -264,7 +276,7 @@ export function SwatchPreview({ settings }: { settings: PreviewSettings }) {
                         `${settings.borderWidth}px solid ${
                           isSelected && settings.selectedStyle === "ring"
                             ? "transparent"
-                            : settings.borderColor
+                            : couleurBordure
                         }`,
                   boxShadow: ring,
                   cursor: "pointer",
