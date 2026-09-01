@@ -669,6 +669,10 @@ export default function SettingsPage() {
                     />}
             </BlockStack>
 
+            {/* Respiration en pied de page. Sans elle, la dernière carte
+                touchait le bord de la fenêtre : rien n'indiquait que la page
+                était finie, et le dernier réglage semblait tronqué. */}
+            <Box paddingBlockEnd="1200" />
           </BlockStack>
         </Layout.Section>
 
@@ -1129,8 +1133,25 @@ function ApparencePanel({ form, set }: PanelProps) {
   // laisserait croire à un réglage sans conséquence.
   const enPastilles = form.displayMode === "swatch";
 
+  const suitLeTheme = estAuto(form.borderColor) && estAuto(form.selectedColor);
+
   return (
     <BlockStack gap="600">
+      {/* En tête, parce que ce choix gouverne tout ce qui suit : il décide si
+          les teintes du sélecteur sont héritées du thème ou imposées par le
+          marchand. Placé plus bas, il obligeait à revenir sur ses pas. */}
+      <Card>
+        <Checkbox
+          label="Match my theme"
+          checked={suitLeTheme}
+          onChange={(coche) => {
+            set("borderColor" as never, (coche ? "auto" : "#D9D9D9") as never);
+            set("selectedColor" as never, (coche ? "auto" : "#111111") as never);
+          }}
+          helpText="Borders and the selected state follow your theme's own text color, so the selector reads correctly on a light store as well as a dark one. Uncheck to pick your own shades."
+        />
+      </Card>
+
       <Bloc titre="How your colors are shown" raison="Swatches, text buttons or a dropdown — pick what fits your theme. Color options only: sizes stay text buttons in every case.">
         <ChoiceCards
           value={form.displayMode}
@@ -1998,17 +2019,13 @@ function ColorField({
   help?: string;
   defaut?: string;
 }) {
-  const auto = estAuto(value);
+  // Une couleur en mode automatique n'a pas de champ : le réglage global, en
+  // tête de l'onglet, la gouverne. Deux cases pour une même posture obligeaient
+  // à les accorder à la main.
+  if (estAuto(value)) return null;
   return (
     <BlockStack gap="200">
-      <Checkbox
-        label="Match my theme"
-        checked={auto}
-        onChange={(coche) => onChange(coche ? AUTO : defaut)}
-        helpText="Follows your theme's text color, so the selector reads correctly on a light or a dark store."
-      />
-      {!auto && (
-    <TextField
+      <TextField
       label={label}
       value={value}
       onChange={onChange}
@@ -2034,8 +2051,7 @@ function ColorField({
           }}
         />
       }
-    />
-      )}
+      />
     </BlockStack>
   );
 }
