@@ -1,55 +1,67 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><style>
-/* Icône Variantsy, 1200 × 1200.
-   Reconstruite en HTML pour redevenir modifiable : la précédente vivait dans un
-   canvas de design qu'on ne pouvait plus reprendre.
-
-   Le grief à corriger : les variantes d'arrière-plan ne se voyaient pas, et le
-   fond était trop sombre. Elles deviennent donc de vraies FICHES COLORÉES —
-   beige et argile, les coloris de l'app — au lieu de fantômes gris. */
+/* Icône Variantsy, 1200 × 1200 — traitement « verre liquide ».
+   Une plaque de verre ne se voit que par ce qu'elle DÉFORME : le fond porte
+   donc des halos colorés, sans lesquels le flou d'arrière-plan n'aurait rien à
+   travailler et les fiches sœurs redeviendraient de simples aplats ternes. */
 * { margin:0; padding:0; box-sizing:border-box; }
-.icone {
-  position: relative;
-  width: 1200px; height: 1200px;
-  display: grid; place-items: center;
-  overflow: hidden;
-  font-family: system-ui, sans-serif;
-}
-.scene { position: relative; width: 900px; height: 900px; display:grid; place-items:center; }
+.icone { position:relative; width:1200px; height:1200px; display:grid; place-items:center; overflow:hidden; }
 
-/* Les deux fiches sœurs, DERRIÈRE. Inclinées et décalées, elles disent
-   « plusieurs coloris du même article ». */
+/* Halos : la matière que le verre va capter. */
+.halo { position:absolute; border-radius:50%; filter: blur(96px); }
+
+.scene { position:relative; width:900px; height:900px; display:grid; place-items:center; z-index:2; }
+
+/* --- Fiches sœurs : verre teinté ---------------------------------------- */
 .fiche {
-  position: absolute; top: 150px;
-  width: 430px; height: 470px;
-  border-radius: 76px;
-  display: grid; place-items: center;
-  box-shadow: 0 40px 90px rgba(0,0,0,.34);
+  position:absolute; top:150px; width:430px; height:470px;
+  border-radius:76px; display:grid; place-items:center;
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  box-shadow:
+    inset 0 2px 1px rgba(255,255,255,.55),      /* arête éclairée, en haut */
+    inset 0 -2px 1px rgba(0,0,0,.18),           /* arête d'ombre, en bas */
+    0 40px 90px rgba(0,0,0,.30);
 }
-.fiche.g { left: 0;  transform: rotate(-9deg); }
-.fiche.d { right: 0; transform: rotate(9deg); }
+.fiche.g { left:0;  transform: rotate(-9deg); }
+.fiche.d { right:0; transform: rotate(9deg); }
 
-/* La fiche de tête : le coloris choisi. */
+/* Le reflet spéculaire : c'est lui qui fait lire « verre » plutôt que
+   « calque translucide ». */
+.fiche::after, .tete::after {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background: linear-gradient(150deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.06) 34%, transparent 58%);
+}
+
+/* --- Fiche de tête : le coloris choisi ---------------------------------- */
 .tete {
-  position: relative; z-index: 3;
-  width: 470px; height: 470px;
-  border-radius: 104px;
-  display: grid; place-items: center;
-  background: linear-gradient(140deg, #6E8CFF 0%, #7B6BF0 52%, #A96BF0 100%);
-  box-shadow: 0 44px 110px rgba(60,80,220,.46), inset 0 2px 0 rgba(255,255,255,.28);
+  position:relative; z-index:3; width:470px; height:470px; border-radius:104px;
+  display:grid; place-items:center;
+  background: linear-gradient(140deg, rgba(120,150,255,.92) 0%, rgba(130,110,245,.92) 52%, rgba(180,110,245,.92) 100%);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  box-shadow:
+    inset 0 3px 2px rgba(255,255,255,.62),
+    inset 0 -3px 2px rgba(0,0,0,.20),
+    0 44px 110px rgba(70,90,230,.50);
 }
-svg { display:block; }
+svg { display:block; position:relative; z-index:2; }
 
-/* Le sélecteur, en bas : trois coloris, celui de la fiche entouré. */
-.rangee {
-  position: absolute; bottom: 96px; left: 0; right: 0;
-  display: flex; justify-content: center; align-items: center; gap: 44px;
-  z-index: 4;
+/* --- Le sélecteur ------------------------------------------------------- */
+.rangee { position:absolute; bottom:96px; left:0; right:0; display:flex;
+  justify-content:center; align-items:center; gap:44px; z-index:4; }
+.pastille {
+  width:84px; height:84px; border-radius:50%;
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: inset 0 2px 1px rgba(255,255,255,.50), inset 0 -2px 1px rgba(0,0,0,.16);
 }
-.pastille { width: 84px; height: 84px; border-radius: 50%; }
 .pastille.on {
-  background: linear-gradient(140deg, #6E8CFF, #A96BF0);
-  box-shadow: 0 0 0 10px var(--fond-anneau), 0 0 0 20px #8E86F5;
+  background: linear-gradient(140deg, rgba(120,150,255,.95), rgba(180,110,245,.95));
+  box-shadow:
+    inset 0 2px 1px rgba(255,255,255,.70),
+    0 0 0 10px rgba(255,255,255,.10),
+    0 0 0 20px rgba(190,190,255,.55);
 }
 </style></head><body>
 <div class="icone" id="cible"></div>
@@ -61,28 +73,29 @@ const TEE = (couleur, taille) => `
         stroke="${couleur}" stroke-width="3.1" stroke-linejoin="round" fill="none"/>
 </svg>`;
 
-// Trois niveaux de luminosité de fond, du plus sombre au plus clair.
+// Trois luminosités de fond. Le verre restant translucide, un fond plus clair
+// éclaircit AUSSI les fiches sœurs : les deux se règlent d'un seul curseur.
 const VARIANTES = {
-  A: { fond: "radial-gradient(120% 100% at 50% 18%, #26305A 0%, #171E38 55%, #10152A 100%)",
-       beige: "#C9B48D", argile: "#B96A4E", opacite: .92, anneau: "#171E38" },
-  B: { fond: "radial-gradient(120% 100% at 50% 18%, #38447A 0%, #232C52 55%, #19203C 100%)",
-       beige: "#D8C3A5", argile: "#C1614B", opacite: 1, anneau: "#232C52" },
-  C: { fond: "radial-gradient(120% 100% at 50% 18%, #4C5A96 0%, #333E६E 55%, #262E55 100%)".replace("६","6"),
-       beige: "#E2D0B4", argile: "#CE7358", opacite: 1, anneau: "#333E6E" },
+  A: { fond:"#131A33", halo:.42, voile:.34 },
+  B: { fond:"#1C2547", halo:.50, voile:.40 },
+  C: { fond:"#2A3568", halo:.58, voile:.46 },
 };
-
 const v = VARIANTES[new URLSearchParams(location.search).get("v") || "B"];
-document.getElementById("cible").style.background = v.fond;
-document.getElementById("cible").style.setProperty("--fond-anneau", v.anneau);
-document.getElementById("cible").innerHTML = `
+
+const cible = document.getElementById("cible");
+cible.style.background = v.fond;
+cible.innerHTML = `
+  <span class="halo" style="width:470px;height:470px;left:110px;top:250px;background:#E4CFA9;opacity:${v.halo}"></span>
+  <span class="halo" style="width:470px;height:470px;right:110px;top:250px;background:#D46A4E;opacity:${v.halo}"></span>
+  <span class="halo" style="width:560px;height:560px;left:320px;bottom:60px;background:#6E8CFF;opacity:${v.halo * 0.9}"></span>
   <div class="scene">
-    <div class="fiche g" style="background:${v.beige};opacity:${v.opacite}">${TEE("rgba(0,0,0,.30)", 210)}</div>
-    <div class="fiche d" style="background:${v.argile};opacity:${v.opacite}">${TEE("rgba(255,255,255,.62)", 210)}</div>
+    <div class="fiche g" style="background:rgba(216,195,165,${v.voile + 0.30})">${TEE("rgba(60,40,20,.55)", 210)}</div>
+    <div class="fiche d" style="background:rgba(193,97,75,${v.voile + 0.30})">${TEE("rgba(255,240,235,.80)", 210)}</div>
     <div class="tete">${TEE("#FFFFFF", 250)}</div>
     <div class="rangee">
-      <span class="pastille" style="background:${v.beige}"></span>
+      <span class="pastille" style="background:rgba(216,195,165,.78)"></span>
       <span class="pastille on"></span>
-      <span class="pastille" style="background:${v.argile}"></span>
+      <span class="pastille" style="background:rgba(193,97,75,.78)"></span>
     </div>
   </div>`;
 </script></body></html>
