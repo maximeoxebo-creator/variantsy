@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import prisma from "../db.server";
+import prisma, { withRetry } from "../db.server";
 import { authenticate } from "../shopify.server";
 
 /**
@@ -47,14 +47,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       // réglages pour qu'un marchand qui réinstalle retrouve sa configuration.
       // Cette rétention est légitime à court terme ; elle cesse de l'être quand
       // le marchand demande l'effacement. Ici on purge donc tout.
-      const [reglages, couleurs, sessions] = await prisma.$transaction([
-        prisma.shopSettings.deleteMany({ where: { shop } }),
-        prisma.swatchValue.deleteMany({ where: { shop } }),
-        prisma.session.deleteMany({ where: { shop } }),
-      ]);
+      // Les groupes de produits liés manquaient à cet effacement : ils sont
+      // arrivés après l'écriture de ce webhook, et une ligne par groupe
+      // survivait donc à une demande de suppression. Ils portent le domaine de
+      // la boutique, donc ils relèvent du même devoir d'effacement.
+      const [reglages, couleurs, groupes, sessions] = await withRetry(() =>
+        prisma.$transaction([
+          prisma.shopSettings.deleteMany({ where: { shop } }),
+          prisma.swatchValue.deleteMany({ where: { shop } }),
+          prisma.productGroup.deleteMany({ where: { shop } }),
+          prisma.session.deleteMany({ where: { shop } }),
+        ]),
+      );
       console.log(
         `[conformité] effacement boutique — ${shop} — ` +
-          `${reglages.count} réglage(s), ${couleurs.count} couleur(s), ${sessions.count} session(s)`,
+          `${reglages.count} réglage(s), ${couleurs.count} couleur(s), ` +
+          `${groupes.count} groupe(s), ${sessions.count} session(s)`,
       );
       break;
     }
