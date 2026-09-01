@@ -1713,6 +1713,42 @@ section("Le panier survit à un thème qui recompose sa fiche");
   await pageRendue.close();
 }
 
+section("Le panier tient même à l'envoi");
+{
+  // Le cas le plus retors : un thème qui recompose TARD — au-delà de nos
+  // reprises différées — ou qui bâtit sa requête depuis son propre état. On
+  // simule ici une réécriture tardive, puis on lit ce que le formulaire aurait
+  // réellement envoyé.
+  const pageTardive = await openPage(PRODUCT, PRODUCT.variants[0]);
+  const couleurT = PRODUCT.options[0].values.find((v) => v !== PRODUCT.variants[0].o[0]);
+  await pageTardive.click(`.variantsy__swatch[data-variantsy-value="${couleurT}"]`);
+  await pageTardive.evaluate(() => {
+    // Réécriture APRÈS toutes nos reprises.
+    setTimeout(() => {
+      document.querySelector('form input[name="id"]').value = "999";
+    }, 400);
+    // Le thème lit FormData dans SON gestionnaire, en phase de bouillonnement.
+    document
+      .querySelector("form[action*='/cart/add']")
+      .addEventListener("submit", (e) => {
+        e.preventDefault();
+        window.__envoye = new FormData(e.target).get("id");
+      });
+  });
+  await pageTardive.waitForTimeout(600);
+  await pageTardive.evaluate(() =>
+    document.querySelector("form[action*='/cart/add']").requestSubmit(),
+  );
+  const envoye = await pageTardive.evaluate(() => window.__envoye);
+  const attenduT = String(PRODUCT.variants.find((v) => v.o[0] === couleurT).id);
+  check(
+    "Une réécriture tardive est rattrapée à l'envoi",
+    envoye === attenduT,
+    `envoyé=${envoye} attendu=${attenduT}`,
+  );
+  await pageTardive.close();
+}
+
 section("Santé générale");
 check("Aucune erreur JS sur l'ensemble des scénarios", consoleErrors.length === 0, consoleErrors.join(" | "));
 

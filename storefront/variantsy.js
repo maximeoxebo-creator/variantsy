@@ -1997,6 +1997,34 @@
   Variantsy.prototype.bind = function () {
     var self = this;
 
+    /**
+     * DERNIER REMPART : on repose la variante à l'instant où le formulaire part.
+     *
+     * Les reprises différées couvrent le thème qui réécrit le champ ou
+     * remplace le formulaire dans la seconde. Elles ne couvrent pas celui qui
+     * recompose plus tard, ni celui qui bâtit sa requête depuis son propre
+     * état. Ici on écrit au dernier moment utile, et en phase de CAPTURE —
+     * donc AVANT le gestionnaire du thème, qui lit d'ordinaire
+     * `new FormData(form)` dans le sien.
+     *
+     * L'écoute est posée sur le document et non sur le formulaire : celui-ci
+     * peut être remplacé à tout moment, l'écoute survit.
+     */
+    document.addEventListener(
+      "submit",
+      function (event) {
+        var form = event.target;
+        if (!form || typeof form.matches !== "function") return;
+        if (!form.matches('form[action*="/cart/add"]')) return;
+        var attendu = self.root.getAttribute("data-current-variant");
+        if (!attendu) return;
+        var champ =
+          form.querySelector('input[name="id"]') || form.querySelector('select[name="id"]');
+        if (champ && champ.value !== attendu) champ.value = attendu;
+      },
+      true,
+    );
+
     this.root.addEventListener("click", function (event) {
       var button = event.target.closest(".variantsy__swatch");
       // Un lien de produit lié navigue : on ne l'intercepte pas.
