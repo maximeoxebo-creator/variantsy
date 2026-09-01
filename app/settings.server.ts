@@ -26,6 +26,7 @@ export type SettingsInput = {
   selectedGap: number;
   cornerRadius: number;
   displayMode: string;
+  otherDisplayMode: string;
   controlRadius: number;
   controlSelectedStyle: string;
   dropdownFullWidth: boolean;
@@ -70,6 +71,7 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   selectedGap: 2,
   cornerRadius: 8,
   displayMode: "swatch",
+  otherDisplayMode: "text",
   controlRadius: 6,
   controlSelectedStyle: "outline",
   dropdownFullWidth: false,
@@ -208,6 +210,7 @@ export type StorefrontConfig = {
     selectedGap: number;
     cornerRadius: number;
     displayMode: string;
+    otherDisplayMode: string;
     controlRadius: number;
     controlSelectedStyle: string;
     dropdownFullWidth: boolean;
@@ -297,6 +300,7 @@ export function toStorefrontConfig(
     selectedGap: settings.selectedGap,
     cornerRadius: settings.cornerRadius,
     displayMode: settings.displayMode,
+    otherDisplayMode: settings.otherDisplayMode,
     controlRadius: settings.controlRadius,
     controlSelectedStyle: settings.controlSelectedStyle,
     dropdownFullWidth: settings.dropdownFullWidth,

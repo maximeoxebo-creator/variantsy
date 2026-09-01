@@ -129,6 +129,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     selectedGap: Math.min(8, Math.max(0, int("selectedGap", DEFAULT_SETTINGS.selectedGap))),
     cornerRadius: Math.min(24, Math.max(0, int("cornerRadius", DEFAULT_SETTINGS.cornerRadius))),
     displayMode: str("displayMode", DEFAULT_SETTINGS.displayMode),
+    otherDisplayMode: str("otherDisplayMode", DEFAULT_SETTINGS.otherDisplayMode),
     controlRadius: Math.min(20, Math.max(0, int("controlRadius", DEFAULT_SETTINGS.controlRadius))),
     controlSelectedStyle: str("controlSelectedStyle", DEFAULT_SETTINGS.controlSelectedStyle),
     dropdownFullWidth: bool("dropdownFullWidth"),
@@ -207,7 +208,8 @@ type Mode = keyof typeof ONGLETS;
 const CLES_STYLE = [
   "shape", "size", "gap", "borderWidth", "borderColor", "selectedStyle",
   "selectedColor", "selectedWidth", "selectedGap", "cornerRadius", "displayMode",
-  "controlRadius", "controlSelectedStyle", "dropdownFullWidth", "swatchFallback",
+  "otherDisplayMode", "controlRadius", "controlSelectedStyle", "dropdownFullWidth",
+  "swatchFallback",
   "photoScale", "neutralColor", "showLabels", "showOptionName", "maxVisible",
   "customCss",
 ] as const;
@@ -1227,6 +1229,71 @@ function ApparencePanel({ form, set }: PanelProps) {
 
       </Bloc>
 
+
+      {/* Les options qui ne sont pas des couleurs avaient leur rendu figé.
+          Le réglage vit juste sous celui des couleurs : c'est là qu'on se
+          demande « et mes tailles ? ». */}
+      <Bloc
+        titre="Your other options"
+        raison="Size, capacity, material — everything that is not a color."
+      >
+        <ChoiceCards
+          help="Colors keep the setting above. This one governs the rest."
+          value={form.otherDisplayMode}
+          accent={accent}
+          onChange={(v) => set("otherDisplayMode", v)}
+          options={[
+            {
+              id: "text",
+              label: "Text buttons",
+              preview: (
+                <span style={{ display: "flex", gap: 4 }}>
+                  {["S", "M", "L"].map((t) => (
+                    <span
+                      key={t}
+                      style={{
+                        minWidth: 22,
+                        height: 22,
+                        lineHeight: "20px",
+                        textAlign: "center",
+                        fontSize: 11,
+                        borderRadius: 4,
+                        border: "1px solid #B0B7BF",
+                        color: "#4A4A4A",
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </span>
+              ),
+            },
+            {
+              id: "dropdown",
+              label: "Dropdown",
+              preview: (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: 76,
+                    height: 24,
+                    padding: "0 7px",
+                    fontSize: 11,
+                    color: "#4A4A4A",
+                    borderRadius: 4,
+                    border: "1px solid #B0B7BF",
+                  }}
+                >
+                  30 L
+                  <span style={{ fontSize: 8 }}>▼</span>
+                </span>
+              ),
+            },
+          ]}
+        />
+      </Bloc>
 
       <Bloc titre="The selector itself" raison="Shape, size and the control your theme shows." illustration={<ApercuRangee radius={radius} accent={accent} />}>
         {enPastilles && (

@@ -81,6 +81,13 @@ model ShopSettings {
   /// "text"     → boutons texte, sans pastille
   /// "dropdown" → liste déroulante
   displayMode          String  @default("swatch")
+  /// Rendu des options qui ne sont PAS des couleurs — taille, litrage,
+  /// matière. Elles étaient toujours des boutons texte, sans recours : le
+  /// réglage ci-dessus ne s'applique qu'aux couleurs, et un produit à vingt
+  /// litrages débordait la fiche.
+  /// "text"     → boutons texte (défaut, comportement d'avant)
+  /// "dropdown" → liste déroulante
+  otherDisplayMode     String  @default("text")
   /// Arrondi des boutons texte et de la liste déroulante, en px.
   /// Sans objet en mode pastilles, où `cornerRadius` fait ce travail.
   controlRadius        Int     @default(6)

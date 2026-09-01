@@ -1400,14 +1400,21 @@
       // taille n'a jamais été une pastille, la forcer en liste déroulante
       // parce que le marchand a choisi ce mode pour ses coloris n'aurait
       // aucun sens.
-      var mode = style.displayMode || "swatch";
       var isColor = self.looksLikeColorOption(group, optionName);
+      // Les options qui ne sont PAS des couleurs — taille, litrage, matière —
+      // suivaient toujours le rendu « boutons texte », sans recours : le mode
+      // d'affichage ne gouvernait que les couleurs. Un produit à vingt litrages
+      // débordait donc la fiche sans qu'on puisse rien y faire.
+      var mode = isColor
+        ? style.displayMode || "swatch"
+        : style.otherDisplayMode || "text";
       var asSwatch = isColor && mode === "swatch";
+      var enListe = mode === "dropdown";
 
       group.classList.toggle("variantsy__group--color", asSwatch);
       group.classList.toggle("variantsy__group--text", !asSwatch);
-      group.classList.toggle("variantsy__group--dropdown", isColor && mode === "dropdown");
-      if (isColor && mode === "dropdown") self.buildDropdown(group, position);
+      group.classList.toggle("variantsy__group--dropdown", enListe);
+      if (enListe) self.buildDropdown(group, position);
 
       var labelValue = group.querySelector("[data-variantsy-current-value]");
       if (labelValue) labelValue.textContent = self.selection[position - 1] || "";

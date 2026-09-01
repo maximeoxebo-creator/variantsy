@@ -58,6 +58,14 @@
   align-items: flex-start;
 }
 
+/* L'anneau de sélection est un box-shadow : il déborde de la pastille SANS
+   occuper de place. La rangée s'alignait donc sur le bord de la pastille, et
+   l'anneau mordait à gauche du libellé. On réserve son débord pour que ce soit
+   LUI qui s'aligne sur le texte — c'est le bord que l'œil lit. */
+.variantsy[data-selected-style="ring"] .variantsy__options {
+  padding-inline-start: calc(var(--vtsy-selected-gap) + var(--vtsy-selected-width));
+}
+
 /* --------------------------------------------------------------------------
    PIÈGE N°5 (voir CLAUDE.md) : reset du chrome natif dès la première version.
 
