@@ -1,0 +1,87 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+/* Trois DIRECTIONS d'icône, pas trois luminosités.
+   Le reproche de fond visait en réalité la composition : trois fiches colorées
+   PLUS une rangée de pastilles sous elles, c'est dire deux fois la même chose.
+   Les fiches SONT déjà le nuancier. La rangée disparaît donc partout ici. */
+* { margin:0; padding:0; box-sizing:border-box; }
+.icone { position:relative; width:1200px; height:1200px; overflow:hidden;
+         display:grid; place-items:center; }
+.scene { position:relative; width:1000px; height:1000px; display:grid; place-items:center; }
+svg { display:block; position:relative; z-index:2; }
+.carte { position:absolute; display:grid; place-items:center; }
+</style></head><body>
+<div class="icone" id="cible"></div>
+<script>
+const TEE = (c, t, ep) => `
+<svg width="${t}" height="${t}" viewBox="0 0 48 48" fill="none">
+  <path d="M17.5 6 L9 10.5 L5.5 20 L12 22.5 L13 18 L13 43 L35 43 L35 18 L36 22.5 L42.5 20 L39 10.5 L30.5 6
+           C30.5 11.5 17.5 11.5 17.5 6 Z"
+        stroke="${c}" stroke-width="${ep || 3.1}" stroke-linejoin="round" fill="none"/>
+</svg>`;
+
+const D = {
+  /* 1 — SIGNATURE. Le dégradé de marque occupe TOUT le fond : l'icône devient
+     reconnaissable à sa couleur seule, avant même qu'on distingue le dessin.
+     Les fiches passent en verre blanc, ce qui les fait tenir sur ce fond. */
+  signature: () => `
+    <div class="icone" style="background:linear-gradient(145deg,#5B7BF0 0%,#7B6BF0 46%,#A96BF0 100%)">
+      <div class="scene">
+        <div class="carte" style="left:110px;top:250px;width:420px;height:470px;border-radius:78px;
+             transform:rotate(-8deg);background:rgba(255,255,255,.22);
+             backdrop-filter:blur(22px) saturate(160%);
+             box-shadow:inset 0 2px 1px rgba(255,255,255,.65), 0 30px 70px rgba(30,30,90,.30)">
+          ${TEE("rgba(255,255,255,.72)", 200)}</div>
+        <div class="carte" style="right:110px;top:250px;width:420px;height:470px;border-radius:78px;
+             transform:rotate(8deg);background:rgba(255,255,255,.22);
+             backdrop-filter:blur(22px) saturate(160%);
+             box-shadow:inset 0 2px 1px rgba(255,255,255,.65), 0 30px 70px rgba(30,30,90,.30)">
+          ${TEE("rgba(255,255,255,.72)", 200)}</div>
+        <div class="carte" style="z-index:3;width:470px;height:490px;border-radius:106px;
+             background:#FFFFFF;
+             box-shadow:0 40px 90px rgba(25,25,80,.34), inset 0 -3px 2px rgba(0,0,0,.05)">
+          ${TEE("#6E7BF0", 250, 3.4)}</div>
+      </div>
+    </div>`,
+
+  /* 2 — PAPIER. Aucun effet : des aplats francs, une ombre nette, beaucoup de
+     blanc. C'est la direction qui tient le mieux en vignette, parce qu'il n'y
+     a rien à perdre quand l'image rétrécit. */
+  papier: () => `
+    <div class="icone" style="background:#F7F5F1">
+      <div class="scene">
+        <div class="carte" style="left:120px;top:265px;width:410px;height:450px;border-radius:74px;
+             transform:rotate(-7deg);background:#E4D3B4;
+             box-shadow:0 18px 40px rgba(80,60,30,.18)">${TEE("rgba(120,90,45,.62)", 195)}</div>
+        <div class="carte" style="right:120px;top:265px;width:410px;height:450px;border-radius:74px;
+             transform:rotate(7deg);background:#C9674C;
+             box-shadow:0 18px 40px rgba(120,50,30,.22)">${TEE("rgba(255,240,232,.86)", 195)}</div>
+        <div class="carte" style="z-index:3;width:465px;height:485px;border-radius:104px;
+             background:linear-gradient(145deg,#5B7BF0,#8B6BF0);
+             box-shadow:0 34px 74px rgba(70,80,220,.34)">${TEE("#FFFFFF", 248, 3.3)}</div>
+      </div>
+    </div>`,
+
+  /* 3 — ÉVENTAIL. Une seule idée, poussée : le même vêtement décliné, en
+     éventail net sur un fond très sobre. Pas de verre, pas de halo — le sujet
+     porte seul, et la superposition raconte la variante. */
+  eventail: () => `
+    <div class="icone" style="background:radial-gradient(120% 110% at 50% 6%, #FFFFFF 0%, #EDEEF4 58%, #E2E4EE 100%)">
+      <div class="scene">
+        <div class="carte" style="left:145px;top:300px;width:380px;height:420px;border-radius:70px;
+             transform:rotate(-14deg);background:#DFCBA8;
+             box-shadow:0 22px 48px rgba(70,60,40,.20)">${TEE("rgba(115,88,45,.60)", 180)}</div>
+        <div class="carte" style="right:145px;top:300px;width:380px;height:420px;border-radius:70px;
+             transform:rotate(14deg);background:#C8664B;
+             box-shadow:0 22px 48px rgba(120,50,30,.22)">${TEE("rgba(255,240,232,.86)", 180)}</div>
+        <div class="carte" style="z-index:3;width:440px;height:470px;border-radius:100px;
+             background:linear-gradient(150deg,#4E6EEC,#8E63F2);
+             box-shadow:0 40px 84px rgba(60,70,215,.38), inset 0 3px 2px rgba(255,255,255,.42)">
+          ${TEE("#FFFFFF", 236, 3.4)}</div>
+      </div>
+    </div>`,
+};
+
+const nom = new URLSearchParams(location.search).get("d") || "signature";
+document.body.innerHTML = D[nom]();
+</script></body></html>
