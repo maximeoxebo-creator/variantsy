@@ -50,10 +50,31 @@ for (const nom of fichiers) {
   const entree = join(source, nom);
   const sortie = join(cible, nom);
 
+  // Les méthodes de prototype sont INTERNES : rien hors de ce fichier ne les
+  // appelle. Les raccourcir gagne 2,5 % de compressé, ce qui vaut deux ou trois
+  // réglages de marge sous le seuil.
+  //
+  // La liste est DÉRIVÉE DE LA SOURCE plutôt qu'écrite à la main : une liste
+  // manuelle se périme en silence — on ajoute une méthode, on oublie de
+  // l'inscrire, et l'économie fond sans que personne ne le voie. Ce qui est
+  // exposé sur `window.Variantsy` n'est pas un prototype et n'entre donc jamais
+  // ici : l'API publique et les tests automatisés restent intacts.
+  const code = readFileSync(entree, "utf8");
+  const methodes = [
+    ...new Set(
+      [...code.matchAll(/Variantsy\.prototype\.(\w+)\s*=/g)].map((m) => m[1]),
+    ),
+  ];
+  if (!methodes.length) {
+    console.error("Aucune méthode de prototype trouvée : le raccourcissement aurait été silencieusement inopérant.");
+    process.exit(1);
+  }
+
   await build({
     entryPoints: [entree],
     outfile: sortie,
     minify: true,
+    mangleProps: new RegExp(`^(${methodes.join("|")})$`),
     // Cible volontairement large : ce code tourne sur les navigateurs des
     // clients d'un marchand, pas sur ceux d'un développeur.
     target: ["es2017"],

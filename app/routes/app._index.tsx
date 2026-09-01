@@ -588,6 +588,16 @@ export default function SettingsPage() {
                   <Text as="p" tone="subdued" variant="bodySm">
                     Indicative preview: type and spacing will follow your theme once live.
                   </Text>
+                  {/* La configuration est mise en cache côté CDN de Shopify
+                      pour épargner un aller-retour à chaque page produit. Un
+                      marchand qui enregistre, recharge aussitôt et ne voit rien
+                      changer croit à une panne : il vaut mieux le dire ici que
+                      de recevoir le message. */}
+                  <Text as="p" tone="subdued" variant="bodySm">
+                    On your storefront, a saved change can take a few minutes to appear:
+                    the settings are cached so shoppers never wait for them. Reload the
+                    product page once or twice — it catches up on its own.
+                  </Text>
                 </BlockStack>
               </Card>
             )}

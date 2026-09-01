@@ -32,6 +32,19 @@ function contrasteSur(couleur: string): string {
   return (r * 299 + v * 587 + b * 114) / 1000 > 150 ? "#111111" : "#ffffff";
 }
 
+/** Arrondi des CASES — boutons texte et liste déroulante.
+ *
+ *  Il suivait son propre réglage, indépendant de la forme des pastilles : un
+ *  marchand qui choisissait « carré » gardait des cases en gélules, et les deux
+ *  rangées d'une même fiche ne se ressemblaient pas. La forme commande
+ *  désormais, sauf en mode rond où une case ronde n'aurait aucun sens : là, le
+ *  réglage du marchand reprend la main. */
+function rayonCase(style: Style): number {
+  if (style.shape === "square") return 0;
+  if (style.shape === "rounded") return style.cornerRadius ?? 8;
+  return style.controlRadius ?? 6;
+}
+
 function rayon(style: Style): string {
   if (style.shape === "square") return "0px";
   if (style.shape === "rounded") return `${style.cornerRadius ?? 8}px`;
@@ -55,7 +68,7 @@ export function styleEnCss(style: Style): string {
     ...(estAuto(style.selectedColor) ? [] : [`--vtsy-selected-color:${style.selectedColor}`]),
     `--vtsy-selected-width:${style.selectedWidth ?? 2}px`,
     `--vtsy-selected-gap:${style.selectedGap ?? 2}px`,
-    `--vtsy-control-radius:${style.controlRadius ?? 6}px`,
+    `--vtsy-control-radius:${rayonCase(style)}px`,
     `--vtsy-photo-size:${Math.round((taille * echelle) / 100)}px`,
     ...(estAuto(style.selectedColor)
       ? []

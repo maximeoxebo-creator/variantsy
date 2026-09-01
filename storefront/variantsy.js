@@ -1353,7 +1353,17 @@
     else v.setProperty("--vtsy-selected-color", style.selectedColor);
     v.setProperty("--vtsy-selected-width", num(style.selectedWidth, 2) + "px");
     v.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
-    v.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
+    // L'arrondi des cases suit la FORME des pastilles : « carré » doit valoir
+    // pour toute la fiche. En mode rond seulement, le réglage du marchand
+    // reprend la main — une case ronde n'aurait aucun sens.
+    v.setProperty(
+      "--vtsy-control-radius",
+      (style.shape === "square"
+        ? 0
+        : style.shape === "rounded"
+          ? num(style.cornerRadius, 8)
+          : num(style.controlRadius, 6)) + "px",
+    );
     // Taille des seules pastilles qui portent une photo : un aplat de couleur
     // reste lisible à 40 px, une photo de produit non.
     v.setProperty(
@@ -1701,9 +1711,16 @@
   Variantsy.prototype.applyVariant = function (variant) {
     this.root.setAttribute("data-current-variant", String(variant.id));
 
+    // ORDRE CRITIQUE. Le formulaire s'écrit APRÈS le sélecteur natif.
+    //
+    // Piloter le sélecteur du thème émet un `change` auquel le thème réagit :
+    // il recalcule SA variante et réécrit `input[name="id"]`. Écrit avant, le
+    // nôtre était donc écrasé, et le panier recevait la variante du thème et
+    // non celle que l'acheteur venait de choisir. Le dernier mot doit nous
+    // revenir : c'est nous qui savons sur quelle pastille il a cliqué.
     var steps = [
-      ["formulaire", this.updateForm],
       ["sélecteur natif", this.updateNativeSelector],
+      ["formulaire", this.updateForm],
       ["url", this.config.behavior.updateUrl ? this.updateUrl : null],
       ["galerie", this.groups ? this.applyGallery : null],
       ["image", !this.groups && this.config.behavior.swapImage ? this.updateImage : null],
@@ -1741,6 +1758,12 @@
     if (input) {
       input.value = String(variant.id);
       input.dispatchEvent(new Event("change", { bubbles: true }));
+      // Certains thèmes recalculent la variante de façon ASYNCHRONE — une
+      // requête vers /variants/xxx.js, un rendu de section — et réécrivent
+      // l'input après nous. On repose donc notre valeur au tick suivant.
+      setTimeout(function () {
+        if (input.value !== String(variant.id)) input.value = String(variant.id);
+      }, 0);
     }
 
     var button = this.form.querySelector('[type="submit"], [name="add"]');

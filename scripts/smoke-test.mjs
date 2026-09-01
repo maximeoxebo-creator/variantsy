@@ -1650,6 +1650,36 @@ section("Liste déroulante des produits liés");
   await pageListe.close();
 }
 
+section("Le panier reçoit la variante choisie");
+{
+  // Un thème qui écoute SES sélecteurs et réécrit l'input après nous : c'est
+  // le comportement de la plupart des thèmes, et il écrasait notre valeur.
+  const pageVoleuse = await openPage(PRODUCT, PRODUCT.variants[0]);
+  await pageVoleuse.evaluate(() => {
+    document.querySelectorAll("select, input[type=radio]").forEach((el) => {
+      el.addEventListener("change", () => {
+        const champ = document.querySelector('form input[name="id"]');
+        if (champ) champ.value = "999";
+      });
+    });
+  });
+  const autre = PRODUCT.options[0].values.find((v) => v !== PRODUCT.variants[0].o[0]);
+  await pageVoleuse.click(`.variantsy__swatch[data-variantsy-value="${autre}"]`);
+  await pageVoleuse.waitForTimeout(120);
+  const idPanier = await pageVoleuse
+    .locator('form input[name="id"]')
+    .inputValue();
+  const attendu = String(
+    PRODUCT.variants.find((v) => v.o[0] === autre).id,
+  );
+  check(
+    "Le thème ne peut plus écraser la variante choisie",
+    idPanier === attendu,
+    `panier=${idPanier} attendu=${attendu}`,
+  );
+  await pageVoleuse.close();
+}
+
 section("Santé générale");
 check("Aucune erreur JS sur l'ensemble des scénarios", consoleErrors.length === 0, consoleErrors.join(" | "));
 
