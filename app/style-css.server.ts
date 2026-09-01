@@ -38,6 +38,11 @@ function rayon(style: Style): string {
   return "50%";
 }
 
+/** Une couleur laissée sur « auto » n'est PAS écrite : la feuille de style la
+ *  dérive alors de currentColor, donc de la couleur de texte du thème. */
+export const estAuto = (v: string | undefined | null) =>
+  !v || v.trim().toLowerCase() === "auto";
+
 /** Les mêmes variables que `appliquerHabillage()` côté storefront. */
 export function styleEnCss(style: Style): string {
   const taille = style.size ?? 40;
@@ -46,13 +51,15 @@ export function styleEnCss(style: Style): string {
     `--vtsy-size:${taille}px`,
     `--vtsy-gap:${style.gap ?? 10}px`,
     `--vtsy-border-width:${style.borderWidth ?? 1}px`,
-    `--vtsy-border-color:${style.borderColor}`,
-    `--vtsy-selected-color:${style.selectedColor}`,
+    ...(estAuto(style.borderColor) ? [] : [`--vtsy-border-color:${style.borderColor}`]),
+    ...(estAuto(style.selectedColor) ? [] : [`--vtsy-selected-color:${style.selectedColor}`]),
     `--vtsy-selected-width:${style.selectedWidth ?? 2}px`,
     `--vtsy-selected-gap:${style.selectedGap ?? 2}px`,
     `--vtsy-control-radius:${style.controlRadius ?? 6}px`,
     `--vtsy-photo-size:${Math.round((taille * echelle) / 100)}px`,
-    `--vtsy-selected-contrast:${contrasteSur(style.selectedColor)}`,
+    ...(estAuto(style.selectedColor)
+      ? []
+      : [`--vtsy-selected-contrast:${contrasteSur(style.selectedColor)}`]),
     `--vtsy-control-width:${style.dropdownFullWidth ? "100%" : "auto"}`,
     `--vtsy-radius:${rayon(style)}`,
   ].join(";");
@@ -64,6 +71,8 @@ export type StylePublie = {
   cssLinked: string;
   selectedStyle: string;
   controlSelected: string;
+  /** L'accent suit-il le thème ? Pilote la teinte douce du mode « fill ». */
+  autoAccent: boolean;
   showLabels: boolean;
   showOptionName: boolean;
   soldOut: string;
@@ -77,6 +86,7 @@ export function stylePublie(config: StorefrontConfig): StylePublie {
     cssLinked: config.styleLinked ? styleEnCss(config.styleLinked) : "",
     selectedStyle: config.style.selectedStyle,
     controlSelected: config.style.controlSelectedStyle || "outline",
+    autoAccent: estAuto(config.style.selectedColor),
     showLabels: Boolean(config.style.showLabels),
     showOptionName: Boolean(config.style.showOptionName),
     soldOut: config.behavior.soldOutStyle,

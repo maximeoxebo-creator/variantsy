@@ -1395,6 +1395,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           label="Selection color"
           value={form.selectedColor}
           onChange={(v) => set("selectedColor", v)}
+          defaut="#111111"
           help="Shade of the outline, thick border or shadow, depending on the style chosen above."
         />
 
@@ -1570,6 +1571,7 @@ function ApparencePanel({ form, set }: PanelProps) {
           <ColorField
             label="Border color at rest"
             value={form.borderColor}
+            defaut="#D9D9D9"
             onChange={(v) => set("borderColor", v)}
           />
           <Checkbox
@@ -1974,18 +1976,38 @@ function contrasteSur(couleur: string): string {
 }
 
 /** Champ couleur : input natif + saisie hex, gardés synchronisés. */
+/** Une couleur peut suivre le thème du marchand plutôt que d'être choisie.
+ *  C'est le DÉFAUT : un gris fixe au repos et un quasi-noir à la sélection
+ *  inversaient la hiérarchie sur une boutique sombre — les pastilles non
+ *  choisies y paraissaient choisies. Le mot « auto » traverse la base et le
+ *  storefront, où la feuille de style dérive la teinte de currentColor. */
+const AUTO = "auto";
+const estAuto = (v: string) => !v || v.trim().toLowerCase() === AUTO;
+
 function ColorField({
   label,
   value,
   onChange,
   help,
+  /** Teinte proposée quand le marchand quitte le mode automatique. */
+  defaut = "#111111",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   help?: string;
+  defaut?: string;
 }) {
+  const auto = estAuto(value);
   return (
+    <BlockStack gap="200">
+      <Checkbox
+        label="Match my theme"
+        checked={auto}
+        onChange={(coche) => onChange(coche ? AUTO : defaut)}
+        helpText="Follows your theme's text color, so the selector reads correctly on a light or a dark store."
+      />
+      {!auto && (
     <TextField
       label={label}
       value={value}
@@ -2013,5 +2035,7 @@ function ColorField({
         />
       }
     />
+      )}
+    </BlockStack>
   );
 }

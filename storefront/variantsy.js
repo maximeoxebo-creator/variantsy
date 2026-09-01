@@ -1330,8 +1330,15 @@
    * n'affecter qu'elle. Une seule implémentation évite que les deux jeux
    * divergent au prochain réglage ajouté.
    */
+  /** Une couleur laissée sur « auto » se dérive du thème : on ne l'écrit pas,
+   *  la feuille de style la calcule depuis currentColor. */
+  function estAuto(v) {
+    return !v || String(v).trim().toLowerCase() === "auto";
+  }
+
   function appliquerHabillage(el, style) {
     el.setAttribute("data-selected-style", style.selectedStyle);
+    el.setAttribute("data-auto-accent", estAuto(style.selectedColor) ? "true" : "false");
     el.setAttribute("data-control-selected", style.controlSelectedStyle || "outline");
     el.setAttribute("data-show-labels", style.showLabels ? "true" : "false");
     el.setAttribute("data-show-option-name", style.showOptionName ? "true" : "false");
@@ -1340,8 +1347,10 @@
     v.setProperty("--vtsy-size", style.size + "px");
     v.setProperty("--vtsy-gap", style.gap + "px");
     v.setProperty("--vtsy-border-width", style.borderWidth + "px");
-    v.setProperty("--vtsy-border-color", style.borderColor);
-    v.setProperty("--vtsy-selected-color", style.selectedColor);
+    if (estAuto(style.borderColor)) v.removeProperty("--vtsy-border-color");
+    else v.setProperty("--vtsy-border-color", style.borderColor);
+    if (estAuto(style.selectedColor)) v.removeProperty("--vtsy-selected-color");
+    else v.setProperty("--vtsy-selected-color", style.selectedColor);
     v.setProperty("--vtsy-selected-width", num(style.selectedWidth, 2) + "px");
     v.setProperty("--vtsy-selected-gap", num(style.selectedGap, 2) + "px");
     v.setProperty("--vtsy-control-radius", num(style.controlRadius, 6) + "px");
@@ -1353,7 +1362,8 @@
     );
     // Le texte doit rester lisible sur le fond plein, quelle que soit la teinte
     // choisie par le marchand : on la mesure au lieu de parier sur du blanc.
-    v.setProperty("--vtsy-selected-contrast", contrasteSur(style.selectedColor));
+    if (estAuto(style.selectedColor)) v.removeProperty("--vtsy-selected-contrast");
+    else v.setProperty("--vtsy-selected-contrast", contrasteSur(style.selectedColor));
     // « auto » laisse la liste se dimensionner sur son contenu ; « 100% »
     // l'étend à la largeur disponible.
     v.setProperty("--vtsy-control-width", style.dropdownFullWidth ? "100%" : "auto");

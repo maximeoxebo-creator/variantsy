@@ -184,6 +184,7 @@
       data-show-labels="{% if vtsy_style.showLabels %}true{% else %}false{% endif %}"
       data-show-option-name="{% if vtsy_style.showOptionName %}true{% else %}false{% endif %}"
       data-sold-out="{{ vtsy_style.soldOut }}"
+      data-auto-accent="{% if vtsy_style.autoAccent %}true{% else %}false{% endif %}"
       style="{{ vtsy_style.css }}"
     {% else %}
       style="--vtsy-size: 40px; --vtsy-gap: 10px; --vtsy-radius: 50%;"

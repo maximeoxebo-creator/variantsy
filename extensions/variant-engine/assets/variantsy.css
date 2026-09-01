@@ -7,8 +7,14 @@
   --vtsy-size: 40px;
   --vtsy-gap: 10px;
   --vtsy-border-width: 1px;
-  --vtsy-border-color: #d9d9d9;
-  --vtsy-selected-color: #111111;
+  /* Défauts DÉRIVÉS DU THÈME, et non des gris fixes. Sur une boutique
+     sombre, un gris clair au repos et un quasi-noir à la sélection
+     inversaient la hiérarchie : les pastilles non choisies paraissaient
+     choisies. currentColor hérite de la couleur de texte du thème, donc la
+     lecture reste juste du clair au sombre. Le marchand garde la main : ses
+     réglages, quand il en pose, écrasent ces variables. */
+  --vtsy-border-color: color-mix(in srgb, currentColor 22%, transparent);
+  --vtsy-selected-color: currentColor;
   --vtsy-selected-width: 2px;
   --vtsy-selected-gap: 2px;
   --vtsy-control-radius: 6px;
@@ -30,7 +36,7 @@
   align-items: baseline;
   gap: 6px;
   margin-bottom: 8px;
-  font-size: 0.875rem;
+  font-size: 0.875em;
   line-height: 1.4;
 }
 
@@ -185,7 +191,7 @@
   border-radius: var(--vtsy-control-radius);
   /* Taille de police pilotée par JS, avec synchronisation de ligne :
      voir syncFontSizes() dans variantsy.js. */
-  font-size: var(--vtsy-text-size, 0.9375rem);
+  font-size: var(--vtsy-text-size, 0.9375em);
   white-space: nowrap;
 }
 
@@ -195,12 +201,14 @@
 }
 
 .variantsy__group--text .variantsy__swatch[data-unavailable="true"] {
-  color: #9a9a9a;
+  /* Un gris fixe se confondait avec le fond d'un thème sombre. Atténuer la
+     couleur du thème conserve le même contraste relatif partout. */
+  color: color-mix(in srgb, currentColor 55%, transparent);
   text-decoration: line-through;
 }
 
 .variantsy__caption {
-  font-size: 0.75rem;
+  font-size: 0.75em;
   line-height: 1.2;
   max-width: calc(var(--vtsy-size) + 24px);
   text-align: center;
@@ -222,7 +230,7 @@
   border-radius: var(--vtsy-radius);
   width: var(--vtsy-size);
   height: var(--vtsy-size);
-  font-size: 0.75rem;
+  font-size: 0.75em;
   cursor: pointer;
   color: inherit;
 }
@@ -389,4 +397,18 @@
 .variantsy__group--linked .variantsy__visual {
   background-size: cover;
   background-position: center;
+}
+
+/* --- Accent automatique ----------------------------------------------------
+   Quand le marchand laisse la couleur de sélection sur « auto », l'accent vaut
+   currentColor. Un fond plein en currentColor rendrait le texte illisible : il
+   faudrait l'inverser, et on ne connaît pas la couleur de fond du thème. On
+   remplace donc le fond plein par une TEINTE de la couleur du thème, lisible
+   du clair au sombre sans rien deviner.
+   -------------------------------------------------------------------------- */
+.variantsy[data-auto-accent="true"][data-control-selected="fill"]
+  .variantsy__group--text
+  .variantsy__swatch.is-selected {
+  background-color: color-mix(in srgb, currentColor 14%, transparent);
+  color: inherit;
 }
