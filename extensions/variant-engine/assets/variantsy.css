@@ -35,7 +35,10 @@
   display: flex;
   align-items: baseline;
   gap: 6px;
-  margin-bottom: 8px;
+  /* L'anneau de sélection déborde du gabarit de la pastille : à 8 px fixes, il
+     venait toucher le libellé. On réserve donc sa place, et le reste suit la
+     typographie du thème plutôt qu'une valeur en pixels. */
+  margin-bottom: calc(0.55em + var(--vtsy-selected-gap, 2px) + var(--vtsy-selected-width, 2px));
   font-size: 0.875em;
   line-height: 1.4;
 }

@@ -1127,7 +1127,12 @@ function ApercuRangee({ radius, accent }: { radius: string; accent: string }) {
 function ApparencePanel({ form, set }: PanelProps) {
   const radius =
     form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
-  const accent = form.selectedColor;
+  // « auto » est une consigne pour le storefront, pas une couleur CSS : passé
+  // tel quel dans `border: 2px solid ${accent}`, il produisait une déclaration
+  // invalide et la case sélectionnée perdait TOUT son liseré. L'admin ne peut
+  // pas connaître la couleur de texte du thème ; il montre donc ce que « auto »
+  // donne sur une boutique claire, le cas de très loin le plus courant.
+  const accent = estAuto(form.selectedColor) ? "#111111" : form.selectedColor;
   // Forme, taille, arrondi, style de sélection et repli de couleur n'ont
   // aucun effet sur des boutons texte ou une liste déroulante : les afficher
   // laisserait croire à un réglage sans conséquence.

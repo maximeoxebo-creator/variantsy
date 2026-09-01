@@ -40,15 +40,18 @@ export default function App() {
           onglets d'une page unique. Ne restent au menu que les deux OUTILS :
           une table de données et un inspecteur, qui ne se logent pas dans un
           onglet de réglages sans devenir illisibles. */}
-      {/* Une seule entrée : tout tient dans les onglets de la page.
-          L'inspecteur de produit et la bibliothèque de couleurs restent
-          accessibles par leur URL, mais ne s'imposent plus au menu — Shopify
-          fournissant désormais les couleurs de variantes nativement, la
-          bibliothèque ne sert plus qu'aux cas qu'il ne couvre pas. */}
+      {/* La bibliothèque de teintes est le SEUL endroit qui permette d'habiller
+          une option autre que la couleur — matière, finition, motif : elle est
+          indexée par nom d'option ET valeur, et accepte une image. Le
+          storefront le sait déjà (voir looksLikeColorOption), mais l'écran
+          n'était joignable que par son URL. Un réglage qu'on ne trouve pas
+          n'existe pas. */}
       <NavMenu>
         <Link to="/app" rel="home">
           Variantsy
         </Link>
+        <Link to="/app/swatches">Color library</Link>
+        <Link to="/app/images">Inspect a product</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
