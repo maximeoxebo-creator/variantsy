@@ -1680,6 +1680,39 @@ section("Le panier reçoit la variante choisie");
   await pageVoleuse.close();
 }
 
+section("Le panier survit à un thème qui recompose sa fiche");
+{
+  // Dawn, Savor et la plupart des thèmes récents ne réécrivent pas l'input :
+  // ils REMPLACENT le formulaire par du HTML re-rendu côté serveur. Une valeur
+  // reposée sur l'ancien élément tombe alors dans le vide, l'ancien nœud étant
+  // détaché du document.
+  const pageRendue = await openPage(PRODUCT, PRODUCT.variants[0]);
+  await pageRendue.evaluate(() => {
+    document.querySelectorAll("select, input[type=radio]").forEach((el) => {
+      el.addEventListener("change", () => {
+        setTimeout(() => {
+          const ancien = document.querySelector("form[action*='/cart/add']");
+          if (!ancien) return;
+          const neuf = ancien.cloneNode(true);
+          neuf.querySelector('input[name="id"]').value = "999";
+          ancien.replaceWith(neuf);
+        }, 80);
+      });
+    });
+  });
+  const couleur = PRODUCT.options[0].values.find((v) => v !== PRODUCT.variants[0].o[0]);
+  await pageRendue.click(`.variantsy__swatch[data-variantsy-value="${couleur}"]`);
+  await pageRendue.waitForTimeout(500);
+  const idFinal = await pageRendue.locator('form input[name="id"]').inputValue();
+  const attenduFinal = String(PRODUCT.variants.find((v) => v.o[0] === couleur).id);
+  check(
+    "Un formulaire remplacé reçoit quand même la bonne variante",
+    idFinal === attenduFinal,
+    `panier=${idFinal} attendu=${attenduFinal}`,
+  );
+  await pageRendue.close();
+}
+
 section("Santé générale");
 check("Aucune erreur JS sur l'ensemble des scénarios", consoleErrors.length === 0, consoleErrors.join(" | "));
 

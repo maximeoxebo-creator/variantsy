@@ -1751,22 +1751,51 @@
    * Filet de sécurité ultime : même si le thème ignore tous nos événements, le
    * panier reçoit la bonne variante.
    */
+  /**
+   * Le champ que Shopify lit à l'ajout au panier, RE-CHERCHÉ à chaque appel.
+   *
+   * Garder une référence ne marche pas : Dawn, Savor et la plupart des thèmes
+   * récents ne réécrivent pas l'input, ils REMPLACENT le formulaire par du HTML
+   * re-rendu côté serveur. La référence pointe alors un nœud détaché du
+   * document, et tout ce qu'on y écrit tombe dans le vide.
+   */
+  Variantsy.prototype.champPanier = function () {
+    var form = this.findForm();
+    if (!form) return null;
+    return (
+      form.querySelector('input[name="id"]') || form.querySelector('select[name="id"]')
+    );
+  };
+
   Variantsy.prototype.updateForm = function (variant) {
-    if (!this.form) return;
-    var input =
-      this.form.querySelector('input[name="id"]') || this.form.querySelector('select[name="id"]');
+    var self = this;
+    var attendu = String(variant.id);
+
+    // Reposer la valeur, en retrouvant le champ à chaque fois. Deux échéances :
+    // le tick suivant pour un thème synchrone, un quart de seconde plus tard
+    // pour celui qui recompose sa fiche après un aller-retour réseau. C'est
+    // notre valeur qui doit gagner : nous seuls savons sur quelle pastille
+    // l'acheteur a cliqué.
+    var reposer = function () {
+      // Une reprise différée doit EXPIRER si l'acheteur a cliqué entre-temps :
+      // sans ce garde, la valeur d'un clic précédent revenait écraser le clic
+      // suivant un quart de seconde plus tard. `data-current-variant` est posé
+      // par applyVariant à chaque changement : c'est notre horloge.
+      if (self.root.getAttribute("data-current-variant") !== attendu) return;
+      var champ = self.champPanier();
+      if (champ && champ.value !== attendu) champ.value = attendu;
+    };
+
+    var input = this.champPanier();
     if (input) {
-      input.value = String(variant.id);
+      input.value = attendu;
       input.dispatchEvent(new Event("change", { bubbles: true }));
-      // Certains thèmes recalculent la variante de façon ASYNCHRONE — une
-      // requête vers /variants/xxx.js, un rendu de section — et réécrivent
-      // l'input après nous. On repose donc notre valeur au tick suivant.
-      setTimeout(function () {
-        if (input.value !== String(variant.id)) input.value = String(variant.id);
-      }, 0);
+      setTimeout(reposer, 0);
+      setTimeout(reposer, 250);
     }
 
-    var button = this.form.querySelector('[type="submit"], [name="add"]');
+    var form = this.findForm();
+    var button = form && form.querySelector('[type="submit"], [name="add"]');
     if (button) {
       button.disabled = !variant.a;
       var label = button.querySelector("span") || button;
@@ -1774,10 +1803,6 @@
         if (!button.getAttribute("data-variantsy-label")) {
           button.setAttribute("data-variantsy-label", label.textContent.trim());
         }
-        // « Sold out » est la formulation de Shopify et des thèmes officiels.
-        // Le libellé d'origine du thème est conservé dans un attribut et
-        // rétabli dès qu'une variante disponible est choisie : on n'écrase
-        // jamais définitivement le texte du marchand.
         label.textContent = "Sold out";
       } else if (button.getAttribute("data-variantsy-label")) {
         label.textContent = button.getAttribute("data-variantsy-label");
