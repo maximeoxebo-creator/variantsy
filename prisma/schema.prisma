@@ -129,6 +129,10 @@ model ShopSettings {
   showLabels           Boolean @default(false)
   /// Afficher "Couleur : Bleu marine" au-dessus des swatches
   showOptionName       Boolean @default(true)
+  /// Mettre la VALEUR en gras dans ce libellé (« Bleu marine »). Vrai reproduit
+  /// le comportement d'avant ce réglage ; faux laisse la graisse du thème, ce
+  /// que préfèrent les mises en page éditoriales où tout est déjà contrasté.
+  labelValueBold       Boolean @default(true)
   /// Nombre max de swatches avant repli "+N"
   maxVisible           Int     @default(0)
 

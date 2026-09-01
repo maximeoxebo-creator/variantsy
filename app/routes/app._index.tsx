@@ -138,6 +138,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     photoScale: Math.min(220, Math.max(100, int("photoScale", DEFAULT_SETTINGS.photoScale))),
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
+    labelValueBold: bool("labelValueBold"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
     hideNativeSelector: bool("hideNativeSelector"),
     nativeSelectorCss: str("nativeSelectorCss", ""),
@@ -210,7 +211,8 @@ const CLES_STYLE = [
   "selectedColor", "selectedWidth", "selectedGap", "cornerRadius", "displayMode",
   "otherDisplayMode", "controlRadius", "controlSelectedStyle", "dropdownFullWidth",
   "swatchFallback",
-  "photoScale", "neutralColor", "showLabels", "showOptionName", "maxVisible",
+  "photoScale", "neutralColor", "showLabels", "showOptionName", "labelValueBold",
+  "maxVisible",
   "customCss",
 ] as const;
 
@@ -1648,6 +1650,16 @@ function ApparencePanel({ form, set }: PanelProps) {
             checked={form.showOptionName}
             onChange={(v) => set("showOptionName", v)}
           />
+          {/* Dépend de la ligne ci-dessus : sans elle, la valeur ne s'affiche
+              nulle part et le réglage n'aurait aucun effet visible. */}
+          {form.showOptionName && (
+            <Checkbox
+              label="Show the value in bold"
+              checked={form.labelValueBold}
+              onChange={(v) => set("labelValueBold", v)}
+              helpText="Off, the value keeps your theme's own weight — which reads better on a page where everything is already contrasted."
+            />
+          )}
         </BlockStack>
 
       </Bloc>

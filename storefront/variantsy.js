@@ -1367,6 +1367,7 @@
     // « auto » laisse la liste se dimensionner sur son contenu ; « 100% »
     // l'étend à la largeur disponible.
     v.setProperty("--vtsy-control-width", style.dropdownFullWidth ? "100%" : "auto");
+    v.setProperty("--vtsy-label-weight", style.labelValueBold === false ? "inherit" : "600");
     v.setProperty(
       "--vtsy-radius",
       style.shape === "square"

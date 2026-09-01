@@ -62,6 +62,7 @@ export function styleEnCss(style: Style): string {
       : [`--vtsy-selected-contrast:${contrasteSur(style.selectedColor)}`]),
     `--vtsy-control-width:${style.dropdownFullWidth ? "100%" : "auto"}`,
     `--vtsy-radius:${rayon(style)}`,
+    `--vtsy-label-weight:${style.labelValueBold === false ? "inherit" : "600"}`,
   ].join(";");
 }
 

@@ -20,6 +20,7 @@
   --vtsy-control-radius: 6px;
   --vtsy-control-width: 320px;
   --vtsy-radius: 50%;
+  --vtsy-label-weight: 600;
 
   display: block;
   margin: 16px 0;
@@ -48,7 +49,10 @@
 }
 
 .variantsy__label-value {
-  font-weight: 600;
+  /* « inherit » quand le marchand refuse le gras : la valeur prend alors la
+     graisse du thème, ce que préfèrent les mises en page éditoriales où tout
+     est déjà contrasté. */
+  font-weight: var(--vtsy-label-weight, 600);
 }
 
 .variantsy__options {

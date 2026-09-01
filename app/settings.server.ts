@@ -35,6 +35,7 @@ export type SettingsInput = {
   neutralColor: string;
   showLabels: boolean;
   showOptionName: boolean;
+  labelValueBold: boolean;
   maxVisible: number;
   soldOutStyle: string;
   hideNativeSelector: boolean;
@@ -80,6 +81,7 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   neutralColor: "#ECECEC",
   showLabels: false,
   showOptionName: true,
+  labelValueBold: true,
   maxVisible: 0,
   soldOutStyle: "strikethrough",
   hideNativeSelector: true,
@@ -219,6 +221,7 @@ export type StorefrontConfig = {
     neutralColor: string;
     showLabels: boolean;
     showOptionName: boolean;
+    labelValueBold: boolean;
     maxVisible: number;
     customCss: string;
   };
@@ -309,6 +312,7 @@ export function toStorefrontConfig(
     neutralColor: settings.neutralColor,
     showLabels: settings.showLabels,
     showOptionName: settings.showOptionName,
+    labelValueBold: settings.labelValueBold,
     maxVisible: settings.maxVisible,
     customCss: settings.customCss,
   };
