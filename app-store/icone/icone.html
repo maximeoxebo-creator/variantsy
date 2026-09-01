@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+/* Icône Variantsy, 1200 × 1200.
+   Reconstruite en HTML pour redevenir modifiable : la précédente vivait dans un
+   canvas de design qu'on ne pouvait plus reprendre.
+
+   Le grief à corriger : les variantes d'arrière-plan ne se voyaient pas, et le
+   fond était trop sombre. Elles deviennent donc de vraies FICHES COLORÉES —
+   beige et argile, les coloris de l'app — au lieu de fantômes gris. */
+* { margin:0; padding:0; box-sizing:border-box; }
+.icone {
+  position: relative;
+  width: 1200px; height: 1200px;
+  display: grid; place-items: center;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+.scene { position: relative; width: 900px; height: 900px; display:grid; place-items:center; }
+
+/* Les deux fiches sœurs, DERRIÈRE. Inclinées et décalées, elles disent
+   « plusieurs coloris du même article ». */
+.fiche {
+  position: absolute; top: 150px;
+  width: 430px; height: 470px;
+  border-radius: 76px;
+  display: grid; place-items: center;
+  box-shadow: 0 40px 90px rgba(0,0,0,.34);
+}
+.fiche.g { left: 0;  transform: rotate(-9deg); }
+.fiche.d { right: 0; transform: rotate(9deg); }
+
+/* La fiche de tête : le coloris choisi. */
+.tete {
+  position: relative; z-index: 3;
+  width: 470px; height: 470px;
+  border-radius: 104px;
+  display: grid; place-items: center;
+  background: linear-gradient(140deg, #6E8CFF 0%, #7B6BF0 52%, #A96BF0 100%);
+  box-shadow: 0 44px 110px rgba(60,80,220,.46), inset 0 2px 0 rgba(255,255,255,.28);
+}
+svg { display:block; }
+
+/* Le sélecteur, en bas : trois coloris, celui de la fiche entouré. */
+.rangee {
+  position: absolute; bottom: 96px; left: 0; right: 0;
+  display: flex; justify-content: center; align-items: center; gap: 44px;
+  z-index: 4;
+}
+.pastille { width: 84px; height: 84px; border-radius: 50%; }
+.pastille.on {
+  background: linear-gradient(140deg, #6E8CFF, #A96BF0);
+  box-shadow: 0 0 0 10px var(--fond-anneau), 0 0 0 20px #8E86F5;
+}
+</style></head><body>
+<div class="icone" id="cible"></div>
+<script>
+const TEE = (couleur, taille) => `
+<svg width="${taille}" height="${taille}" viewBox="0 0 48 48" fill="none">
+  <path d="M17.5 6 L9 10.5 L5.5 20 L12 22.5 L13 18 L13 43 L35 43 L35 18 L36 22.5 L42.5 20 L39 10.5 L30.5 6
+           C30.5 11.5 17.5 11.5 17.5 6 Z"
+        stroke="${couleur}" stroke-width="3.1" stroke-linejoin="round" fill="none"/>
+</svg>`;
+
+// Trois niveaux de luminosité de fond, du plus sombre au plus clair.
+const VARIANTES = {
+  A: { fond: "radial-gradient(120% 100% at 50% 18%, #26305A 0%, #171E38 55%, #10152A 100%)",
+       beige: "#C9B48D", argile: "#B96A4E", opacite: .92, anneau: "#171E38" },
+  B: { fond: "radial-gradient(120% 100% at 50% 18%, #38447A 0%, #232C52 55%, #19203C 100%)",
+       beige: "#D8C3A5", argile: "#C1614B", opacite: 1, anneau: "#232C52" },
+  C: { fond: "radial-gradient(120% 100% at 50% 18%, #4C5A96 0%, #333E६E 55%, #262E55 100%)".replace("६","6"),
+       beige: "#E2D0B4", argile: "#CE7358", opacite: 1, anneau: "#333E6E" },
+};
+
+const v = VARIANTES[new URLSearchParams(location.search).get("v") || "B"];
+document.getElementById("cible").style.background = v.fond;
+document.getElementById("cible").style.setProperty("--fond-anneau", v.anneau);
+document.getElementById("cible").innerHTML = `
+  <div class="scene">
+    <div class="fiche g" style="background:${v.beige};opacity:${v.opacite}">${TEE("rgba(0,0,0,.30)", 210)}</div>
+    <div class="fiche d" style="background:${v.argile};opacity:${v.opacite}">${TEE("rgba(255,255,255,.62)", 210)}</div>
+    <div class="tete">${TEE("#FFFFFF", 250)}</div>
+    <div class="rangee">
+      <span class="pastille" style="background:${v.beige}"></span>
+      <span class="pastille on"></span>
+      <span class="pastille" style="background:${v.argile}"></span>
+    </div>
+  </div>`;
+</script></body></html>
