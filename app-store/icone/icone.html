@@ -79,17 +79,58 @@ const VARIANTES = {
   A: { fond:"#131A33", halo:.42, voile:.34 },
   B: { fond:"#1C2547", halo:.50, voile:.40 },
   C: { fond:"#2A3568", halo:.58, voile:.46 },
+  // Mode clair. Sur fond blanc, une plaque de verre ne se lit plus par son
+  // arête éclairée — le fond est déjà lumineux — mais par son OMBRE PORTÉE et
+  // par la teinte qu'elle laisse passer. Les réglages s'inversent donc :
+  // ombres plus présentes, voile plus dense, halos discrets.
+  LA: { fond:"#F2F3F8", halo:.30, voile:.50, clair:true },
+  LB: { fond:"#EDEFF6", halo:.38, voile:.56, clair:true },
+  LC: { fond:"#E4E7F2", halo:.46, voile:.62, clair:true },
 };
 const v = VARIANTES[new URLSearchParams(location.search).get("v") || "B"];
 
 const cible = document.getElementById("cible");
 cible.style.background = v.fond;
+
+if (v.clair) {
+  const style = document.createElement("style");
+  style.textContent = `
+    .fiche {
+      box-shadow:
+        inset 0 2px 1px rgba(255,255,255,.85),
+        inset 0 -1px 1px rgba(0,0,0,.06),
+        0 26px 56px rgba(40,50,90,.20);
+    }
+    .tete {
+      box-shadow:
+        inset 0 3px 2px rgba(255,255,255,.75),
+        inset 0 -3px 2px rgba(0,0,0,.10),
+        0 30px 70px rgba(70,90,230,.34);
+    }
+    .pastille {
+      box-shadow:
+        inset 0 2px 1px rgba(255,255,255,.75),
+        0 6px 16px rgba(40,50,90,.16);
+    }
+    .pastille.on {
+      box-shadow:
+        inset 0 2px 1px rgba(255,255,255,.80),
+        0 0 0 10px rgba(255,255,255,.85),
+        0 0 0 20px rgba(120,110,240,.55),
+        0 6px 18px rgba(40,50,90,.18);
+    }
+    /* Le reflet doit s'effacer : sur fond clair il blanchissait la plaque. */
+    .fiche::after, .tete::after {
+      background: linear-gradient(150deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.04) 30%, transparent 52%);
+    }`;
+  document.head.appendChild(style);
+}
 cible.innerHTML = `
   <span class="halo" style="width:470px;height:470px;left:110px;top:250px;background:#E4CFA9;opacity:${v.halo}"></span>
   <span class="halo" style="width:470px;height:470px;right:110px;top:250px;background:#D46A4E;opacity:${v.halo}"></span>
   <span class="halo" style="width:560px;height:560px;left:320px;bottom:60px;background:#6E8CFF;opacity:${v.halo * 0.9}"></span>
   <div class="scene">
-    <div class="fiche g" style="background:rgba(216,195,165,${v.voile + 0.30})">${TEE("rgba(60,40,20,.55)", 210)}</div>
+    <div class="fiche g" style="background:rgba(216,195,165,${v.voile + 0.30})">${TEE(v.clair ? "rgba(90,65,35,.70)" : "rgba(60,40,20,.55)", 210)}</div>
     <div class="fiche d" style="background:rgba(193,97,75,${v.voile + 0.30})">${TEE("rgba(255,240,235,.80)", 210)}</div>
     <div class="tete">${TEE("#FFFFFF", 250)}</div>
     <div class="rangee">
