@@ -1158,7 +1158,11 @@ function ApparencePanel({ form, set }: PanelProps) {
   // laisserait croire à un réglage sans conséquence.
   const enPastilles = form.displayMode === "swatch";
 
-  const suitLeTheme = estAuto(form.borderColor) && estAuto(form.selectedColor);
+  // La typographie fait autant que la couleur : un sélecteur aux bonnes teintes
+  // mais dont le titre est plus petit que « Quantité » juste en dessous ne
+  // ressemble toujours pas au thème.
+  const suitLeTheme =
+    estAuto(form.borderColor) && estAuto(form.selectedColor) && form.labelSize === "auto";
 
   return (
     <BlockStack gap="600">
@@ -1172,8 +1176,9 @@ function ApparencePanel({ form, set }: PanelProps) {
           onChange={(coche) => {
             set("borderColor" as never, (coche ? "auto" : "#D9D9D9") as never);
             set("selectedColor" as never, (coche ? "auto" : "#111111") as never);
+            set("labelSize" as never, (coche ? "auto" : "l") as never);
           }}
-          helpText="Borders and the selected state follow your theme's own text color, so the selector reads correctly on a light store as well as a dark one. Uncheck to pick your own shades."
+          helpText="Borders, the selected state and the option titles follow your theme: the colors come from its text color, and the title size is measured on your theme's own labels. Uncheck to set your own."
         />
       </Card>
 
@@ -1697,6 +1702,7 @@ function ApparencePanel({ form, set }: PanelProps) {
               <Select
                 label="Option name size"
                 options={[
+                  { label: "Match my theme", value: "auto" },
                   { label: "Small", value: "s" },
                   { label: "Medium", value: "m" },
                   { label: "Large", value: "l" },
@@ -1704,7 +1710,7 @@ function ApparencePanel({ form, set }: PanelProps) {
                 ]}
                 value={form.labelSize}
                 onChange={(v: string) => set("labelSize", v)}
-                helpText="Relative to your theme's own text, so it scales with it. Themes treat an option name as a section heading — that is why Large is the default."
+                helpText="Match my theme reads the size off your theme's own option titles, so Variantsy sits at the same level as the labels around it. The other sizes are relative to your theme's text."
               />
               <Checkbox
                 label="Option name in bold"

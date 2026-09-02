@@ -87,6 +87,10 @@ export function styleEnCss(style: Style): string {
     `--vtsy-control-width:${style.dropdownFullWidth ? "100%" : "auto"}`,
     `--vtsy-radius:${rayon(style)}`,
     `--vtsy-label-weight:${style.labelValueBold ? "600" : "inherit"}`,
+    // « auto » ne peut pas être calculé ici : la taille est RELEVÉE sur le
+    // thème, dans le navigateur. On peint donc au plus proche — 1.5em, le
+    // gabarit d'un titre d'option — et le JS ajuste au pixel. Le repli vaut
+    // aussi si le script n'arrive jamais.
     `--vtsy-label-size:${TAILLES[style.labelSize] ?? "1.5em"}`,
     `--vtsy-label-name-weight:${style.labelNameBold === false ? "inherit" : "600"}`,
   ].join(";");

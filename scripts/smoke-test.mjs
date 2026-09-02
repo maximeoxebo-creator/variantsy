@@ -303,6 +303,12 @@ function buildHtml(product, currentVariant, options = {}) {
 
       <form action="/cart/add" method="post">
         <input type="hidden" name="id" value="${currentVariant.id}">
+        <!-- Tous les thèmes titrent leur champ de quantité. C'est le seul titre
+             du formulaire que Variantsy ne remplace jamais, donc sa référence
+             de dernier recours pour se mettre au diapason. -->
+        <label class="quantity__label" for="Quantity-1"
+               style="font-size: 27px; font-weight: 700">Quantité</label>
+        <input id="Quantity-1" name="quantity" value="1">
         <button type="submit" name="add"><span>Ajouter au panier</span></button>
       </form>
     </div>
@@ -1831,6 +1837,117 @@ section("Pastille tirée d'un fichier nommé");
     JSON.stringify(etat.seconde),
   );
   await pageFichiers.close();
+}
+
+section("Titre d'option a la taille du theme");
+{
+  // Le reproche du marchand : « Couleur » plus petit que « Quantite » pose
+  // juste en dessous. Un multiple de la taille heritee ne pouvait pas y
+  // repondre — les themes dimensionnent ces titres a l'absolu.
+  const lireTaille = (page) =>
+    page.evaluate(() =>
+      window.getComputedStyle(document.querySelector(".variantsy__label")).fontSize,
+    );
+
+  const pageAuto = await openPage(PRODUCT, PRODUCT.variants[0], {
+    style: { labelSize: "auto" },
+  });
+  const auto = await lireTaille(pageAuto);
+  check(
+    "« auto » releve la taille du titre du theme",
+    Math.abs(parseFloat(auto) - 27) < 0.5,
+    `mesure=${auto} attendu=27px`,
+  );
+  await pageAuto.close();
+
+  const pageFixe = await openPage(PRODUCT, PRODUCT.variants[0], {
+    style: { labelSize: "m" },
+  });
+  const fixe = await lireTaille(pageFixe);
+  check(
+    "Une taille choisie a la main reste maitresse",
+    Math.abs(parseFloat(fixe) - 27) > 1,
+    `mesure=${fixe}`,
+  );
+  await pageFixe.close();
+}
+
+section("Garde reseau : le theme envoie SA variante");
+{
+  // Le cas rencontre en boutique. Variantsy masque le selecteur natif, donc
+  // l'etat du theme ne bouge jamais : il envoie la premiere variante, quelle
+  // que soit la pastille cliquee, et sans jamais lire le formulaire. Aucune
+  // des couches precedentes ne pouvait l'attraper.
+  const PERIMEE = PRODUCT.variants[0].id;
+  const VOULUE = PRODUCT.variants.find((v) => v.o[0] !== PRODUCT.variants[0].o[0]);
+
+  const scenario = async ({ corps, quickAdd }) => {
+    const page = await openPage(PRODUCT, PRODUCT.variants[0], {});
+    let envoye = null;
+    await page.route("**/cart/add.js", (route) => {
+      envoye = route.request().postData();
+      return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    });
+    await page.evaluate(
+      ([perimee, corps, quickAdd]) => {
+        if (quickAdd) {
+          // Un ajout rapide de vignette, pose ailleurs sur la page.
+          const carte = document.createElement("div");
+          carte.className = "card";
+          carte.innerHTML =
+            '<form action="/cart/add" method="post"><button name="add" id="rapide">+</button></form>';
+          document.body.appendChild(carte);
+        }
+        const bouton = document.querySelector(quickAdd ? "#rapide" : 'form[action*="/cart/add"] [name="add"]');
+        bouton.addEventListener("click", (event) => {
+          event.preventDefault();
+          // Le theme ignore le formulaire : il envoie son propre etat.
+          if (corps === "json") {
+            fetch("/cart/add.js", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ items: [{ id: perimee, quantity: 1 }] }),
+            });
+          } else {
+            const data = new FormData();
+            data.append("id", String(perimee));
+            data.append("quantity", "1");
+            fetch("/cart/add.js", { method: "POST", body: data });
+          }
+        });
+      },
+      [PERIMEE, corps, quickAdd],
+    );
+    if (!quickAdd) {
+      await page.click(`.variantsy__swatch[data-variantsy-value="${VOULUE.o[0]}"]`);
+      await page.waitForTimeout(120);
+    }
+    await page.click(quickAdd ? "#rapide" : 'form[action*="/cart/add"] [name="add"]');
+    await page.waitForTimeout(200);
+    await page.close();
+    return envoye || "";
+  };
+
+  const json = await scenario({ corps: "json" });
+  check(
+    "Corps JSON : la variante choisie remplace celle du theme",
+    json.includes(String(VOULUE.id)) && !json.includes(String(PERIMEE)),
+    `envoye=${json} attendu=${VOULUE.id}`,
+  );
+
+  const form = await scenario({ corps: "formdata" });
+  check(
+    "Corps FormData : la variante choisie remplace celle du theme",
+    form.includes(String(VOULUE.id)) && !form.includes(String(PERIMEE)),
+    `envoye=${form} attendu=${VOULUE.id}`,
+  );
+
+  const rapide = await scenario({ corps: "json", quickAdd: true });
+  check(
+    "Un ajout rapide de vignette n'est PAS reecrit",
+    rapide.includes(String(PERIMEE)),
+    `envoye=${rapide} attendu=${PERIMEE}`,
+  );
 }
 
 section("Fiches soeurs : le fichier nommé passe devant la couleur");

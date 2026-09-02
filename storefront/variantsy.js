@@ -33,6 +33,8 @@
   var CACHE_KEY = "variantsy:config:v3";
   var CACHE_TTL = 5 * 60 * 1000; // 5 min côté navigateur, 60 s côté CDN
   var HIDDEN_CLASS = "variantsy-media-hidden";
+  /** Le champ où le thème range la variante à mettre au panier. */
+  var CHAMP_ID = 'input[name="id"],select[name="id"]';
 
   var DEFAULT_CONFIG = {
     v: 1,
@@ -107,6 +109,15 @@
    * silence : la r\u00e8gle enti\u00e8re est ignor\u00e9e et le style part en vrille sans la
    * moindre erreur en console.
    */
+  /**
+   * Unique canal de diagnostic. Les libellés restent courts : sur la boutique
+   * d'un marchand, c'est l'ERREUR qui renseigne, pas la phrase qui l'annonce —
+   * et chaque phrase pèse sur un budget que Shopify plafonne.
+   */
+  function alerte(quoi, error) {
+    console.warn("[Variantsy] " + quoi, error);
+  }
+
   function num(value, fallback) {
     var n = Number(value);
     return isFinite(n) ? n : fallback;
@@ -330,7 +341,7 @@
       })
       .catch(function (error) {
         clearTimeout(timeout);
-        console.warn("[Variantsy] configuration indisponible, valeurs par défaut appliquées", error);
+        alerte("config", error);
         return DEFAULT_CONFIG;
       });
   }
@@ -880,22 +891,34 @@
    * remplace jamais le balisage d'origine : une vente ne doit pas dépendre de
    * la réussite de ce code.
    */
+  /**
+   * La liste déroulante d'une rangée, créée au premier passage puis réutilisée.
+   *
+   * Les deux modes déroulants — variantes et produits liés — ne different que
+   * par ce qu'ils font du choix : l'un sélectionne, l'autre navigue. Tout le
+   * reste était écrit deux fois.
+   */
+  function assurerSelect(group, auChangement) {
+    var select = group.querySelector(".variantsy__select");
+    if (select) return select;
+    select = document.createElement("select");
+    select.className = "variantsy__select";
+    select.setAttribute("aria-label", group.getAttribute("data-option-name") || "");
+    select.addEventListener("change", function () {
+      auChangement(select.value);
+    });
+    var host = group.querySelector(".variantsy__options") || group;
+    host.parentNode.insertBefore(select, host.nextSibling);
+    return select;
+  }
+
   Variantsy.prototype.buildDropdown = function (group, position) {
     var self = this;
-    var existing = group.querySelector(".variantsy__select");
     var buttons = group.querySelectorAll(".variantsy__swatch");
     var current = this.selection[position - 1];
-
-    if (!existing) {
-      existing = document.createElement("select");
-      existing.className = "variantsy__select";
-      existing.setAttribute("aria-label", group.getAttribute("data-option-name") || "");
-      existing.addEventListener("change", function () {
-        self.select(position, existing.value);
-      });
-      var host = group.querySelector(".variantsy__options") || group;
-      host.parentNode.insertBefore(existing, host.nextSibling);
-    }
+    var existing = assurerSelect(group, function (valeur) {
+      self.select(position, valeur);
+    });
 
     // On reconstruit les options à chaque passage : la disponibilité change
     // avec les autres sélections, et un choix devenu impossible doit le dire.
@@ -924,17 +947,9 @@
     var liens = group.querySelectorAll(".variantsy__swatch");
     if (!liens.length) return;
 
-    var existing = group.querySelector(".variantsy__select");
-    if (!existing) {
-      existing = document.createElement("select");
-      existing.className = "variantsy__select";
-      existing.setAttribute("aria-label", group.getAttribute("data-option-name") || "");
-      existing.addEventListener("change", function () {
-        if (existing.value) window.location.href = existing.value;
-      });
-      var host = group.querySelector(".variantsy__options") || group;
-      host.parentNode.insertBefore(existing, host.nextSibling);
-    }
+    var existing = assurerSelect(group, function (adresse) {
+      if (adresse) window.location.href = adresse;
+    });
 
     existing.innerHTML = "";
     Array.prototype.forEach.call(liens, function (lien) {
@@ -1387,10 +1402,16 @@
     v.setProperty("--vtsy-control-width", style.dropdownFullWidth ? "100%" : "auto");
     var TAILLES = { s: "1em", m: "1.25em", l: "1.5em", xl: "1.85em" };
     v.setProperty("--vtsy-label-weight", style.labelValueBold ? "600" : "inherit");
-    v.setProperty("--vtsy-label-size", TAILLES[style.labelSize] || "1.25em");
+    // « auto » : la taille est celle du thème, relevée sur la page. Une mesure
+    // impossible retombe sur le multiple, jamais sur rien.
+    var mesure = style.labelSize === "auto" ? mesurerTitreTheme(document) : null;
+    v.setProperty(
+      "--vtsy-label-size",
+      mesure ? mesure.taille + "px" : TAILLES[style.labelSize] || "1.25em",
+    );
     v.setProperty(
       "--vtsy-label-name-weight",
-      style.labelNameBold === false ? "inherit" : "600",
+      style.labelNameBold === false ? "inherit" : (mesure && mesure.graisse) || "600",
     );
     v.setProperty(
       "--vtsy-radius",
@@ -1400,6 +1421,13 @@
           ? num(style.cornerRadius, 8) + "px"
           : "50%",
     );
+  }
+
+  /** Les trois classes qui disent COMMENT une rangée s'affiche. */
+  function poserMode(group, asSwatch, enListe) {
+    group.classList.toggle("variantsy__group--color", asSwatch);
+    group.classList.toggle("variantsy__group--text", !asSwatch);
+    group.classList.toggle("variantsy__group--dropdown", enListe);
   }
 
   Variantsy.prototype.paint = function () {
@@ -1436,9 +1464,7 @@
       var asSwatch = isColor && mode === "swatch";
       var enListe = mode === "dropdown";
 
-      group.classList.toggle("variantsy__group--color", asSwatch);
-      group.classList.toggle("variantsy__group--text", !asSwatch);
-      group.classList.toggle("variantsy__group--dropdown", enListe);
+      poserMode(group, asSwatch, enListe);
       if (enListe) self.buildDropdown(group, position);
 
       var labelValue = group.querySelector("[data-variantsy-current-value]");
@@ -1491,9 +1517,7 @@
       var mode = styleLie.displayMode || "swatch";
       var asSwatch = mode === "swatch";
 
-      group.classList.toggle("variantsy__group--color", asSwatch);
-      group.classList.toggle("variantsy__group--text", !asSwatch);
-      group.classList.toggle("variantsy__group--dropdown", mode === "dropdown");
+      poserMode(group, asSwatch, mode === "dropdown");
       if (mode === "dropdown") self.buildDropdownLie(group);
 
       Array.prototype.forEach.call(
@@ -1530,6 +1554,141 @@
 
     if (style.customCss) this.injectCustomCss(style.customCss);
   };
+
+  /**
+   * Mesure le titre d'option du thème, pour lui emprunter sa taille.
+   *
+   * Un multiple de la taille héritée — 1.25em — ne suffit pas : les thèmes
+   * dimensionnent ces titres à l'absolu, et Variantsy se retrouvait plus petit
+   * que « Quantité » posé juste en dessous. On lit donc la vraie valeur.
+   *
+   * Le sélecteur natif est masqué, mais `font-size` se résout SANS mise en
+   * page : la mesure reste bonne même sur un élément non affiché. À défaut, on
+   * se rabat sur le libellé de quantité, seul titre du formulaire que
+   * Variantsy ne remplace jamais.
+   */
+  function mesurerTitreTheme(scope) {
+    // Le titre d'option du thème d'abord : c'est le même rôle, donc la même
+    // taille. À défaut, le libellé de quantité — seul titre du formulaire que
+    // Variantsy ne remplace jamais.
+    // Les deux repères sont HORS de notre bloc par construction : le sélecteur
+    // natif est celui que Variantsy remplace, la quantité celui qu'il ne touche
+    // jamais.
+    var natif = queryFirst(scope, NATIVE_SELECTORS, "");
+    var reperes = [
+      natif && natif.querySelector("legend, label, .form__label"),
+      scope.querySelector('.quantity__label, label[for*="Quantity" i]'),
+    ];
+    for (var i = 0; i < reperes.length; i++) {
+      if (!reperes[i]) continue;
+      var lu = window.getComputedStyle(reperes[i]);
+      var taille = parseFloat(lu.fontSize);
+      // Une valeur aberrante trahit un élément qui n'est pas un titre : mieux
+      // vaut le réglage du marchand qu'une mesure douteuse.
+      if (taille >= 10 && taille <= 60) return { taille: taille, graisse: lu.fontWeight };
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Garde réseau                                                           */
+  /* ---------------------------------------------------------------------- */
+
+  // Instances vivantes de la page. Le garde est posé UNE fois sur `fetch` et
+  // `XMLHttpRequest`, et interroge cette liste au moment du départ.
+  var instancesVivantes = [];
+  var gardePose = false;
+
+  /**
+   * Corrige l'identifiant de variante au moment où la requête part.
+   *
+   * Les couches précédentes — champ du formulaire, sélecteur natif, écoute du
+   * `submit` en capture — supposent toutes que le thème lit le formulaire. Ce
+   * n'est pas toujours vrai : certains thèmes gardent LEUR variante courante
+   * dans un composant et bâtissent `{items:[{id}]}` sans jamais regarder le
+   * DOM. Comme Variantsy masque le sélecteur natif, l'état de ce thème n'a
+   * jamais bougé : il envoie donc la première variante, quelle que soit la
+   * pastille cliquée.
+   *
+   * Ici on ne suppose plus rien. On regarde ce qui part vraiment.
+   *
+   * Deux verrous pour ne corriger que ce qui doit l'être : l'identifiant envoyé
+   * doit appartenir AU PRODUIT de la fiche, et un ajout doit avoir été demandé
+   * depuis le formulaire de la fiche dans les deux dernières secondes — sans
+   * quoi un « ajout rapide » posé ailleurs sur la page se verrait réécrit.
+   */
+  function correctionAjout(ids) {
+    for (var i = 0; i < instancesVivantes.length; i++) {
+      var instance = instancesVivantes[i];
+      var attendu = instance.root.getAttribute("data-current-variant");
+      if (Date.now() - instance.dernierAjout > 2000) continue;
+      if (!attendu || !instance.idsProduit[attendu]) continue;
+      for (var j = 0; j < ids.length; j++) {
+        if (instance.idsProduit[String(ids[j])] && String(ids[j]) !== attendu) return attendu;
+      }
+    }
+    return null;
+  }
+
+  /** Réécrit l'identifiant dans un corps de requête, quelle qu'en soit la forme. */
+  function corrigerCorps(body) {
+    if (!body) return body;
+
+    // FormData et URLSearchParams exposent la même paire get/set.
+    if (typeof body.get === "function" && typeof body.set === "function") {
+      var lu = body.get("id");
+      var neufLu = lu && correctionAjout([lu]);
+      if (neufLu) body.set("id", neufLu);
+      return body;
+    }
+
+    if (typeof body !== "string") return body;
+    try {
+      // `{"id":123}` ou `{"items":[{"id":123}]}`.
+      if (body.charAt(0) === "{") {
+        var charge = JSON.parse(body);
+        var lignes = charge.items || [charge];
+        var neufJson = correctionAjout(
+          lignes.map(function (ligne) {
+            return ligne && ligne.id;
+          }),
+        );
+        if (!neufJson) return body;
+        lignes.forEach(function (ligne) {
+          ligne.id = Number(neufJson);
+        });
+        return JSON.stringify(charge);
+      }
+
+      // `id=123&quantity=1`.
+      var params = new URLSearchParams(body);
+      var neufTexte = params.get("id") && correctionAjout([params.get("id")]);
+      if (!neufTexte) return body;
+      params.set("id", neufTexte);
+      return params.toString();
+    } catch (error) {
+      // Un corps qu'on ne sait pas lire part tel quel : le garde ne doit jamais
+      // empêcher un ajout au panier.
+      return body;
+    }
+  }
+
+  function poserGardeReseau() {
+    if (gardePose || typeof window.fetch !== "function") return;
+    gardePose = true;
+    var fetchOrigine = window.fetch;
+    window.fetch = function (entree, options) {
+      try {
+        var url = typeof entree === "string" ? entree : entree && entree.url;
+        if (String(url).indexOf("/cart/add") !== -1 && options && options.body) {
+          options.body = corrigerCorps(options.body);
+        }
+      } catch (error) {
+        // Un garde qui échoue ne doit jamais empêcher l'ajout au panier.
+      }
+      return fetchOrigine.apply(this, arguments);
+    };
+  }
 
   /**
    * Adopte un fichier de la bibliothèque nommé d'après la valeur — mais
@@ -1790,7 +1949,7 @@
       } catch (error) {
         // Une étape qui échoue ne doit jamais empêcher les suivantes : le
         // formulaire compte plus que le titre, le titre plus que la galerie.
-        console.warn("[Variantsy] étape « " + steps[i][0] + " » en échec", error);
+        alerte(steps[i][0], error);
       }
     }
 
@@ -1817,9 +1976,7 @@
   Variantsy.prototype.champPanier = function () {
     var form = this.findForm();
     if (!form) return null;
-    return (
-      form.querySelector('input[name="id"]') || form.querySelector('select[name="id"]')
-    );
+    return form.querySelector(CHAMP_ID);
   };
 
   Variantsy.prototype.updateForm = function (variant) {
@@ -2073,9 +2230,33 @@
         if (!form.matches('form[action*="/cart/add"]')) return;
         var attendu = self.root.getAttribute("data-current-variant");
         if (!attendu) return;
-        var champ =
-          form.querySelector('input[name="id"]') || form.querySelector('select[name="id"]');
+        var champ = form.querySelector(CHAMP_ID);
         if (champ && champ.value !== attendu) champ.value = attendu;
+        self.dernierAjout = Date.now();
+      },
+      true,
+    );
+
+    /**
+     * Ouvre la fenêtre du garde réseau.
+     *
+     * On n'exige PAS que le clic vienne du formulaire d'ajout : sur un thème
+     * sur mesure, le bouton peut vivre ailleurs, et l'exiger rendait le garde
+     * inerte là où on en a le plus besoin. La fenêtre ne fait qu'autoriser une
+     * correction — le verrou qui compte reste l'autre : l'identifiant envoyé
+     * doit appartenir à cette fiche.
+     *
+     * Seul l'« ajout rapide » d'une vignette est exclu : lui seul pourrait
+     * envoyer la variante par défaut du MÊME produit sans que l'acheteur ait
+     * choisi quoi que ce soit.
+     */
+    document.addEventListener(
+      "click",
+      function (event) {
+        var cible = event.target;
+        if (!cible || typeof cible.closest !== "function") return;
+        if (cible.closest(".card, product-card, .quick-add, [data-quick-add]")) return;
+        self.dernierAjout = Date.now();
       },
       true,
     );
@@ -2160,11 +2341,22 @@
   };
 
   Variantsy.prototype.start = function () {
+    // Le garde réseau a besoin de savoir quelles variantes appartiennent à
+    // cette fiche : lui seul autorise une correction.
+    this.dernierAjout = 0;
+    this.idsProduit = {};
+    var self = this;
+    (this.product.variants || []).forEach(function (variant) {
+      self.idsProduit[String(variant.id)] = true;
+    });
+    instancesVivantes.push(this);
+    poserGardeReseau();
+
     this.groups = null;
     try {
       this.groups = computeGroups(this.product, this.config.gallery);
     } catch (error) {
-      console.warn("[Variantsy] groupage des images impossible", error);
+      alerte("groupage", error);
     }
     this.root.setAttribute("data-gallery-mode", this.groups ? "grouped" : "off");
 
@@ -2182,7 +2374,7 @@
       try {
         this.applyGallery(variant);
       } catch (error) {
-        console.warn("[Variantsy] filtrage initial impossible", error);
+        alerte("filtrage", error);
         this.restoreGallery();
       }
     }
@@ -2262,7 +2454,7 @@
         try {
           new Variantsy(root, config).start();
         } catch (error) {
-          console.error("[Variantsy] initialisation impossible", error);
+          alerte("init", error);
           root.removeAttribute("data-variantsy-ready");
         }
       });
