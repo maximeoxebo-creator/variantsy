@@ -198,14 +198,14 @@ export default function SwatchesPage() {
 
   return (
     <Page
-      title="Swatch library"
+      title="Color library"
       subtitle="Map every option value to a color or an image. The mapping applies to the whole store."
       primaryAction={{
-        content: "Importer depuis mes produits",
+        content: "Import from my products",
         onAction: runImport,
         loading: busy,
       }}
-      secondaryActions={[{ content: "Ajouter manuellement", onAction: () => setEditing({ kind: "color" }) }]}
+      secondaryActions={[{ content: "Add manually", onAction: () => setEditing({ kind: "color" }) }]}
     >
       <Layout>
         <Layout.Section>
@@ -236,9 +236,9 @@ export default function SwatchesPage() {
             <Card padding="0">
               {rows.length === 0 ? (
                 <EmptyState
-                  heading="Aucun swatch pour l'instant"
-                  action={{ content: "Importer depuis mes produits", onAction: runImport, loading: busy }}
-                  secondaryAction={{ content: "Ajouter manuellement", onAction: () => setEditing({ kind: "color" }) }}
+                  heading="No swatches yet"
+                  action={{ content: "Import from my products", onAction: runImport, loading: busy }}
+                  secondaryAction={{ content: "Add manually", onAction: () => setEditing({ kind: "color" }) }}
                   image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                 >
                   <p>
@@ -250,11 +250,11 @@ export default function SwatchesPage() {
                 <BlockStack gap="0">
                   <div style={{ padding: 12 }}>
                     <TextField
-                      label="Rechercher"
+                      label="Search"
                       labelHidden
                       value={query}
                       onChange={setQuery}
-                      placeholder="Rechercher une valeur…"
+                      placeholder="Search a value…"
                       autoComplete="off"
                       clearButton
                       onClearButtonClick={() => setQuery("")}
@@ -332,22 +332,22 @@ export default function SwatchesPage() {
                 </Text>
               </InlineStack>
               <TextField
-                label="Valeur de l'option"
+                label="Option value"
                 value={editing.label || ""}
                 onChange={(v) => setEditing({ ...editing, label: v })}
                 helpText="Must match the value in your products exactly (case and accents are ignored)."
                 autoComplete="off"
               />
               <TextField
-                label="Nom de l'option"
+                label="Option name"
                 value={editing.optionName || defaultOption}
                 onChange={(v) => setEditing({ ...editing, optionName: v })}
                 autoComplete="off"
               />
               <Select
-                label="Type de swatch"
+                label="Swatch type"
                 options={[
-                  { label: "Couleur unie", value: "color" },
+                  { label: "Solid color", value: "color" },
                   { label: "Two-tone (gradient)", value: "gradient" },
                   { label: "Image / texture", value: "image" },
                 ]}
@@ -357,7 +357,7 @@ export default function SwatchesPage() {
               {editing.kind !== "image" && (
                 <InlineStack gap="300">
                   <TextField
-                    label="Couleur"
+                    label="Color"
                     value={editing.colorHex || ""}
                     onChange={(v) => setEditing({ ...editing, colorHex: v })}
                     placeholder="#1F3A5F"
@@ -376,7 +376,7 @@ export default function SwatchesPage() {
               )}
               {editing.kind === "image" && (
                 <TextField
-                  label="URL de l'image"
+                  label="Image URL"
                   value={editing.imageUrl || ""}
                   onChange={(v) => setEditing({ ...editing, imageUrl: v })}
                   helpText="Upload the file under Content → Files, then paste its URL here."

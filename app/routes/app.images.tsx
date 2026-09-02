@@ -272,7 +272,7 @@ export default function ImagesPage() {
 
   return (
     <Page
-      title="Inspecteur de produit"
+      title="Inspect a product"
       subtitle="See exactly how Variantsy groups a product's media."
       primaryAction={{
         content: "Enregistrer",
@@ -331,8 +331,8 @@ export default function ImagesPage() {
                     ) : (
                       <Banner tone="success" title={`Grouped by \u201C${inspection.optionName}\u201D`}>
                         <p>
-                          {inspection.groups.length} group(s) detected. Each color will show
-                          uniquement ses images.
+                          {inspection.groups.length} group(s) detected. Each color shows only its
+                          own images.
                         </p>
                       </Banner>
                     )}
