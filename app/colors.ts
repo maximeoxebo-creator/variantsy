@@ -62,6 +62,10 @@ export const COLOR_DICTIONARY: Record<string, string> = {
 
   // Métaux
   argent: "#C0C0C0", silver: "#C0C0C0",
+  // Finitions métalliques : très courantes en électroménager et en ustensile,
+  // et absentes jusqu'ici — « inox » retombait sur un doré par accident.
+  inox: "#C4C8CC", acier: "#B7BCC2", steel: "#B7BCC2", chrome: "#CBD1D6",
+  aluminium: "#C9CDD1", metal: "#B9BEC4", brosse: "#BFC4C9", brushed: "#BFC4C9",
   bronze: "#8C7853", cuivre: "#B87333", copper: "#B87333",
 };
 
@@ -75,9 +79,25 @@ export function guessColor(label: string): string | null {
 
   // "Bleu marine chiné" → on retient la plus longue clé contenue dans le label,
   // pour que "bleu marine" l'emporte sur "bleu".
+  // La recherche se fait sur des MOTS ENTIERS. En sous-chaîne libre, « or »
+  // se trouvait dans « collectors » et peignait en doré une poubelle inox.
+  // Le storefront, lui, a toujours exigé des limites de mot : les deux
+  // moteurs se contredisaient, et la pastille changeait de couleur au
+  // chargement — le clignotement qu'on s'est efforcé de supprimer.
+  const motEntier = (texte: string, mot: string) => {
+    let i = texte.indexOf(mot);
+    while (i !== -1) {
+      const avant = i === 0 ? "" : texte.charAt(i - 1);
+      const apres = texte.charAt(i + mot.length);
+      if (!/[a-z0-9]/.test(avant) && !/[a-z0-9]/.test(apres)) return true;
+      i = texte.indexOf(mot, i + 1);
+    }
+    return false;
+  };
+
   let best: { hex: string; length: number } | null = null;
   for (const [name, hex] of Object.entries(COLOR_DICTIONARY)) {
-    if (key.includes(name) && (!best || name.length > best.length)) {
+    if (motEntier(key, name) && (!best || name.length > best.length)) {
       best = { hex, length: name.length };
     }
   }
