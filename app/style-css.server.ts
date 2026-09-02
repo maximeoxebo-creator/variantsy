@@ -14,6 +14,15 @@ import type { StorefrontConfig } from "./settings.server";
 
 type Style = StorefrontConfig["style"];
 
+/** Le libellé se mesure en em : il suit ainsi la typographie du thème au lieu
+ *  d'imposer des pixels qui jurent sur une fiche éditoriale. */
+const TAILLES: Record<string, string> = {
+  s: "0.875em",
+  m: "1em",
+  l: "1.25em",
+  xl: "1.5em",
+};
+
 /** Noir ou blanc, selon ce qui se lit le mieux sur la couleur donnée.
  *  Reprend le calcul du storefront : les deux doivent tomber d'accord, sinon
  *  le texte changerait de couleur au chargement. */
@@ -75,7 +84,9 @@ export function styleEnCss(style: Style): string {
       : [`--vtsy-selected-contrast:${contrasteSur(style.selectedColor)}`]),
     `--vtsy-control-width:${style.dropdownFullWidth ? "100%" : "auto"}`,
     `--vtsy-radius:${rayon(style)}`,
-    `--vtsy-label-weight:${style.labelValueBold === false ? "inherit" : "600"}`,
+    `--vtsy-label-weight:${style.labelValueBold ? "600" : "inherit"}`,
+    `--vtsy-label-size:${TAILLES[style.labelSize] ?? "1.25em"}`,
+    `--vtsy-label-name-weight:${style.labelNameBold === false ? "inherit" : "600"}`,
   ].join(";");
 }
 

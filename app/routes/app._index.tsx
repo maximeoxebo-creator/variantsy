@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Checkbox,
+  Select,
   Collapsible,
   Divider,
   InlineGrid,
@@ -139,6 +140,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     showLabels: bool("showLabels"),
     showOptionName: bool("showOptionName"),
     labelValueBold: bool("labelValueBold"),
+    labelSize: str("labelSize", DEFAULT_SETTINGS.labelSize),
+    labelNameBold: bool("labelNameBold"),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
     hideNativeSelector: bool("hideNativeSelector"),
     nativeSelectorCss: str("nativeSelectorCss", ""),
@@ -211,7 +214,7 @@ const CLES_STYLE = [
   "selectedColor", "selectedWidth", "selectedGap", "cornerRadius", "displayMode",
   "otherDisplayMode", "controlRadius", "controlSelectedStyle", "dropdownFullWidth",
   "swatchFallback",
-  "photoScale", "neutralColor", "showLabels", "showOptionName", "labelValueBold",
+  "photoScale", "neutralColor", "showLabels", "showOptionName", "labelValueBold", "labelSize", "labelNameBold",
   "maxVisible",
   "customCss",
 ] as const;
@@ -1663,12 +1666,31 @@ function ApparencePanel({ form, set }: PanelProps) {
           {/* Dépend de la ligne ci-dessus : sans elle, la valeur ne s'affiche
               nulle part et le réglage n'aurait aucun effet visible. */}
           {form.showOptionName && (
-            <Checkbox
-              label="Show the value in bold"
-              checked={form.labelValueBold}
-              onChange={(v) => set("labelValueBold", v)}
-              helpText="Off, the value keeps your theme's own weight — which reads better on a page where everything is already contrasted."
-            />
+            <BlockStack gap="300">
+              <Select
+                label="Option name size"
+                options={[
+                  { label: "Small", value: "s" },
+                  { label: "Medium", value: "m" },
+                  { label: "Large", value: "l" },
+                  { label: "Extra large", value: "xl" },
+                ]}
+                value={form.labelSize}
+                onChange={(v: string) => set("labelSize", v)}
+                helpText="Relative to your theme's own text, so it scales with it. Themes treat an option name as a section heading — that is why Large is the default."
+              />
+              <Checkbox
+                label="Option name in bold"
+                checked={form.labelNameBold}
+                onChange={(v) => set("labelNameBold", v)}
+              />
+              <Checkbox
+                label="Selected value in bold"
+                checked={form.labelValueBold}
+                onChange={(v) => set("labelValueBold", v)}
+                helpText="Off, the value stays discreet behind the name — the hierarchy your theme uses."
+              />
+            </BlockStack>
           )}
         </BlockStack>
 

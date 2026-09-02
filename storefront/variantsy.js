@@ -1377,7 +1377,13 @@
     // « auto » laisse la liste se dimensionner sur son contenu ; « 100% »
     // l'étend à la largeur disponible.
     v.setProperty("--vtsy-control-width", style.dropdownFullWidth ? "100%" : "auto");
-    v.setProperty("--vtsy-label-weight", style.labelValueBold === false ? "inherit" : "600");
+    var TAILLES = { s: "0.875em", m: "1em", l: "1.25em", xl: "1.5em" };
+    v.setProperty("--vtsy-label-weight", style.labelValueBold ? "600" : "inherit");
+    v.setProperty("--vtsy-label-size", TAILLES[style.labelSize] || "1.25em");
+    v.setProperty(
+      "--vtsy-label-name-weight",
+      style.labelNameBold === false ? "inherit" : "600",
+    );
     v.setProperty(
       "--vtsy-radius",
       style.shape === "square"

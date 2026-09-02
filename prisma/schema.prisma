@@ -132,7 +132,17 @@ model ShopSettings {
   /// Mettre la VALEUR en gras dans ce libellé (« Bleu marine »). Vrai reproduit
   /// le comportement d'avant ce réglage ; faux laisse la graisse du thème, ce
   /// que préfèrent les mises en page éditoriales où tout est déjà contrasté.
-  labelValueBold       Boolean @default(true)
+  labelValueBold       Boolean @default(false)
+  /// Taille du libellé « Couleur », relative au texte du thème.
+  /// "s" 0.875em · "m" 1em · "l" 1.25em · "xl" 1.5em
+  ///
+  /// Il était figé à 0.875em : plus PETIT que le corps de texte, alors que les
+  /// thèmes traitent le nom d'option comme un titre de section. Le sélecteur
+  /// paraissait donc rapporté au lieu d'appartenir à la fiche.
+  labelSize            String  @default("l")
+  /// Nom de l'option en gras. C'est LUI que l'œil doit trouver en premier ;
+  /// la valeur vient en second, comme dans les thèmes officiels.
+  labelNameBold        Boolean @default(true)
   /// Nombre max de swatches avant repli "+N"
   maxVisible           Int     @default(0)
 
