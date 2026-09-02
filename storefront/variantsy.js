@@ -855,7 +855,11 @@
       if (swatches[optionName + "::" + value]) return true;
       // Une valeur à laquelle Shopify attache une couleur EST une couleur :
       // c'est le signal le plus fort qui soit, le marchand l'a saisi lui-même.
-      if (estCouleurCss(this.nativeSwatches[optionName + "::" + value])) return true;
+      var natif = this.nativeSwatches[optionName + "::" + value];
+      if (estCouleurCss(natif)) return true;
+      // Un FICHIER téléversé comme pastille dit la même chose qu'une couleur :
+      // le marchand a déclaré que cette option est un nuancier.
+      if (natif && /^(https?:|\/\/|\/)/.test(String(natif))) return true;
       // La valeur EST un code couleur (« #1F3A5F »).
       if (/^#[0-9a-f]{3,8}$/i.test(value)) return true;
       if (dictionary && guessColorFrom(dictionary, value)) return true;
@@ -1377,7 +1381,7 @@
     // « auto » laisse la liste se dimensionner sur son contenu ; « 100% »
     // l'étend à la largeur disponible.
     v.setProperty("--vtsy-control-width", style.dropdownFullWidth ? "100%" : "auto");
-    var TAILLES = { s: "0.875em", m: "1em", l: "1.25em", xl: "1.5em" };
+    var TAILLES = { s: "1em", m: "1.25em", l: "1.5em", xl: "1.85em" };
     v.setProperty("--vtsy-label-weight", style.labelValueBold ? "600" : "inherit");
     v.setProperty("--vtsy-label-size", TAILLES[style.labelSize] || "1.25em");
     v.setProperty(
@@ -1528,12 +1532,24 @@
     // admin, donc plus fiable que n'importe quelle devinette. Elle ne passe
     // toutefois PAS devant la bibliothèque de l'app : celle-ci est une
     // correction explicite, et corriger doit rester possible.
-    var native = estCouleurCss(this.nativeSwatches[optionName + "::" + normalize(value)]);
+    var brute = this.nativeSwatches[optionName + "::" + normalize(value)];
+    var native = estCouleurCss(brute);
+    // Shopify accepte aussi un FICHIER comme pastille native. On ne lisait que
+    // les couleurs : une boutique qui avait téléversé ses nuanciers les voyait
+    // ignorés, et retombait sur la photo de variante.
+    var nativeImage = !native && brute && /^(https?:|\/\/|\/)/.test(String(brute)) ? String(brute) : null;
 
     if (!swatch && native) {
       visual.classList.remove("is-photo");
       visual.style.backgroundImage = "none";
       visual.style.backgroundColor = native;
+      return;
+    }
+
+    if (!swatch && nativeImage) {
+      visual.style.backgroundImage = 'url("' + nativeImage + '")';
+      visual.style.backgroundColor = "transparent";
+      visual.classList.add("is-photo");
       return;
     }
 

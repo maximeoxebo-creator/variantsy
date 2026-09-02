@@ -218,7 +218,14 @@
 
 .variantsy__group--text .variantsy__swatch.is-selected {
   border-color: var(--vtsy-selected-color);
-  box-shadow: inset 0 0 0 1px var(--vtsy-selected-color);
+  /* L'ombre interne s'AJOUTE à la bordure : figée à 1 px, elle doublait le
+     trait quoi que le marchand règle, et le cadre jurait avec les thèmes fins.
+     Elle ne comble désormais que l'écart entre l'épaisseur choisie pour la
+     sélection et celle de la bordure au repos — nulle quand les deux sont
+     égales, donc un seul trait. */
+  box-shadow: inset 0 0 0
+    max(0px, calc(var(--vtsy-selected-width) - var(--vtsy-border-width)))
+    var(--vtsy-selected-color);
 }
 
 .variantsy__group--text .variantsy__swatch[data-unavailable="true"] {

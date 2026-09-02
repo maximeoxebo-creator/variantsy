@@ -1749,6 +1749,39 @@ section("Le panier tient même à l'envoi");
   await pageTardive.close();
 }
 
+section("Pastille native téléversée");
+{
+  // Shopify accepte un FICHIER comme pastille native, pas seulement une
+  // couleur. On ne lisait que les couleurs : une boutique qui avait téléversé
+  // ses nuanciers les voyait ignorés au profit de la photo de variante.
+  const AVEC_FICHIER = {
+    ...PRODUCT,
+    options: [
+      {
+        name: "Couleur",
+        position: 1,
+        values: PRODUCT.options[0].values,
+        sw: ["https://cdn.shopify.com/nuancier-noir.png", null, null],
+      },
+      ...PRODUCT.options.slice(1),
+    ],
+  };
+  const pageFichier = await openPage(AVEC_FICHIER, AVEC_FICHIER.variants[0], {
+    swatches: {},
+    style: { swatchFallback: "color" },
+  });
+  const fond = await pageFichier.evaluate(() => {
+    const b = document.querySelector('.variantsy__swatch[data-variantsy-value="Noir"]');
+    return b ? b.querySelector(".variantsy__visual").style.backgroundImage : null;
+  });
+  check(
+    "Un fichier téléversé peint la pastille",
+    typeof fond === "string" && fond.includes("nuancier-noir.png"),
+    String(fond),
+  );
+  await pageFichier.close();
+}
+
 section("Santé générale");
 check("Aucune erreur JS sur l'ensemble des scénarios", consoleErrors.length === 0, consoleErrors.join(" | "));
 

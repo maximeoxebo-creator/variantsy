@@ -17,10 +17,12 @@ type Style = StorefrontConfig["style"];
 /** Le libellé se mesure en em : il suit ainsi la typographie du thème au lieu
  *  d'imposer des pixels qui jurent sur une fiche éditoriale. */
 const TAILLES: Record<string, string> = {
-  s: "0.875em",
-  m: "1em",
-  l: "1.25em",
-  xl: "1.5em",
+  s: "1em",
+  m: "1.25em",
+  l: "1.5em",
+  // Les thèmes marchands titrent souvent bien plus haut que le corps de texte :
+  // l'échelle plafonnait trop bas pour les rejoindre.
+  xl: "1.85em",
 };
 
 /** Noir ou blanc, selon ce qui se lit le mieux sur la couleur donnée.
@@ -85,7 +87,7 @@ export function styleEnCss(style: Style): string {
     `--vtsy-control-width:${style.dropdownFullWidth ? "100%" : "auto"}`,
     `--vtsy-radius:${rayon(style)}`,
     `--vtsy-label-weight:${style.labelValueBold ? "600" : "inherit"}`,
-    `--vtsy-label-size:${TAILLES[style.labelSize] ?? "1.25em"}`,
+    `--vtsy-label-size:${TAILLES[style.labelSize] ?? "1.5em"}`,
     `--vtsy-label-name-weight:${style.labelNameBold === false ? "inherit" : "600"}`,
   ].join(";");
 }

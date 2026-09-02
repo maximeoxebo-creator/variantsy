@@ -249,7 +249,13 @@
                 émet null quand il est absent, et le JS retombe sur ses autres
                 sources.
               {%- endcomment -%}
-              "sw": [{% for value in option.values %}{% if value.swatch and value.swatch.color %}{{ value.swatch.color | append: '' | json }}{% else %}null{% endif %}{% unless forloop.last %},{% endunless %}{% endfor %}]
+              {%- comment -%}
+                Shopify accepte DEUX formes de pastille native : une couleur, ou
+                un FICHIER importé par le marchand. On ne lisait que la
+                première, et une boutique qui avait téléversé ses nuanciers les
+                voyait ignorés au profit de la photo de variante.
+              {%- endcomment -%}
+              "sw": [{% for value in option.values %}{% if value.swatch and value.swatch.color %}{{ value.swatch.color | append: '' | json }}{% elsif value.swatch and value.swatch.image %}{{ value.swatch.image | image_url: width: 200 | json }}{% else %}null{% endif %}{% unless forloop.last %},{% endunless %}{% endfor %}]
             }{% unless forloop.last %},{% endunless %}
           {%- endfor -%}
         ],
