@@ -205,6 +205,55 @@ function groupHtml(option, selected) {
  * Le fixture doit la reproduire fidèlement — c'est justement cette ressemblance
  * qui piégeait le moteur de variantes.
  */
+/**
+ * Galerie qui n'affiche QU'UN média à la fois — celui qui ne porte pas la
+ * classe `hidden` du thème — pilotée par une bande de vignettes séparée.
+ *
+ * Relevé sur Les Collectors. Le piège : masquer un média n'en désigne pas un
+ * autre. Le thème continuait d'afficher celui du coloris précédent, que
+ * Variantsy venait justement de cacher — donc plus de grande image du tout.
+ */
+function galerieUnique(product, currentVariant) {
+  const medias = product.media || [];
+  const actif = currentVariant.m || (medias[0] || {}).id;
+  const items = medias
+    .map(
+      (m) => `
+      <div class="product__media-item${m.id === actif ? "" : " hidden"}" data-media-item-id="${m.id}">
+        <div class="media" data-media-id="${m.id}"><img src="${m.src}" alt=""></div>
+      </div>`,
+    )
+    .join("");
+  const vignettes = medias
+    .map(
+      (m) => `
+      <div class="product-thumbnails__item">
+        <button type="button" class="product-thumbnails__item-link" data-thumbnail-id="${m.id}"
+                data-product-thumbnail>vignette</button>
+      </div>`,
+    )
+    .join("");
+  return `
+    <!-- La classe du thème, celle qui fait tout : un média qui la porte
+         n'occupe aucune place. Sans cette règle, le fixture mentait. -->
+    <style>.product__media-item.hidden { display: none; }</style>
+    <div class="product__media-container">
+      <div class="product__media">${items}</div>
+    </div>
+    <div class="product-thumbnails">${vignettes}</div>
+    <script>
+      // Le thème : un clic sur une vignette designe le média a afficher.
+      document.addEventListener("click", (event) => {
+        const bouton = event.target.closest("[data-product-thumbnail]");
+        if (!bouton) return;
+        const id = bouton.getAttribute("data-thumbnail-id");
+        document.querySelectorAll(".product__media-item").forEach((item) => {
+          item.classList.toggle("hidden", item.getAttribute("data-media-item-id") !== id);
+        });
+      });
+    </script>`;
+}
+
 function buildLinkedRow(peinte, fichiers) {
   const membres = [
     { h: "cocotte-bleue", v: "Blue", self: false },
@@ -281,13 +330,18 @@ function buildHtml(product, currentVariant, options = {}) {
 <html lang="fr"><head><meta charset="utf-8"><title>${product.title} – Ma Boutique</title><style>${css}</style></head>
 <body>
   <main data-section-type="product">
+    ${
+      options.galerieUnique
+        ? galerieUnique(product, currentVariant)
+        : `
     <media-gallery data-section="${SECTION}" class="product__media-wrapper">
       <ul class="product__media-list">${slides}</ul>
       <!-- Leurre : ID contenant un identifiant connu en suffixe numérique.
            Ne doit JAMAIS être masqué (cf. mediaIdOf / vérification d'appartenance). -->
       <div id="decoy" data-media-id="${SECTION}-4900">leurre</div>
     </media-gallery>
-    <div class="thumbnail-list"><ul>${thumbs}</ul></div>
+    <div class="thumbnail-list"><ul>${thumbs}</ul></div>`
+    }
 
     <div class="product__info-wrapper">
       <h1 class="product__title">${product.title}</h1>
@@ -373,6 +427,7 @@ async function openPage(product, currentVariant, configOverrides = {}) {
       liens: configOverrides.liens,
       peinte: configOverrides.peinte,
       fichiers: configOverrides.fichiers,
+      galerieUnique: configOverrides.galerieUnique,
     }),
   );
   await page.addScriptTag({ content: js });
@@ -1837,6 +1892,48 @@ section("Pastille tirée d'un fichier nommé");
     JSON.stringify(etat.seconde),
   );
   await pageFichiers.close();
+}
+
+section("Galerie qui n'affiche qu'un media a la fois");
+{
+  // Le cas des Collectors. Le thème designe le média affiche en retirant SA
+  // classe `hidden` ; les autres restent en display:none. Masquer les photos
+  // d'un coloris ne designe donc rien : le thème continuait d'afficher celle du
+  // coloris precedent — que Variantsy venait de cacher. Resultat : plus aucune
+  // grande image.
+  //
+  // Ni `.product__media` ni `.product-thumbnails` ne figuraient dans les listes
+  // de Variantsy : la galerie valait null, et toute la mecanique de recadrage
+  // sortait a sa premiere ligne.
+  const page = await openPage(PRODUCT, PRODUCT.variants[0], { galerieUnique: true });
+  const lire = () =>
+    page.evaluate(() => {
+      const items = [...document.querySelectorAll(".product__media-item")];
+      const actif = items.find((e) => !e.classList.contains("hidden"));
+      return {
+        actif: actif && actif.getAttribute("data-media-item-id"),
+        cache: actif ? actif.classList.contains("variantsy-media-hidden") : null,
+      };
+    });
+
+  await page.click('.variantsy__swatch[data-variantsy-value="Bleu marine"]');
+  await page.waitForTimeout(400);
+  const bleu = await lire();
+  check(
+    "Le media affiche n'est jamais un media masque",
+    bleu.cache === false,
+    JSON.stringify(bleu),
+  );
+
+  await page.click('.variantsy__swatch[data-variantsy-value="Terracotta"]');
+  await page.waitForTimeout(400);
+  const terra = await lire();
+  check(
+    "Il le reste au coloris suivant",
+    terra.cache === false,
+    JSON.stringify(terra),
+  );
+  await page.close();
 }
 
 section("Titre d'option a la taille du theme");

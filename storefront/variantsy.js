@@ -383,6 +383,11 @@
     ".product-gallery",
     ".product-single__media-group",
     ".product-media",
+    // EN DERNIER, et ce rang compte : chez Dawn, `.product__media` désigne un
+    // média isolé, pas la galerie. Les entrées ci-dessus l'attrapent avant. Là
+    // où aucune ne répond, c'est le nom du conteneur — vu sur Les Collectors,
+    // dont la galerie n'affiche qu'un média à la fois.
+    ".product__media",
   ];
 
   var THUMB_SELECTORS = [
@@ -391,6 +396,7 @@
     ".product__media-thumbnails",
     ".product-single__thumbnails",
     ".product-gallery__thumbnails",
+    ".product-thumbnails",
     "[data-thumbnails]",
   ];
 
