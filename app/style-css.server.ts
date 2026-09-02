@@ -100,6 +100,9 @@ export type StylePublie = {
   controlSelected: string;
   /** L'accent suit-il le thème ? Pilote la teinte douce du mode « fill ». */
   autoAccent: boolean;
+  /** Chercher un fichier nommé d'après chaque valeur d'option. */
+  fileMatch: boolean;
+  fileExt: string;
   showLabels: boolean;
   showOptionName: boolean;
   soldOut: string;
@@ -114,6 +117,8 @@ export function stylePublie(config: StorefrontConfig): StylePublie {
     selectedStyle: config.style.selectedStyle,
     controlSelected: config.style.controlSelectedStyle || "outline",
     autoAccent: estAuto(config.style.selectedColor),
+    fileMatch: Boolean(config.style.swatchFileMatch),
+    fileExt: (config.style.swatchFileExt || "png").replace(/[^a-z0-9]/gi, ""),
     showLabels: Boolean(config.style.showLabels),
     showOptionName: Boolean(config.style.showOptionName),
     soldOut: config.behavior.soldOutStyle,

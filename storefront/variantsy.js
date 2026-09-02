@@ -522,14 +522,18 @@
      * la bibliothèque du marchand, pour que les deux se consultent pareil.
      */
     this.nativeSwatches = {};
+    // Fichiers de la boutique nommés d'après la valeur d'option. Le Liquid en
+    // rend l'adresse sans savoir s'ils existent : c'est le chargement qui
+    // tranchera.
+    this.fichiers = {};
     var instance = this;
     (this.product.options || []).forEach(function (option) {
       var couleurs = option.sw;
-      if (!couleurs) return;
+      var fichiers = option.file;
       (option.values || []).forEach(function (value, index) {
-        var couleur = couleurs[index];
-        if (!couleur) return;
-        instance.nativeSwatches[normalize(option.name) + "::" + normalize(value)] = couleur;
+        var cle = normalize(option.name) + "::" + normalize(value);
+        if (couleurs && couleurs[index]) instance.nativeSwatches[cle] = couleurs[index];
+        if (fichiers && fichiers[index]) instance.fichiers[cle] = fichiers[index];
       });
     });
 
@@ -1504,6 +1508,10 @@
           // Déjà peinte par le Liquid depuis la métadonnée : le JS résoudrait
           // la même couleur, mais un cran plus tard. Y toucher ne ferait que
           // rétablir le clignotement qu'on vient de supprimer.
+          // Avant le retour anticipé : la métadonnée donne la couleur, le
+          // fichier nommé donne l'image. Le second l'emporte quand il existe.
+          sonderFichier(visual, visual.getAttribute("data-variantsy-fichier"));
+
           if (visual.hasAttribute("data-variantsy-peint")) return;
 
           var avant = visual.style.backgroundImage;
@@ -1522,6 +1530,26 @@
 
     if (style.customCss) this.injectCustomCss(style.customCss);
   };
+
+  /**
+   * Adopte un fichier de la bibliothèque nommé d'après la valeur — mais
+   * seulement s'il se charge.
+   *
+   * Le Liquid rend l'adresse SANS savoir si le fichier existe : `file_url` ne
+   * vérifie rien. Poser cette adresse en fond laisserait donc une pastille vide
+   * chaque fois que la convention n'est pas respectée. On peint donc d'abord la
+   * couleur devinée, et on ne la remplace qu'au chargement effectif.
+   */
+  function sonderFichier(visual, url) {
+    if (!url) return;
+    var sonde = new Image();
+    sonde.onload = function () {
+      visual.style.backgroundImage = 'url("' + url + '")';
+      visual.style.backgroundColor = "transparent";
+      visual.classList.add("is-photo");
+    };
+    sonde.src = url;
+  }
 
   /** Applique la couleur / l'image d'un swatch depuis la bibliothèque marchand. */
   Variantsy.prototype.applyVisual = function (visual, optionName, value, styleForce) {
@@ -1545,6 +1573,11 @@
       visual.style.backgroundColor = native;
       return;
     }
+
+    // Fichier nommé d'après la valeur. On NE retourne PAS : la cascade continue
+    // et peint tout de suite la couleur devinée, que la sonde remplacera si le
+    // fichier existe vraiment.
+    if (!swatch) sonderFichier(visual, this.fichiers[optionName + "::" + normalize(value)]);
 
     if (!swatch && nativeImage) {
       visual.style.backgroundImage = 'url("' + nativeImage + '")';

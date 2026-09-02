@@ -255,7 +255,19 @@
                 première, et une boutique qui avait téléversé ses nuanciers les
                 voyait ignorés au profit de la photo de variante.
               {%- endcomment -%}
-              "sw": [{% for value in option.values %}{% if value.swatch and value.swatch.color %}{{ value.swatch.color | append: '' | json }}{% elsif value.swatch and value.swatch.image %}{{ value.swatch.image | image_url: width: 200 | json }}{% else %}null{% endif %}{% unless forloop.last %},{% endunless %}{% endfor %}]
+              "sw": [{% for value in option.values %}{% if value.swatch and value.swatch.color %}{{ value.swatch.color | append: '' | json }}{% elsif value.swatch and value.swatch.image %}{{ value.swatch.image | image_url: width: 200 | json }}{% else %}null{% endif %}{% unless forloop.last %},{% endunless %}{% endfor %}],
+              {%- comment -%}
+                Adresse d'un fichier PORTANT LE NOM de la valeur, dans
+                Contenu › Fichiers. `file_url` résout par nom sans aucune
+                portée supplémentaire — là où les pastilles natives de Shopify
+                reposent sur les métaobjets, auxquels tous les marchands n'ont
+                pas accès.
+
+                Le filtre ne VÉRIFIE PAS l'existence du fichier : il rend une
+                adresse dans tous les cas. C'est donc le navigateur qui
+                tranche, et le JS n'adopte l'image que si elle se charge.
+              {%- endcomment -%}
+              "file": [{% if vtsy_style.fileMatch %}{% for value in option.values %}{{ value | handleize | append: '.' | append: vtsy_style.fileExt | file_url | json }}{% unless forloop.last %},{% endunless %}{% endfor %}{% endif %}]
             }{% unless forloop.last %},{% endunless %}
           {%- endfor -%}
         ],
@@ -414,9 +426,21 @@
                   qui changeaient sous les yeux de l'acheteur.
                 {%- endcomment -%}
                 {%- assign vtsy_teinte = vtsy_sibling.metafields.variantsy.group_color -%}
+                {%- comment -%}
+                  Le fichier nommé d'après la fiche n'est PAS posé en fond ici :
+                  `file_url` rend une adresse même quand le fichier n'existe
+                  pas, et une pastille vide serait pire que la couleur devinée.
+                  On le passe donc au JS, qui ne l'adoptera qu'une fois chargé.
+                {%- endcomment -%}
+                {%- if vtsy_style.fileMatch -%}
+                  {%- assign vtsy_fichier = vtsy_value | handleize | append: '.' | append: vtsy_style.fileExt | file_url -%}
+                {%- else -%}
+                  {%- assign vtsy_fichier = blank -%}
+                {%- endif -%}
                 <span
                   class="variantsy__visual"
                   aria-hidden="true"
+                  {%- if vtsy_fichier != blank %} data-variantsy-fichier="{{ vtsy_fichier }}"{% endif -%}
                   {%- if vtsy_teinte != blank %} data-variantsy-peint style="background-color: {{ vtsy_teinte }}"
                   {%- elsif vtsy_sibling.featured_image %} style="background-image: url({{ vtsy_sibling.featured_image | image_url: width: 200 }})"{% endif -%}
                 ></span>

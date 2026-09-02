@@ -205,7 +205,7 @@ function groupHtml(option, selected) {
  * Le fixture doit la reproduire fidèlement — c'est justement cette ressemblance
  * qui piégeait le moteur de variantes.
  */
-function buildLinkedRow(peinte) {
+function buildLinkedRow(peinte, fichiers) {
   const membres = [
     { h: "cocotte-bleue", v: "Blue", self: false },
     { h: "cocotte-beige", v: "Beige", self: true },
@@ -218,6 +218,8 @@ function buildLinkedRow(peinte) {
            role="listitem" aria-current="${m.self ? "page" : "false"}"
            data-variantsy-value="${m.v}" data-variantsy-linked-handle="${m.h}">
           <span class="variantsy__visual" aria-hidden="true"${
+            fichiers && fichiers[m.v] ? ` data-variantsy-fichier="${fichiers[m.v]}"` : ""
+          }${
             peinte && m.v === peinte.valeur
               ? ` data-variantsy-peint style="background-color: ${peinte.hex}"`
               : ""
@@ -296,7 +298,7 @@ function buildHtml(product, currentVariant, options = {}) {
            data-endpoint="/apps/variantsy/settings" data-current-variant="${currentVariant.id}">
         <script type="application/json" data-variantsy-data>${JSON.stringify(product)}</script>
         ${product.options.map((option) => groupHtml(option, selected)).join("")}
-        ${options.liens ? buildLinkedRow(options.peinte) : ""}
+        ${options.liens ? buildLinkedRow(options.peinte, options.fichiers) : ""}
       </div>
 
       <form action="/cart/add" method="post">
@@ -364,6 +366,7 @@ async function openPage(product, currentVariant, configOverrides = {}) {
     buildHtml(product, currentVariant, {
       liens: configOverrides.liens,
       peinte: configOverrides.peinte,
+      fichiers: configOverrides.fichiers,
     }),
   );
   await page.addScriptTag({ content: js });
@@ -1780,6 +1783,90 @@ section("Pastille native téléversée");
     String(fond),
   );
   await pageFichier.close();
+}
+
+section("Pastille tirée d'un fichier nommé");
+{
+  // Le Liquid rend une adresse SANS savoir si le fichier existe. Deux cas donc :
+  // celui qui se charge doit l'emporter, celui qui échoue ne doit rien casser.
+  const AVEC_FICHIERS = {
+    ...PRODUCT,
+    options: [
+      {
+        name: "Couleur",
+        position: 1,
+        values: PRODUCT.options[0].values,
+        // La première existe (une image de test valide), la seconde non.
+        file: [
+          "data:image/gif;base64,R0lGODlhAQABAIAAAP8AAAAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==",
+          "https://example.com/absent-nulle-part.png",
+          null,
+        ],
+      },
+      ...PRODUCT.options.slice(1),
+    ],
+  };
+  const pageFichiers = await openPage(AVEC_FICHIERS, AVEC_FICHIERS.variants[0], {
+    swatches: {},
+    style: { swatchFallback: "color" },
+    colors: { noir: "#111111", "bleu marine": "#1F3A5F" },
+  });
+  await pageFichiers.waitForTimeout(400);
+  const etat = await pageFichiers.evaluate(() => {
+    const lire = (v) => {
+      const b = document.querySelector(`.variantsy__swatch[data-variantsy-value="${v}"]`);
+      const s = b.querySelector(".variantsy__visual").style;
+      return { image: s.backgroundImage, fond: s.backgroundColor };
+    };
+    return { premiere: lire("Noir"), seconde: lire("Bleu marine") };
+  });
+  check(
+    "Un fichier qui se charge peint la pastille",
+    etat.premiere.image.includes("data:image"),
+    JSON.stringify(etat.premiere),
+  );
+  check(
+    "Un fichier absent laisse la couleur devinée",
+    etat.seconde.image === "none" || etat.seconde.image === "",
+    JSON.stringify(etat.seconde),
+  );
+  await pageFichiers.close();
+}
+
+section("Fiches soeurs : le fichier nommé passe devant la couleur");
+{
+  // La rangée des fiches soeurs est peinte par le Liquid depuis une métadonnée,
+  // et le JS s'interdit d'y toucher. Le fichier nommé est la seule exception —
+  // encore faut-il qu'il existe vraiment.
+  const IMAGE_VALIDE =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAP8AAAAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==";
+  const pageLiee = await openPage(PRODUCT, PRODUCT.variants[0], {
+    swatches: {},
+    liens: true,
+    peinte: { valeur: "Blue", hex: "#1F3A5F" },
+    fichiers: { Blue: IMAGE_VALIDE, Charcoal: "https://example.com/absent.png" },
+  });
+  await pageLiee.waitForTimeout(400);
+  const vu = await pageLiee.evaluate(() => {
+    const lire = (v) => {
+      const s = document.querySelector(
+        `[data-variantsy-linked] [data-variantsy-value="${v}"] .variantsy__visual`,
+      ).style;
+      return { image: s.backgroundImage, fond: s.backgroundColor };
+    };
+    return { bleu: lire("Blue"), anthracite: lire("Charcoal") };
+  });
+  check(
+    "Le fichier chargé remplace la couleur de la métadonnée",
+    vu.bleu.image.includes("data:image"),
+    JSON.stringify(vu.bleu),
+  );
+  check(
+    "Un fichier absent ne vide pas la pastille",
+    !vu.anthracite.image.includes("absent.png"),
+    JSON.stringify(vu.anthracite),
+  );
+  await pageLiee.close();
 }
 
 section("Santé générale");

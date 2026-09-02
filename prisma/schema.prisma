@@ -143,6 +143,23 @@ model ShopSettings {
   /// Nom de l'option en gras. C'est LUI que l'œil doit trouver en premier ;
   /// la valeur vient en second, comme dans les thèmes officiels.
   labelNameBold        Boolean @default(true)
+
+  // --- Pastilles tirées des fichiers de la boutique ------------------------
+  /// Chercher, pour chaque valeur d'option, un fichier PORTANT SON NOM dans
+  /// Contenu › Fichiers — « les collectors 501 duck green edition » va
+  /// chercher « les-collectors-501-duck-green-edition.png ».
+  ///
+  /// Passe par le filtre Liquid `file_url`, qui résout un fichier par son nom
+  /// SANS portée supplémentaire : les pastilles natives de Shopify, elles,
+  /// reposent sur les métaobjets, auxquels tous les marchands n'ont pas accès.
+  ///
+  /// `file_url` ne vérifie pas l'existence du fichier : il rend une adresse
+  /// dans tous les cas. C'est donc le NAVIGATEUR qui tranche — si l'image ne
+  /// se charge pas, la cascade habituelle reprend la main.
+  swatchFileMatch      Boolean @default(false)
+  /// Extension cherchée. Un seul essai par valeur : multiplier les tentatives
+  /// multiplierait les requêtes en échec sur chaque page produit.
+  swatchFileExt        String  @default("png")
   /// Nombre max de swatches avant repli "+N"
   maxVisible           Int     @default(0)
 

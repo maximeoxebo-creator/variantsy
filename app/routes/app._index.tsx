@@ -142,6 +142,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     labelValueBold: bool("labelValueBold"),
     labelSize: str("labelSize", DEFAULT_SETTINGS.labelSize),
     labelNameBold: bool("labelNameBold"),
+    swatchFileMatch: bool("swatchFileMatch"),
+    swatchFileExt: str("swatchFileExt", DEFAULT_SETTINGS.swatchFileExt),
     soldOutStyle: str("soldOutStyle", DEFAULT_SETTINGS.soldOutStyle),
     hideNativeSelector: bool("hideNativeSelector"),
     nativeSelectorCss: str("nativeSelectorCss", ""),
@@ -214,7 +216,8 @@ const CLES_STYLE = [
   "selectedColor", "selectedWidth", "selectedGap", "cornerRadius", "displayMode",
   "otherDisplayMode", "controlRadius", "controlSelectedStyle", "dropdownFullWidth",
   "swatchFallback",
-  "photoScale", "neutralColor", "showLabels", "showOptionName", "labelValueBold", "labelSize", "labelNameBold",
+  "photoScale", "neutralColor", "showLabels", "showOptionName", "labelValueBold", "labelSize", "labelNameBold", "swatchFileMatch",
+  "swatchFileExt",
   "maxVisible",
   "customCss",
 ] as const;
@@ -1546,6 +1549,30 @@ function ApparencePanel({ form, set }: PanelProps) {
       <Bloc titre="When a color has no shade" raison="What a value missing from your library falls back to.">
         {enPastilles && (
           <>
+
+        {/* Placé avant le repli : un fichier nommé, quand il existe, passe
+            devant la couleur devinée. C'est la porte de sortie des marchands
+            privés de métaobjets, donc des pastilles natives de Shopify. */}
+        <Checkbox
+          label="Use images from Files, matched by name"
+          checked={form.swatchFileMatch}
+          onChange={(v) => set("swatchFileMatch", v)}
+          helpText={`Looks in Content → Files for an image named after the value: "Duck green" becomes "duck-green.${form.swatchFileExt}". No extra permission, and a missing file changes nothing — the fallback below takes over.`}
+        />
+        {form.swatchFileMatch && (
+          <Select
+            label="File extension"
+            options={[
+              { label: ".png", value: "png" },
+              { label: ".jpg", value: "jpg" },
+              { label: ".webp", value: "webp" },
+              { label: ".svg", value: "svg" },
+            ]}
+            value={form.swatchFileExt}
+            onChange={(v: string) => set("swatchFileExt", v)}
+            helpText="One extension only: trying several would mean a failed request per value on every product page."
+          />
+        )}
 
         <ChoiceCards
           help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Blue, Beige, Terracotta."

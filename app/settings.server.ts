@@ -38,6 +38,8 @@ export type SettingsInput = {
   labelValueBold: boolean;
   labelSize: string;
   labelNameBold: boolean;
+  swatchFileMatch: boolean;
+  swatchFileExt: string;
   maxVisible: number;
   soldOutStyle: string;
   hideNativeSelector: boolean;
@@ -86,6 +88,8 @@ export const DEFAULT_SETTINGS: SettingsInput = {
   labelValueBold: false,
   labelSize: "l",
   labelNameBold: true,
+  swatchFileMatch: false,
+  swatchFileExt: "png",
   maxVisible: 0,
   soldOutStyle: "strikethrough",
   hideNativeSelector: true,
@@ -228,6 +232,8 @@ export type StorefrontConfig = {
     labelValueBold: boolean;
     labelSize: string;
     labelNameBold: boolean;
+    swatchFileMatch: boolean;
+    swatchFileExt: string;
     maxVisible: number;
     customCss: string;
   };
@@ -321,6 +327,8 @@ export function toStorefrontConfig(
     labelValueBold: settings.labelValueBold,
     labelSize: settings.labelSize,
     labelNameBold: settings.labelNameBold,
+    swatchFileMatch: settings.swatchFileMatch,
+    swatchFileExt: settings.swatchFileExt,
     maxVisible: settings.maxVisible,
     customCss: settings.customCss,
   };
