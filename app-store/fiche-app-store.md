@@ -84,18 +84,40 @@ Give every product color its own photo gallery, swatches and title. Or link one 
 Champ distinct des « Feature 1-5 » ci-dessus : celui-ci décrit le plan
 tarifaire, huit lignes maximum, quarante caractères chacune.
 
-1. Unlimited products and variants        (31/40)
-2. A photo gallery for every color        (31/40)
-3. Gallery filtered to the chosen color   (36/40)
-4. Dynamic variant titles                 (22/40)
-5. Link one product page per color        (31/40)
-6. Swatches, buttons or dropdown          (29/40)
-7. Hides your theme's own selector        (31/40)
+1. A photo gallery for every color        (31/40)
+2. Gallery filtered to the chosen color   (36/40)
+3. Link one product page per color        (31/40)
+4. Unlimited products and variants        (31/40)
+5. Swatches, buttons or dropdown          (29/40)
+6. Matches your theme automatically       (32/40)
+7. Dynamic variant titles                 (22/40)
 8. Live preview, no theme code            (27/40)
+
+Les trois premières lignes sont celles que le gratuit n'a PAS : posées en tête,
+la différence entre les deux colonnes se lit sans les comparer ligne à ligne.
 
 La ligne 5 remplace « Swatches on catalog pages » : les pastilles sur les pages
 de collection ont été retirées de l'app. Les lignes 7 et 8 occupent les deux
 emplacements restés libres.
+
+## Plan « Free » — nom et « top features »
+
+Nom du forfait : Free (4/18)
+Prix : 0 — aucun essai (un essai sur un forfait gratuit n'a pas de sens)
+
+1. Unlimited products and variants        (31/40)
+2. Swatches, buttons or dropdown          (29/40)
+3. Matches your theme automatically       (32/40)
+4. Dynamic variant titles                 (22/40)
+5. Color library and file swatches        (31/40)
+6. Hides your theme's own selector        (31/40)
+7. Live preview, no theme code            (27/40)
+8. Works on any theme                     (18/40)
+
+Ce que le gratuit NE fait pas, et qui doit rester en tête du plan Pro : une
+galerie par couleur, et les pages produit liées. Le code ne lit aucun NOM de
+forfait : tout abonnement actif vaut « pro », l'absence d'abonnement vaut
+« gratuit ».
 
 ## Category
 
@@ -198,8 +220,10 @@ WHAT IS ALREADY SET UP
 - The Installation tab holds the one-time setup: enabling the app block in the theme editor.
 
 5. BILLING
-- The app checks for an active subscription on every load of the admin, not only the first. Without an active plan the merchant is redirected to the pricing page.
-- The demo store has an active Pro subscription so that the admin can be reviewed.
+- The app reads the merchant's plan from Shopify on every load of the admin, not only the first, and never from its own database.
+- There is a free plan, so the app opens without any subscription. The two paid features — a photo gallery per color, and linked product pages — are locked, and a banner on the home screen links to the pricing page in one click.
+- A free plan creates no app subscription in Shopify, so an empty activeSubscriptions means "free", not "not subscribed". That is why the app no longer redirects.
+- The demo store has an active Pro subscription so that the paid features can be reviewed.
 
 NOTES
 - Variantsy adds nothing to collection pages; it works on product pages only.
