@@ -84,17 +84,18 @@ Give every product color its own photo gallery, swatches and title. Or link one 
 Champ distinct des « Feature 1-5 » ci-dessus : celui-ci décrit le plan
 tarifaire, huit lignes maximum, quarante caractères chacune.
 
-1. A photo gallery for every color        (31/40)
-2. Gallery filtered to the chosen color   (36/40)
-3. Link one product page per color        (31/40)
-4. Unlimited products and variants        (31/40)
-5. Swatches, buttons or dropdown          (29/40)
-6. Matches your theme automatically       (32/40)
-7. Dynamic variant titles                 (22/40)
-8. Live preview, no theme code            (27/40)
+1. Everything in the Free plan            (27/40)
+2. A photo gallery for every color        (31/40)
+3. Gallery filtered to the chosen color   (36/40)
+4. Link one product page per color        (31/40)
+5. One selector across those pages        (31/40)
 
-Les trois premières lignes sont celles que le gratuit n'a PAS : posées en tête,
-la différence entre les deux colonnes se lit sans les comparer ligne à ligne.
+CINQ lignes, pas huit — et surtout, aucune répétition. La première version
+reprenait les huit lignes du gratuit en y glissant les trois différences :
+six lignes sur huit étaient identiques d'une colonne à l'autre, et l'œil qui
+balaie deux listes jumelles ne voit pas ce qu'il achète. « Everything in the
+Free plan » dit en une ligne ce que la répétition disait mal en six, et libère
+la colonne pour les seules différences.
 
 La ligne 5 remplace « Swatches on catalog pages » : les pastilles sur les pages
 de collection ont été retirées de l'app. Les lignes 7 et 8 occupent les deux
