@@ -87,10 +87,19 @@ tarifaire, huit lignes maximum, quarante caractères chacune.
 1. Everything in the Free plan            (27/40)
 2. A photo gallery for every color        (31/40)
 3. Gallery filtered to the chosen color   (36/40)
-4. Link one product page per color        (31/40)
-5. One selector across those pages        (31/40)
+4. Thumbnails filtered with it            (27/40)
+5. The large photo follows the color      (33/40)
+6. Link one product page per color        (31/40)
+7. One selector across those pages        (31/40)
+8. Each page keeps its URL and stock      (33/40)
 
-CINQ lignes, pas huit — et surtout, aucune répétition. La première version
+Huit lignes, dont AUCUNE n'est vraie du forfait gratuit. Les lignes 4, 5 et 8
+détaillent les deux fonctionnalités payantes au lieu de répéter les communes :
+les vignettes suivent le filtrage, la grande photo suit le coloris (c'est
+promoteLeadCell et focusFirstVisibleMedia), et chaque fiche sœur garde son URL,
+son SKU et son stock — l'argument de référencement du modèle lié.
+
+Ce qui affaiblissait la colonne n'était pas sa longueur mais la RÉPÉTITION — et surtout, aucune répétition. La première version
 reprenait les huit lignes du gratuit en y glissant les trois différences :
 six lignes sur huit étaient identiques d'une colonne à l'autre, et l'œil qui
 balaie deux listes jumelles ne voit pas ce qu'il achète. « Everything in the
