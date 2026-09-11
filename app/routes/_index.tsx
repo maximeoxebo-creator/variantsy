@@ -20,7 +20,7 @@ export default function Index() {
       </p>
       <form method="get" action="/auth/login" style={{ marginTop: 24 }}>
         <label htmlFor="shop" style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-          Domaine de la boutique
+          Store domain
         </label>
         <input
           id="shop"
