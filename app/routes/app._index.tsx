@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 import {
   Badge,
   BlockStack,
@@ -233,14 +233,44 @@ const CLES_TITRE = [
  *  rien perdre. C'est la différence avec l'ancien écran « Setup », qui posait
  *  la même question pour ne montrer que des instructions, et renvoyait vers un
  *  onglet au lieu d'y mener. */
+/**
+ * Ce que le forfait gratuit ne fait pas — dit une fois, en haut, plutôt que
+ * dispersé en cadenas dans chaque réglage.
+ *
+ * Ce bandeau porte aussi une obligation de la revue Shopify (règle 1.2.1) :
+ * la page de tarification doit être joignable depuis l'app. Elle l'était
+ * autrefois par une redirection forcée ; le forfait gratuit l'a supprimée,
+ * c'est donc ce bouton qui en tient lieu. Ne pas le retirer.
+ *
+ * `target="_top"` est obligatoire : la page de tarification refuse d'être
+ * affichée dans l'iframe embarquée.
+ */
+function BandeauPlan({ pricingUrl }: { pricingUrl: string }) {
+  return (
+    <Banner
+      tone="info"
+      title="Two features are on the Pro plan"
+      action={{ content: "See plans", url: pricingUrl, target: "_top" }}
+    >
+      <p>
+        Swatches, display modes, theme matching and dynamic titles are yours on the free
+        plan, with no limit on products. A photo gallery per color and linked product
+        pages need Pro — $9.90 a month, 14 days free.
+      </p>
+    </Banner>
+  );
+}
+
 function SelecteurMode({
   mode,
   onChange,
   nbGroupes,
+  pro,
 }: {
   mode: Mode;
   onChange: (m: Mode) => void;
   nbGroupes: number;
+  pro: boolean;
 }) {
   // La carte écartée s'efface, pour que l'œil se pose d'abord sur celle qui
   // est active. Elle se rallume au survol : atténuée en permanence, elle
@@ -259,10 +289,14 @@ function SelecteurMode({
       titre: "Linked products",
       sous: "One product page per color, linked together",
       apercu: <SchemaGroupe />,
+      // La carte reste CLIQUABLE en gratuit : le marchand doit pouvoir voir
+      // l'écran, composer un groupe et comprendre ce qu'il achète. C'est la
+      // rangée sur la boutique qui est verrouillée, pas l'exploration.
+      paye: true,
       note:
         nbGroupes > 0
           ? `${nbGroupes} group${nbGroupes > 1 ? "s" : ""} set up.`
-          : "What Shopify reserves to Plus plans. Here, on any plan.",
+          : "What Shopify reserves to Plus plans. Here, from the Pro plan.",
     },
   ];
 
@@ -307,7 +341,10 @@ function SelecteurMode({
             }}
           >
             <span>
-              <span style={{ display: "block", fontSize: 15, fontWeight: 650 }}>{c.titre}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 650 }}>{c.titre}</span>
+                {"paye" in c && c.paye && !pro && <Badge tone="info">Pro</Badge>}
+              </span>
               <span
                 style={{
                   display: "block",
@@ -338,6 +375,11 @@ function SelecteurMode({
 
 export default function SettingsPage() {
   const { settings, themeName, deepLink, groups } = useLoaderData<typeof loader>();
+  // Le plan vit dans le loader du LAYOUT : c'est lui qui interroge Shopify à
+  // chaque chargement. Le relire ici l'aurait dédoublé — et deux lectures
+  // peuvent diverger.
+  const parent = useRouteLoaderData<{ plan: string; pricingUrl: string }>("routes/app");
+  const pro = parent?.plan === "pro";
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
 
@@ -566,7 +608,9 @@ export default function SettingsPage() {
                 carte imbriquée dans une autre — Polaris les aplatit, et la mise
                 en groupes ne se voyait pas. Posés sur le fond de la page, les
                 blocs redeviennent des cartes à part entière. */}
-            <SelecteurMode mode={mode} onChange={changerMode} nbGroupes={groups.length} />
+            {!pro && parent?.pricingUrl && <BandeauPlan pricingUrl={parent.pricingUrl} />}
+
+            <SelecteurMode mode={mode} onChange={changerMode} nbGroupes={groups.length} pro={pro} />
 
             <Card padding="0">
               <Tabs
@@ -652,7 +696,7 @@ export default function SettingsPage() {
                   {actif === "installation" && (
                     <InstallationPanel themeName={themeName} deepLink={deepLink} mode={mode} />
                   )}
-                  {actif === "apparence" && <ApparencePanel form={vue} set={ecrire as never} />}
+                  {actif === "apparence" && <ApparencePanel form={vue} set={ecrire as never} pro={pro} />}
                   {actif === "titre" && <TitrePanel form={vue} set={ecrire as never} />}
                   {actif === "groupes" && <LiensProduitsPanel
                       groups={groups}
@@ -717,6 +761,9 @@ type Settings = SerializeFrom<typeof loader>["settings"];
 type PanelProps = {
   form: Settings;
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
+  /** Facultatif : seuls les volets qui abritent un réglage payant s'en
+   *  servent. Absent vaut « gratuit », le choix prudent. */
+  pro?: boolean;
 };
 
 /**
@@ -1144,7 +1191,7 @@ function ApercuRangee({ radius, accent }: { radius: string; accent: string }) {
   );
 }
 
-function ApparencePanel({ form, set }: PanelProps) {
+function ApparencePanel({ form, set, pro }: PanelProps) {
   const radius =
     form.shape === "circle" ? "50%" : form.shape === "rounded" ? `${form.cornerRadius}px` : "0px";
   // « auto » est une consigne pour le storefront, pas une couleur CSS : passé
@@ -1744,10 +1791,17 @@ function ApparencePanel({ form, set }: PanelProps) {
             defaut="#D9D9D9"
             onChange={(v) => set("borderColor", v)}
           />
+          {/* Le réglage reste VISIBLE en gratuit, simplement inopérant : le
+              masquer laisserait croire que l'app ne sait pas le faire. */}
           <Checkbox
             label="Filter the gallery to the chosen color"
-            helpText="This is the core of Variantsy. Uncheck to fall back to the native behavior — one image per variant. The grouping itself is entirely automatic."
-            checked={form.galleryEnabled}
+            helpText={
+              pro
+                ? "This is the core of Variantsy. Uncheck to fall back to the native behavior — one image per variant. The grouping itself is entirely automatic."
+                : "On the Pro plan. Each color then shows only its own photos, and the grouping is entirely automatic."
+            }
+            checked={form.galleryEnabled && pro !== false}
+            disabled={!pro}
             onChange={(v) => set("galleryEnabled", v)}
           />
           <Checkbox

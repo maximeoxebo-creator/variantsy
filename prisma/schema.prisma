@@ -55,6 +55,13 @@ model ShopSettings {
   /// Interrupteur maître : si false, l'extension ne rend rien côté storefront.
   enabled Boolean @default(true)
 
+  /// "free" | "pro" — report du plan lu chez Shopify à chaque chargement de
+  /// l'admin. Shopify reste la source de vérité ; cette colonne existe parce
+  /// que le storefront, servi par l'app proxy, n'a pas de session admin pour
+  /// aller le demander lui-même. Par défaut "free" : une boutique dont on ne
+  /// sait encore rien n'a pas à recevoir les fonctionnalités payantes.
+  plan String @default("free")
+
   // --- Apparence des swatches -------------------------------------------
   /// "circle" | "square" | "rounded"
   shape                String  @default("circle")

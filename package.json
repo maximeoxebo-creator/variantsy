@@ -12,7 +12,7 @@
     "vercel-build": "prisma generate && prisma migrate deploy && remix vite:build",
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/smoke-test.mjs",
+    "test": "node scripts/plan-test.mjs && node scripts/smoke-test.mjs",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

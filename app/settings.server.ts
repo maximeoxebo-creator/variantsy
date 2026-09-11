@@ -127,6 +127,36 @@ export async function getSettings(shop: string): Promise<ShopSettings> {
   });
 }
 
+/**
+ * Reporte en base le plan lu chez Shopify.
+ *
+ * Le storefront est servi par l'app proxy, qui n'a pas de session admin : il ne
+ * peut pas demander le plan lui-même. Cette colonne est sa seule source.
+ *
+ * `null` veut dire « Shopify n'a pas répondu » : on ne touche à rien, sous
+ * peine de dégrader un marchand payant sur un hoquet réseau. L'écriture n'a
+ * lieu que si la valeur change, pour ne pas écrire à chaque chargement.
+ */
+export async function enregistrerPlan(shop: string, plan: string | null): Promise<boolean> {
+  if (!plan) return false;
+  try {
+    return await withRetry(async () => {
+      const actuel = await prisma.shopSettings.findUnique({
+        where: { shop },
+        select: { plan: true },
+      });
+      if (!actuel || actuel.plan === plan) return false;
+      await prisma.shopSettings.update({ where: { shop }, data: { plan } });
+      return true;
+    });
+  } catch (error) {
+    // Un report qui échoue ne doit pas empêcher l'admin de s'ouvrir : le
+    // prochain chargement retentera.
+    console.error("[plan] report impossible", error);
+    return false;
+  }
+}
+
 /** Les surcharges « produits liés » ne font pas partie de SettingsInput :
  *  celui-ci décrit le repli servi quand la base est injoignable, et une
  *  surcharge absente s'y traduit simplement par un héritage. */
@@ -208,6 +238,10 @@ export async function deleteSwatchValue(shop: string, id: string): Promise<void>
 export type StorefrontConfig = {
   v: number;
   enabled: boolean;
+  /** Les pages produit liées sont-elles déverrouillées ? On publie une
+   *  CAPACITÉ, pas un nom de forfait : le storefront n'a pas à connaître la
+   *  grille tarifaire, et elle peut changer sans toucher au bloc. */
+  linked: boolean;
   style: {
     shape: string;
     size: number;
@@ -285,6 +319,21 @@ export type StorefrontConfig = {
   colors?: Record<string, string>;
 };
 
+/**
+ * Le forfait gratuit donne tout l'habillage — pastilles, modes d'affichage,
+ * adaptation au thème, titre dynamique. Restent payantes les deux
+ * fonctionnalités qu'aucun concurrent gratuit ne propose : une galerie par
+ * couleur, et les pages produit liées.
+ *
+ * `SettingsInput` est le repli servi quand la base est injoignable ; il ne
+ * porte pas de colonne `plan`. Dans ce cas on sert le gratuit : mieux vaut une
+ * fonctionnalité manquante pendant une panne qu'une fonctionnalité payante
+ * offerte à tout le monde.
+ */
+export function estPro(settings: ShopSettings | SettingsInput): boolean {
+  return (settings as Partial<ShopSettings>).plan === "pro";
+}
+
 export function toStorefrontConfig(
   settings: ShopSettings | SettingsInput,
   values: SwatchValue[],
@@ -343,6 +392,8 @@ export function toStorefrontConfig(
   return {
     v: 1,
     enabled: settings.enabled,
+    /** Ce que la boutique a le droit de faire, pas ce qu'elle paie. */
+    linked: estPro(settings),
     style,
     // Fusion plutôt que remplacement : une surcharge partielle — le marchand
     // n'a changé que la forme — hérite du reste au lieu de repartir des
@@ -367,7 +418,11 @@ export function toStorefrontConfig(
       updateDocumentTitle: settings.updateDocumentTitle,
     },
     gallery: {
-      enabled: settings.galleryEnabled,
+      // Une galerie par couleur est une fonctionnalité PRO. On la coupe ici,
+      // à la source : le storefront reçoit une config où elle n'a jamais été
+      // activée, plutôt qu'une config complète qu'il faudrait lui demander
+      // d'ignorer.
+      enabled: settings.galleryEnabled && estPro(settings),
       groupBy: settings.groupBy,
       commonMediaMode: settings.commonMediaMode,
       altFallback: settings.altFallback,

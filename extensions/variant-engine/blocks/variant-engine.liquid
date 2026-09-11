@@ -384,7 +384,17 @@
       change pas de variante. Le référencement de chaque produit est préservé —
       c'est tout l'intérêt par rapport à une app qui fusionnerait les fiches.
     {%- endcomment -%}
-    {%- if vtsy_has_color == false and vtsy_members and vtsy_members.size > 1 -%}
+    {%- comment -%}
+      `vtsy_style.linked` est une CAPACITÉ, pas un nom de forfait : le bloc n'a
+      pas à connaître la grille tarifaire. Elle est publiée dans la métadonnée
+      de boutique, republiée dès que le plan change.
+
+      Une métadonnée écrite AVANT l'existence du forfait gratuit ne porte pas
+      cette clé et vaut donc « non ». C'est le bon sens de l'erreur : la rangée
+      reparaît au premier chargement de l'admin, qui relit le plan chez Shopify
+      et republie.
+    {%- endcomment -%}
+    {%- if vtsy_style.linked and vtsy_has_color == false and vtsy_members and vtsy_members.size > 1 -%}
       <div
         class="variantsy__group variantsy__group--color variantsy__group--linked"
         {% if vtsy_style.cssLinked != blank %}style="{{ vtsy_style.cssLinked }}"{% endif %}

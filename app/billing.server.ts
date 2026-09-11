@@ -21,9 +21,14 @@ type GraphqlAdmin = {
  * base). Dès la 2e visite, le reviewer ne voyait plus jamais la page de
  * facturation → rejet.
  *
- * Règle ici : le gate tourne sur CHAQUE chargement de l'app, et interroge
- * Shopify (pas notre base) pour savoir si un abonnement est actif. Aucun état
- * local ne peut désynchroniser le gate de la réalité.
+ * Règle ici : le plan est relu depuis SHOPIFY à chaque chargement de l'app,
+ * jamais depuis notre base. Aucun état local ne peut le désynchroniser de la
+ * réalité. Ce qu'on enregistre ensuite en base n'est qu'un report, pour que le
+ * storefront — qui n'a pas de session admin — sache quoi servir.
+ *
+ * Depuis l'ajout du forfait gratuit, ce plan ne BLOQUE plus l'entrée : il
+ * décide de ce qui est déverrouillé. Voir planActuel plus bas pour la raison,
+ * qui tient à une particularité de Shopify App Pricing.
  *
  * Note importante : Shopify marque les abonnements en période d'essai comme
  * `ACTIVE`. Tester "le tableau activeSubscriptions n'est pas vide" couvre donc
@@ -76,31 +81,50 @@ export function pricingPlansUrl(shop: string): string {
   return `https://admin.shopify.com/store/${shopHandle}/charges/${appHandle}/pricing_plans`;
 }
 
+export type Plan = "free" | "pro";
+
 /**
- * À appeler dans le loader du layout racine `app.tsx`.
- * Lève une redirection top-level si aucun abonnement (ni essai) n'est actif.
+ * Le plan du marchand, tel que Shopify le connaît.
  *
- * `target: "_top"` est obligatoire : sans lui, la page de pricing s'ouvrirait
- * dans l'iframe embarquée et Shopify la refuserait (X-Frame-Options).
+ * POURQUOI PAS DE REDIRECTION — et c'est un renversement par rapport à la
+ * version precedente de ce fichier.
+ *
+ * Un forfait GRATUIT de Shopify App Pricing ne cree aucun abonnement :
+ * `activeSubscriptions` revient vide, exactement comme pour un marchand qui
+ * n'aurait rien choisi. Les deux cas sont indiscernables depuis l'API Admin.
+ * L'ancien gate redirigeait sur tableau vide : garde tel quel, il aurait
+ * enferme toute boutique en gratuit dans une boucle vers la page de
+ * tarification.
+ *
+ * Tableau vide vaut donc GRATUIT, et l'app s'ouvre. La regle 1.2.1 reste
+ * satisfaite autrement : les fonctionnalites payantes sont verrouillees et la
+ * page de tarification est joignable d'un clic depuis l'admin — c'est ce que
+ * le reviewer doit pouvoir constater.
+ *
+ * Un essai en cours compte comme PRO : Shopify marque les abonnements en
+ * periode d'essai `ACTIVE`.
  */
-export async function requireActivePlan(
+export async function planActuel(
   admin: GraphqlAdmin,
   shop: string,
-  redirect: (url: string, init?: { target?: string }) => never,
-): Promise<ActiveSubscription[]> {
+): Promise<{ plan: Plan | null; subscriptions: ActiveSubscription[]; pricingUrl: string }> {
   let subscriptions: ActiveSubscription[] = [];
   try {
     subscriptions = await getActiveSubscriptions(admin);
   } catch (error) {
-    // Si l'appel GraphQL échoue (réseau, throttling), on NE bloque pas le
-    // marchand : mieux vaut laisser passer une session que d'afficher une
-    // erreur. Le gate se réappliquera au prochain chargement.
+    // Un appel qui echoue (reseau, throttling) ne doit jamais degrader un
+    // marchand payant : on le laisse sur le plan qu'on lui connait deja, et
+    // l'appelant gardera la valeur enregistree.
     console.error("[billing] impossible de vérifier l'abonnement", error);
-    return [];
+    // `null` ne veut pas dire gratuit : il veut dire « je ne sais pas ». Rendre
+    // « gratuit » ici retirerait ses fonctionnalites a un marchand payant sur
+    // un simple hoquet reseau.
+    return { plan: null, subscriptions: [], pricingUrl: pricingPlansUrl(shop) };
   }
 
-  if (subscriptions.length === 0) {
-    throw redirect(pricingPlansUrl(shop), { target: "_top" });
-  }
-  return subscriptions;
+  return {
+    plan: subscriptions.length > 0 ? "pro" : "free",
+    subscriptions,
+    pricingUrl: pricingPlansUrl(shop),
+  };
 }

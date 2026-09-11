@@ -110,6 +110,9 @@ export type StylePublie = {
   showLabels: boolean;
   showOptionName: boolean;
   soldOut: string;
+  /** Les pages produit liées sont-elles déverrouillées ? Le bloc rend cette
+   *  rangée lui-même, côté serveur : c'est donc à lui qu'il faut le dire. */
+  linked: boolean;
 };
 
 export function stylePublie(config: StorefrontConfig): StylePublie {
@@ -126,5 +129,6 @@ export function stylePublie(config: StorefrontConfig): StylePublie {
     showLabels: Boolean(config.style.showLabels),
     showOptionName: Boolean(config.style.showOptionName),
     soldOut: config.behavior.soldOutStyle,
+    linked: config.linked,
   };
 }
