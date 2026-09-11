@@ -24,7 +24,7 @@ import {
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
 import { authenticate } from "../shopify.server";
-import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
+import { apparenceServie, getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { publierStyle } from "../publier-style.server";
 import { listGroups, saveGroup, deleteGroup } from "../groups.server";
 import { SwatchPreview } from "../components/SwatchPreview";
@@ -44,7 +44,11 @@ const PUBLISHED_THEME_QUERY = `#graphql
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
-  const settings = await getSettings(session.shop);
+  // L'écran montre ce que la BOUTIQUE reçoit, pas ce qui dort en base : sur un
+  // forfait gratuit, l'apparence revient à ses valeurs d'usine. Sans cette
+  // ligne, un marchand retombé en gratuit verrait ses anciens réglages dans
+  // des champs désactivés, et une boutique qui ne les applique pas.
+  const settings = apparenceServie(await getSettings(session.shop));
 
   let themeId: string | null = null;
   let themeName: string | null = null;
@@ -249,13 +253,13 @@ function BandeauPlan({ pricingUrl }: { pricingUrl: string }) {
   return (
     <Banner
       tone="info"
-      title="Two features are on the Pro plan"
+      title="You are on the free plan"
       action={{ content: "See plans", url: pricingUrl, target: "_top" }}
     >
       <p>
-        Swatches, display modes, theme matching and dynamic titles are yours on the free
-        plan, with no limit on products. A photo gallery per color and linked product
-        pages need Pro — $9.90 a month, 14 days free.
+        Swatches, dynamic titles and theme matching are yours, with no limit on products.
+        Customizing the selector, a photo gallery per color and linked product pages come
+        with Pro — $9.90 a month, 14 days free.
       </p>
     </Banner>
   );
@@ -304,18 +308,22 @@ function SelecteurMode({
     <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
       {choix.map((c) => {
         const actif = mode === c.id;
+        // Verrouillée, la carte cesse d'être un bouton qui ment : ni clic, ni
+        // survol qui la rallume. Le badge « Pro » dit pourquoi.
+        const verrouillee = "paye" in c && c.paye === true && !pro;
         return (
           <button
             key={c.id}
             type="button"
+            disabled={verrouillee}
             onClick={() => onChange(c.id)}
-            onMouseEnter={() => setSurvolee(c.id)}
+            onMouseEnter={() => !verrouillee && setSurvolee(c.id)}
             onMouseLeave={() => setSurvolee(null)}
-            onFocus={() => setSurvolee(c.id)}
+            onFocus={() => !verrouillee && setSurvolee(c.id)}
             onBlur={() => setSurvolee(null)}
             aria-pressed={actif}
             style={{
-              opacity: actif || survolee === c.id ? 1 : 0.55,
+              opacity: verrouillee ? 0.45 : actif || survolee === c.id ? 1 : 0.55,
               transition: "opacity 150ms ease",
               // PIÈGE N°5 : un bouton étiré par la grille centre son contenu.
               display: "flex",
@@ -327,7 +335,7 @@ function SelecteurMode({
               textAlign: "left",
               padding: 16,
               borderRadius: 14,
-              cursor: "pointer",
+              cursor: verrouillee ? "not-allowed" : "pointer",
               background: actif
                 ? "var(--p-color-bg-surface-selected)"
                 : "var(--p-color-bg-surface)",
@@ -1229,6 +1237,33 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
         />
       </Card>
 
+      {/* TOUT ce qui suit est payant. Un <fieldset disabled> désactive d'un
+          coup chaque champ et chaque bouton qu'il contient — c'est le
+          navigateur qui s'en charge, pas une prop à répéter sur quarante
+          contrôles, dont on oublierait forcément une au prochain réglage
+          ajouté. « Match my theme », au-dessus, reste HORS du cadre : c'est la
+          seule personnalisation que le forfait gratuit conserve. */}
+      <fieldset
+        disabled={!pro}
+        style={{
+          border: 0,
+          padding: 0,
+          margin: 0,
+          minWidth: 0,
+          opacity: pro ? 1 : 0.5,
+        }}
+      >
+        <BlockStack gap="600">
+          {!pro && (
+            <Banner tone="info" title="Appearance is on the Pro plan">
+              <p>
+                The free plan shows the default selector, which already follows your theme
+                when &ldquo;Match my theme&rdquo; is on above. Shape, size, borders, display
+                modes and typography come with Pro.
+              </p>
+            </Banner>
+          )}
+
       <Bloc titre="How your colors are shown" raison="Swatches, text buttons or a dropdown — pick what fits your theme. Color options only: sizes stay text buttons in every case.">
         <ChoiceCards
           value={form.displayMode}
@@ -1852,6 +1887,8 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
           />
         </Advanced>
       </Bloc>
+        </BlockStack>
+      </fieldset>
 
     </BlockStack>
   );

@@ -73,6 +73,41 @@ verifie("Gratuit : le titre dynamique reste servi", "updateTitle" in gratuit.beh
 verifie("Pro : la galerie est servie", paye.gallery.enabled === true);
 verifie("Pro : les pages liées sont servies", paye.linked === true);
 
+/* --- L'apparence est figee en gratuit ---------------------------------- */
+// Personnalisee puis retombee en gratuit : la boutique doit recevoir l'usine,
+// pas les anciens reglages. « Match my theme » est la seule exception.
+const personnalise = {
+  ...reglages("free"),
+  shape: "square", size: 72, gap: 24, borderWidth: 5, selectedStyle: "fill",
+  displayMode: "dropdown", showLabels: true, labelNameBold: false,
+  borderColor: "auto", selectedColor: "auto", labelSize: "auto",
+  swatchFileMatch: true, swatchFileExt: "webp",
+};
+const servi = toStorefrontConfig(personnalise, []).style;
+verifie("Gratuit : la forme revient a l'usine", servi.shape === DEFAULT_SETTINGS.shape, servi.shape);
+verifie("Gratuit : la taille revient a l'usine", servi.size === DEFAULT_SETTINGS.size, String(servi.size));
+verifie(
+  "Gratuit : le mode d'affichage revient a l'usine",
+  servi.displayMode === DEFAULT_SETTINGS.displayMode,
+  servi.displayMode,
+);
+verifie(
+  "Gratuit : « Match my theme » survit",
+  servi.borderColor === "auto" && servi.selectedColor === "auto" && servi.labelSize === "auto",
+  JSON.stringify([servi.borderColor, servi.selectedColor, servi.labelSize]),
+);
+verifie(
+  "Gratuit : l'origine des couleurs survit",
+  servi.swatchFileMatch === true && servi.swatchFileExt === "webp",
+  "sans elle, les pastilles seraient grises",
+);
+const servipro = toStorefrontConfig({ ...personnalise, plan: "pro" }, []).style;
+verifie(
+  "Pro : la personnalisation est servie telle quelle",
+  servipro.shape === "square" && servipro.size === 72 && servipro.displayMode === "dropdown",
+  JSON.stringify([servipro.shape, servipro.size, servipro.displayMode]),
+);
+
 /* --- Le marchand garde la main sur ce qu'il paie ------------------------ */
 const proEteint = toStorefrontConfig({ ...reglages("pro"), galleryEnabled: false }, []);
 verifie(

@@ -85,13 +85,18 @@ Champ distinct des « Feature 1-5 » ci-dessus : celui-ci décrit le plan
 tarifaire, huit lignes maximum, quarante caractères chacune.
 
 1. Everything in the Free plan            (27/40)
-2. A photo gallery for every color        (31/40)
-3. Gallery filtered to the chosen color   (36/40)
-4. Thumbnails filtered with it            (27/40)
-5. The large photo follows the color      (33/40)
-6. Link one product page per color        (31/40)
-7. One selector across those pages        (31/40)
-8. Each page keeps its URL and stock      (33/40)
+2. Customize shape, size and colors       (32/40)
+3. Swatches, buttons or dropdown          (29/40)
+4. A photo gallery for every color        (31/40)
+5. Gallery filtered to the chosen color   (36/40)
+6. The large photo follows the color      (33/40)
+7. Link one product page per color        (31/40)
+8. One selector across those pages        (31/40)
+
+Deux lignes ajoutées en tête (2 et 3) depuis que la personnalisation du
+sélecteur est passée en Pro. « Thumbnails filtered with it » et « Each page
+keeps its URL and stock » ont cédé leur place : les huit emplacements sont
+pris, et ces deux-là étaient les moins décisives.
 
 Huit lignes, dont AUCUNE n'est vraie du forfait gratuit. Les lignes 4, 5 et 8
 détaillent les deux fonctionnalités payantes au lieu de répéter les communes :
@@ -116,13 +121,17 @@ Nom du forfait : Free (4/18)
 Prix : 0 — aucun essai (un essai sur un forfait gratuit n'a pas de sens)
 
 1. Unlimited products and variants        (31/40)
-2. Swatches, buttons or dropdown          (29/40)
+2. Color swatches on any theme            (27/40)
 3. Matches your theme automatically       (32/40)
 4. Dynamic variant titles                 (22/40)
 5. Color library and file swatches        (31/40)
 6. Hides your theme's own selector        (31/40)
 7. Live preview, no theme code            (27/40)
-8. Works on any theme                     (18/40)
+8. No setup, no theme code                (23/40)
+
+La ligne 2 ne dit plus « Swatches, buttons or dropdown » : le choix du mode
+d'affichage est passé en Pro, la promesse serait devenue fausse. La ligne 8 ne
+répète plus « Works on any theme », déjà dit en ligne 2.
 
 Ce que le gratuit NE fait pas, et qui doit rester en tête du plan Pro : une
 galerie par couleur, et les pages produit liées. Le code ne lit aucun NOM de

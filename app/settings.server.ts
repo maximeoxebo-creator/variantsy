@@ -334,10 +334,60 @@ export function estPro(settings: ShopSettings | SettingsInput): boolean {
   return (settings as Partial<ShopSettings>).plan === "pro";
 }
 
+/**
+ * Réglages d'apparence qu'un forfait GRATUIT ne pilote pas : ils reprennent
+ * leur valeur d'usine, servie comme affichée.
+ *
+ * La liste est explicite, et non « tout sauf trois » : un réglage ajouté plus
+ * tard ne devient pas payant par accident — il restera libre jusqu'à ce qu'on
+ * l'inscrive ici, ce qui est le sens de l'erreur le moins grave.
+ */
+const APPARENCE_FIGEE = [
+  "shape", "size", "gap", "borderWidth", "selectedStyle", "selectedWidth",
+  "selectedGap", "cornerRadius", "displayMode", "otherDisplayMode",
+  "controlRadius", "controlSelectedStyle", "dropdownFullWidth", "swatchFallback",
+  "photoScale", "neutralColor", "showLabels", "showOptionName", "labelValueBold",
+  "labelNameBold", "maxVisible", "customCss",
+] as const;
+
+/**
+ * Ce que le gratuit garde malgré tout :
+ *
+ *  - `borderColor`, `selectedColor`, `labelSize` portent « Match my theme ».
+ *    C'est la seule personnalisation laissée au gratuit, et la plus utile :
+ *    sans elle, le sélecteur jure avec le thème sur lequel il est posé.
+ *  - `swatchFileMatch` / `swatchFileExt` ne décident pas de l'APPARENCE mais de
+ *    l'origine des couleurs, au même titre que la bibliothèque de teintes. Les
+ *    figer rendrait des pastilles grises, et une pastille grise ne vaut rien.
+ */
+const APPARENCE_LIBRE = [
+  "borderColor", "selectedColor", "labelSize", "swatchFileMatch", "swatchFileExt",
+] as const;
+
+/**
+ * L'apparence réellement servie. Sur un forfait gratuit, c'est celle d'usine.
+ *
+ * Le filtrage a lieu ICI, à la source, et pas dans l'écran de réglages : le
+ * storefront doit servir ce que l'admin montre, y compris pour un marchand qui
+ * avait personnalisé son sélecteur avant de retomber en gratuit.
+ */
+export function apparenceServie<T extends ShopSettings | SettingsInput>(settings: T): T {
+  if (estPro(settings)) return settings;
+  const fige = { ...settings } as Record<string, unknown>;
+  for (const cle of APPARENCE_FIGEE) {
+    fige[cle] = (DEFAULT_SETTINGS as Record<string, unknown>)[cle];
+  }
+  for (const cle of APPARENCE_LIBRE) {
+    fige[cle] = (settings as Record<string, unknown>)[cle];
+  }
+  return fige as T;
+}
+
 export function toStorefrontConfig(
-  settings: ShopSettings | SettingsInput,
+  reglages: ShopSettings | SettingsInput,
   values: SwatchValue[],
 ): StorefrontConfig {
+  const settings = apparenceServie(reglages);
   const swatches: StorefrontConfig["swatches"] = {};
   for (const v of values) {
     swatches[`${v.optionName}::${v.value}`] = {
