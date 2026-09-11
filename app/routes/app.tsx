@@ -27,7 +27,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Depuis le forfait gratuit, ce plan ne bloque plus l'entrée : il décide de
   // ce qui est déverrouillé. Voir app/billing.server.ts.
   // ---------------------------------------------------------------------
-  const { plan, pricingUrl } = await planActuel(admin, session.shop);
+  // Les deux lectures sont indépendantes : les enchaîner ajoutait un
+  // aller-retour à CHAQUE navigation dans l'admin, cold start Neon compris.
+  // `settings` ne sert qu'en repli, quand Shopify n'a pas répondu — auquel cas
+  // `enregistrerPlan` n'écrit rien, et la valeur lue ici ne peut pas être
+  // périmée.
+  const [{ plan, pricingUrl }, settings] = await Promise.all([
+    planActuel(admin, session.shop),
+    getSettings(session.shop),
+  ]);
   // Un changement de plan doit atteindre le STOREFRONT tout de suite : la
   // rangée de produits liés est rendue par le bloc Liquid, qui lit une
   // métadonnée de boutique. Sans cette republication, un marchand qui vient de
@@ -36,8 +44,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (await enregistrerPlan(session.shop, plan)) {
     await publierStyle(admin, session.shop);
   }
-  const settings = await getSettings(session.shop);
-
   return {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     shop: session.shop,
