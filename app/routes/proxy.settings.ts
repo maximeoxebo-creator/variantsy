@@ -47,7 +47,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return json(toStorefrontConfig(settings, values), { status: 200, cache: "cdn" });
   } catch (error) {
     console.error("[proxy] base injoignable, repli sur les valeurs par défaut", error);
-    return json(toStorefrontConfig(DEFAULT_SETTINGS, []), {
+    // Le repli se sert du plan le plus GÉNÉREUX, à dessein. Base injoignable,
+    // on ne sait rien du plan : servir « gratuit » éteindrait la galerie d'un
+    // marchand qui la paie, et sa fiche produit montrerait d'un coup les
+    // photos de tous les coloris. Le risque inverse — une boutique gratuite
+    // qui profite de la galerie le temps d'une panne — ne coûte rien à
+    // personne. La fenêtre est de dix secondes de cache.
+    return json(toStorefrontConfig({ ...DEFAULT_SETTINGS, plan: "pro" }, []), {
       status: 200,
       // Cache très court : dès que la base répond, on veut la vraie config.
       cache: "short",

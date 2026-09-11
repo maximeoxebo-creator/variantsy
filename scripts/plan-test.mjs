@@ -91,6 +91,17 @@ verifie(
 verifie("Le Liquid apprend que les pages liées sont fermées", stylePublie(gratuit).linked === false);
 verifie("Le Liquid apprend qu'elles sont ouvertes", stylePublie(paye).linked === true);
 
+/* --- Le repli quand la base ne repond pas ------------------------------ */
+// L'app proxy sert alors DEFAULT_SETTINGS forcé en "pro". Volontaire : on ne
+// sait rien du plan, et éteindre la galerie d'un marchand qui la paie change
+// sa fiche produit sous les yeux de ses acheteurs.
+const repli = toStorefrontConfig({ ...DEFAULT_SETTINGS, plan: "pro" }, []);
+verifie(
+  "Base injoignable : la galerie reste allumée",
+  repli.gallery.enabled === true,
+  "le repli ne doit pas dégrader un marchand payant",
+);
+
 /* --- La lecture du plan chez Shopify ----------------------------------- */
 const admin = (subs) => ({
   graphql: async () => ({

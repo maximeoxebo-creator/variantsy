@@ -56,6 +56,13 @@ api_version = "2026-07"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
+  # Sans lui, un marchand qui résilie garderait les fonctionnalités payantes :
+  # le storefront lit le plan reporté en base, et seule l'ouverture de l'admin
+  # le rafraîchissait — ce qu'un marchand parti ne fait plus.
+  [[webhooks.subscriptions]]
+  topics = [ "app_subscriptions/update" ]
+  uri = "/webhooks/app/subscriptions_update"
+
   # Obligatoires pour toute app publiée sur l'App Store. Leur absence — ou une
   # réponse incorrecte — est le premier motif de refus à la première
   # soumission : l'équipe d'examen les teste à chaque passage, signature

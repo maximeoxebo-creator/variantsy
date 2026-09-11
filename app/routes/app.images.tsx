@@ -16,7 +16,7 @@ import {
 } from "@shopify/polaris";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-import { getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
+import { getSettings, updateSettings, DEFAULT_SETTINGS, estPro } from "../settings.server";
 import { computeGroups } from "../grouping.js";
 
 /**
@@ -164,7 +164,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     };
 
     const cfg = {
-      enabled: settings.galleryEnabled,
+      // Le même calcul que celui servi au storefront. Sans `estPro`, cet écran
+      // annonçait un groupage impeccable à une boutique qui n'en voyait aucun
+      // effet — or c'est précisément l'écran qu'on ouvre pour comprendre
+      // pourquoi rien ne se passe.
+      enabled: settings.galleryEnabled && estPro(settings),
       groupBy: settings.groupBy,
       commonMediaMode: settings.commonMediaMode,
       altFallback: settings.altFallback,
@@ -179,7 +183,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       // Un diagnostic précis vaut mieux qu'un « ça ne marche pas » : c'est ce
       // qui évite les tickets de support.
       let reason = "No group detected.";
-      if (!settings.galleryEnabled) {
+      if (!estPro(settings)) {
+        reason =
+          "A photo gallery per color is on the Pro plan. The grouping below is what your shoppers would see once you upgrade.";
+      } else if (!settings.galleryEnabled) {
         reason = "Variant galleries are turned off in the settings above.";
       } else if (!mediaViews.length) {
         reason = "This product has no media.";
