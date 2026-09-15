@@ -362,7 +362,7 @@ export default function SwatchesPage() {
                     label="Color"
                     value={editing.colorHex || ""}
                     onChange={(v) => setEditing({ ...editing, colorHex: v })}
-                    placeholder="#1F3A5F"
+                    placeholder="#F07A22"
                     autoComplete="off"
                   />
                   {editing.kind === "gradient" && (

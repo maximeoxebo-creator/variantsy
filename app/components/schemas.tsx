@@ -12,8 +12,15 @@ import { BlockStack, Text } from "@shopify/polaris";
    couleur de Polaris, donc le thème clair comme le sombre.
    ========================================================================== */
 
-export const BLUE = "#2C5AA0";
-export const BEIGE = "#D8C3A5";
+/** Teintes des maquettes : un camaïeu d'orange, pour l'unité avec la marque.
+ *
+ *  Elles remplacent le bleu, le beige et la terracotta d'origine en recopiant
+ *  leur CLARTÉ (L* 38 / 80 / 64) : chaque schéma garde l'équilibre de contraste
+ *  pour lequel il avait été dessiné, et les trois restent distinctes à l'œil,
+ *  daltonien compris — l'écart de clarté porte la différence, pas la teinte. */
+export const RUST = "#9E3A12";
+export const APRICOT = "#F8BB85";
+export const TANGERINE = "#F07A22";
 
 /** Couleur de MARQUE de Variantsy — orange Soleil, celle de l'icône.
  *
@@ -24,7 +31,7 @@ export const BEIGE = "#D8C3A5";
  *
  *  `MARQUE` est plus sombre que l'orange de l'icône : elle sert à des traits
  *  fins et à du texte de 8 px sur blanc, où la teinte claire disparaît. */
-export const MARQUE = "#C2410C";
+export const MARQUE = "#EA580C";
 export const DEGRADE_MARQUE = "linear-gradient(145deg,#FFB53F 0%,#FF8C3B 46%,#F2623A 100%)";
 
 /** Teinte d'une silhouette posée sur un aplat de couleur.
@@ -214,8 +221,8 @@ export function FicheMiniature({
  */
 export function SchemaOptions() {
   const valeurs = [
-    { nom: "Beige", couleur: BEIGE },
-    { nom: "Blue", couleur: BLUE },
+    { nom: "Apricot", couleur: APRICOT },
+    { nom: "Rust", couleur: RUST },
   ];
 
   return (
@@ -256,7 +263,7 @@ export function SchemaOptions() {
                 gap: 8,
                 padding: "6px 12px 6px 8px",
                 borderRadius: 8,
-                background: "var(--p-color-bg-surface-info)",
+                background: "var(--p-color-bg-surface-secondary)",
                 fontSize: 13,
               }}
             >
@@ -290,8 +297,8 @@ export function SchemaOptions() {
  */
 export function SchemaAssignation() {
   const lignes = [
-    { valeur: "Blue", couleur: BLUE },
-    { valeur: "Beige", couleur: BEIGE },
+    { valeur: "Rust", couleur: RUST },
+    { valeur: "Apricot", couleur: APRICOT },
   ];
 
   return (
@@ -340,8 +347,8 @@ export function SchemaAssignation() {
               borderRadius: 8,
               flex: "0 0 auto",
               background: `color-mix(in srgb, ${ligne.couleur} 22%, #fff)`,
-              border: "2px solid var(--p-color-border-info)",
-              boxShadow: "0 0 0 3px var(--p-color-bg-surface-info)",
+              border: "2px solid #EA580C",
+              boxShadow: "0 0 0 3px #FFF1E6",
             }}
           >
             <Silhouette tint={ligne.couleur} />
@@ -415,7 +422,7 @@ export function SchemaRetraitOption() {
               color: "var(--p-color-text-critical)",
             }}
           >
-            Color · Beige, Blue
+            Color · Apricot, Rust
           </span>
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--p-color-text-critical)" }}>
             to remove
@@ -454,9 +461,9 @@ export function SchemaGroupe() {
   // un CÂBLAGE qui descend de ces rangées vers une barre commune. Les « ↔ »
   // seuls suggéraient un va-et-vient, pas un sélecteur partagé.
   const fiches = [
-    { nom: "Blue", couleur: BLUE, sku: "COC-BLU", stock: 12 },
-    { nom: "Beige", couleur: BEIGE, sku: "COC-BEI", stock: 4 },
-    { nom: "Clay", couleur: "#C0715A", sku: "COC-CLA", stock: 9 },
+    { nom: "Rust", couleur: RUST, sku: "COC-RUS", stock: 12 },
+    { nom: "Apricot", couleur: APRICOT, sku: "COC-APR", stock: 4 },
+    { nom: "Tangerine", couleur: TANGERINE, sku: "COC-TAN", stock: 9 },
   ];
 
   return (
@@ -488,7 +495,7 @@ export function SchemaGroupe() {
                 background: "#fff",
                 border:
                   i === 0
-                    ? "2px solid var(--p-color-border-emphasis)"
+                    ? "2px solid #303030"
                     : "1px solid var(--p-color-border-secondary)",
               }}
             >
@@ -576,7 +583,7 @@ export function SchemaGroupe() {
                         background: autre.couleur,
                         boxShadow:
                           autre.nom === f.nom
-                            ? "0 0 0 1.5px #fff, 0 0 0 3px var(--p-color-border-emphasis)"
+                            ? "0 0 0 1.5px #fff, 0 0 0 3px #303030"
                             : "none",
                       }}
                     />
@@ -673,12 +680,12 @@ export function SchemaEditeurTheme() {
               padding: "5px 8px",
               marginInlineStart: ligne.niveau * 12,
               borderRadius: 6,
-              background: ligne.actif ? "var(--p-color-bg-surface-info)" : "transparent",
+              background: ligne.actif ? "#FFF1E6" : "transparent",
               border: ligne.actif
-                ? "1.5px solid var(--p-color-border-info)"
+                ? "1.5px solid #EA580C"
                 : "1.5px solid transparent",
               color: ligne.actif
-                ? "var(--p-color-text-info)"
+                ? "#9A3412"
                 : "var(--p-color-text-secondary)",
               fontWeight: ligne.actif ? 600 : 400,
             }}
@@ -732,8 +739,8 @@ export function SchemaEditeurTheme() {
             gap: 8,
             padding: "8px 10px",
             borderRadius: 8,
-            background: "var(--p-color-bg-surface-info)",
-            border: "1.5px solid var(--p-color-border-info)",
+            background: "#FFF1E6",
+            border: "1.5px solid #EA580C",
             fontWeight: 600,
           }}
         >
@@ -763,9 +770,8 @@ export function SchemaEditeurTheme() {
  *  la notice, où elle enseigne un geste ; ici elle ne racontait rien.
  */
 export function SchemaAvantApres() {
-  const ARGILE = "#C0715A";
   // Le coloris retenu par le client, celui que le filtre conserve.
-  const CHOISI = BLUE;
+  const CHOISI = RUST;
 
   const Zone = ({
     etiquette,
@@ -846,7 +852,7 @@ export function SchemaAvantApres() {
         <Zone
           etiquette="WITHOUT VARIANTSY"
           teinte="var(--p-color-text-secondary)"
-          photos={[CHOISI, CHOISI, BEIGE, BEIGE, ARGILE, ARGILE]}
+          photos={[CHOISI, CHOISI, APRICOT, APRICOT, TANGERINE, TANGERINE]}
         />
         <Zone
           etiquette="WITH VARIANTSY"
@@ -858,7 +864,7 @@ export function SchemaAvantApres() {
 
       {/* Le coloris choisi, une seule fois : c'est lui qui explique le filtre. */}
       <span style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
-        {[CHOISI, BEIGE, ARGILE].map((c) => (
+        {[CHOISI, APRICOT, TANGERINE].map((c) => (
           <span
             key={c}
             style={{
@@ -868,7 +874,7 @@ export function SchemaAvantApres() {
               background: c,
               boxShadow:
                 c === CHOISI
-                  ? "0 0 0 2px #fff, 0 0 0 4px var(--p-color-border-emphasis)"
+                  ? "0 0 0 2px #fff, 0 0 0 4px #303030"
                   : "none",
             }}
           />

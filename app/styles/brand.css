@@ -20,14 +20,18 @@
   --vy-ink: #4a2208;
   --vy-text: #1d1d1f;
   --vy-text-secondary: #636366;
-  /* Couleur des aplats qui portent du texte blanc. Blanc sur #c2410c : 5,2:1.
-     L'orange vif de l'icône (#ff8c3b) n'y tiendrait qu'à 2,3:1. */
-  --vy-brand: #c2410c;
+  /* Orange de marque, clair et vif. #f26410 est le plus vif qui garde 3:1 avec
+     du texte blanc — le seuil d'un bouton ; #f97316 tombe à 2,8:1, l'orange de
+     l'icône (#ff8c3b) à 2,3:1. */
+  --vy-brand: #f26410;
+  /* Le même orange, un cran plus soutenu, pour le PETIT texte sur fond blanc :
+     liens, libellés. #ea580c y tient 3,6:1 là où #f26410 descend à 3,2:1. */
+  --vy-brand-text: #ea580c;
   /* Dégradés relevés dans la source de l'icône (app-store/icone/declinaisons.html,
      palette « soleil ») : le fond de l'icône, et sa version sombre pour les
      pastilles à texte blanc. */
   --vy-gradient-ref: linear-gradient(145deg, #ffb53f 0%, #ff8c3b 46%, #f2623a 100%);
-  --vy-gradient: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  --vy-gradient: linear-gradient(135deg, #f26410 0%, #ea580c 100%);
 }
 
 /*
@@ -42,14 +46,14 @@
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
   background:
-    radial-gradient(1100px 480px at 8% -8%, rgba(255, 170, 50, 0.16), transparent 60%),
-    radial-gradient(900px 460px at 95% 0%, rgba(255, 200, 80, 0.12), transparent 60%),
+    radial-gradient(1100px 520px at 8% -8%, rgba(255, 150, 40, 0.32), transparent 62%),
+    radial-gradient(900px 500px at 95% 0%, rgba(255, 190, 60, 0.26), transparent 62%),
     linear-gradient(180deg, #f5f5f7 0%, #eceef3 100%);
 
-  --p-color-bg-fill-brand: #c2410c;
-  --p-color-bg-fill-brand-hover: #9a3412;
-  --p-color-bg-fill-brand-active: #7c2d12;
-  --p-color-bg-fill-brand-selected: #7c2d12;
+  --p-color-bg-fill-brand: #f26410;
+  --p-color-bg-fill-brand-hover: #ea580c;
+  --p-color-bg-fill-brand-active: #c94a0a;
+  --p-color-bg-fill-brand-selected: #c94a0a;
   --p-color-button-gradient-bg-fill: none;
 
   /* Boutons à plat, comme LinguaBar : pas d'ombre portée ni de relief. Les
@@ -101,9 +105,9 @@
 }
 
 .vy-grad {
-  /* La partie lisible du dégradé de l'icône : son départ jaune (#ffb53f)
-     s'effacerait sur le fond clair de la page. */
-  background: linear-gradient(120deg, #f57a1f 0%, #d9480f 55%, #c2410c 100%);
+  /* Du jaune-orangé au mandarine : un titre de 30 px en graisse 800 porte un
+     départ lumineux sans perdre sa lecture. */
+  background: linear-gradient(120deg, #ffa53d 0%, #ff7a1a 50%, #f26410 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -228,10 +232,11 @@
   align-items: flex-start;
   gap: 10px;
   padding: 13px 16px;
-  /* Ambre plutôt qu'orange pur : dilué, l'orange virait au rose. */
-  border: 1px solid rgba(230, 130, 20, 0.28);
+  /* Un vrai dégradé, de l'ambre vers le mandarine : à plat et trop dilué, il
+     ne se voyait pas. Il part de l'ambre, car un orange pur dilué vire au rose. */
+  border: 1px solid rgba(242, 100, 16, 0.34);
   border-radius: 16px;
-  background: rgba(255, 170, 40, 0.12);
+  background: linear-gradient(120deg, rgba(255, 184, 77, 0.36) 0%, rgba(255, 138, 51, 0.24) 55%, rgba(242, 100, 16, 0.16) 100%);
   color: #6b3410;
   font-size: 13px;
   line-height: 1.5;
@@ -242,7 +247,7 @@
 }
 
 .vy-info a {
-  color: var(--vy-brand);
+  color: var(--vy-brand-text);
   font-weight: 600;
 }
 
@@ -368,7 +373,7 @@
 
 .vy-link {
   align-self: flex-start;
-  color: var(--vy-brand);
+  color: var(--vy-brand-text);
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
@@ -432,7 +437,7 @@ button.vy-link {
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
-  color: var(--vy-brand);
+  color: var(--vy-brand-text);
 }
 
 .vy-how__visual {
@@ -701,7 +706,7 @@ button.vy-link {
   content: "+";
   display: inline-block;
   width: 16px;
-  color: var(--vy-brand);
+  color: var(--vy-brand-text);
 }
 
 .vy-more[open] summary::before {

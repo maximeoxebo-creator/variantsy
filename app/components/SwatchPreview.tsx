@@ -46,11 +46,14 @@ function contrasteSur(couleur: string): string {
 type PreviewValue = { label: string; color: string; available: boolean };
 
 const DEMO_VALUES: PreviewValue[] = [
-  { label: "Black", color: "#1A1A1A", available: true },
-  { label: "Navy", color: "#1F3A5F", available: true },
-  { label: "Beige", color: "#D8C3A5", available: true },
-  { label: "Terracotta", color: "#C1614B", available: false },
-  { label: "White", color: "#F5F5F0", available: true },
+  // Camaïeu d'orange, du plus sombre au plus clair : cinq clartés espacées
+  // (L* 22 / 38 / 64 / 80 / 94), pour que chaque pastille se distingue de ses
+  // voisines sans changer de teinte.
+  { label: "Mahogany", color: "#5C2208", available: true },
+  { label: "Rust", color: "#9E3A12", available: true },
+  { label: "Apricot", color: "#F8BB85", available: true },
+  { label: "Tangerine", color: "#F07A22", available: false },
+  { label: "Cream", color: "#FDEBD3", available: true },
 ];
 
 const DEMO_PRODUCT = "Organic cotton sweatshirt";

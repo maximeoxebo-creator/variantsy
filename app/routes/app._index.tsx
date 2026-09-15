@@ -1063,7 +1063,7 @@ function VignetteApercu({ revele }: { revele: boolean }) {
           transform: revele ? "none" : "translateY(3px)",
         }}
       >
-        {["#1F3A5F", "#D8C3A5"].map((c) => (
+        {["#9E3A12", "#F8BB85"].map((c) => (
           <span
             key={c}
             style={{
@@ -1145,12 +1145,12 @@ function ApercuRangee({ radius, accent }: { radius: string; accent: string }) {
           width: 22,
           height: 22,
           borderRadius: radius,
-          background: "#2C5AA0",
+          background: "#9E3A12",
           boxShadow: `0 0 0 2px var(--p-color-bg-surface), 0 0 0 4px ${accent}`,
         }}
       />
-      <span style={{ width: 22, height: 22, borderRadius: radius, background: "#D8C3A5" }} />
-      <span style={{ width: 22, height: 22, borderRadius: radius, background: "#C0715A" }} />
+      <span style={{ width: 22, height: 22, borderRadius: radius, background: "#F8BB85" }} />
+      <span style={{ width: 22, height: 22, borderRadius: radius, background: "#F07A22" }} />
     </span>
   );
 }
@@ -1231,9 +1231,9 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
               label: "Swatches",
               preview: (
                 <span style={{ display: "flex", gap: 4 }}>
-                  <Chip radius={radius} background="#1F3A5F" size={20} />
-                  <Chip radius={radius} background="#D8C3A5" size={20} />
-                  <Chip radius={radius} background="#C1614B" size={20} />
+                  <Chip radius={radius} background="#9E3A12" size={20} />
+                  <Chip radius={radius} background="#F8BB85" size={20} />
+                  <Chip radius={radius} background="#F07A22" size={20} />
                 </span>
               ),
             },
@@ -1280,7 +1280,7 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
                     border: "1px solid #B0B7BF",
                   }}
                 >
-                  Blue
+                  Rust
                   <span style={{ fontSize: 8 }}>▼</span>
                 </span>
               ),
@@ -1618,7 +1618,7 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
         )}
 
         <ChoiceCards
-          help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Blue, Beige, Terracotta."
+          help="What a shopper sees for a value missing from your swatch library. Each preview shows three different values: Rust, Apricot, Tangerine."
           value={form.swatchFallback}
           accent={accent}
           onChange={(v) => set("swatchFallback", v)}
@@ -1628,9 +1628,9 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
               label: "A color guessed from the name",
               preview: (
                 <span style={{ display: "flex", gap: 4 }}>
-                  <Chip radius={radius} background="#1F3A5F" size={20} />
-                  <Chip radius={radius} background="#D8C3A5" size={20} />
-                  <Chip radius={radius} background="#C1614B" size={20} />
+                  <Chip radius={radius} background="#9E3A12" size={20} />
+                  <Chip radius={radius} background="#F8BB85" size={20} />
+                  <Chip radius={radius} background="#F07A22" size={20} />
                 </span>
               ),
             },
@@ -1641,17 +1641,17 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
                 <span style={{ display: "flex", gap: 4 }}>
                   <Chip
                     radius={radius}
-                    background="linear-gradient(135deg,#8FA3B5 0 50%,#6E8296 50%)"
+                    background="linear-gradient(135deg,#C07048 0 50%,#9A4A22 50%)"
                     size={20}
                   />
                   <Chip
                     radius={radius}
-                    background="linear-gradient(135deg,#D6CCBB 0 50%,#B8AB94 50%)"
+                    background="linear-gradient(135deg,#FAD3AE 0 50%,#EDB98A 50%)"
                     size={20}
                   />
                   <Chip
                     radius={radius}
-                    background="linear-gradient(135deg,#C79A88 0 50%,#A97462 50%)"
+                    background="linear-gradient(135deg,#F59A55 0 50%,#DC7A30 50%)"
                     size={20}
                   />
                 </span>
@@ -1729,7 +1729,7 @@ function ApparencePanel({ form, set, pro }: PanelProps) {
             />
           )}
           <Checkbox
-            label="The &ldquo;Color: Blue&rdquo; line above the selector"
+            label="The &ldquo;Color: Rust&rdquo; line above the selector"
             checked={form.showOptionName}
             onChange={(v) => set("showOptionName", v)}
           />
@@ -1858,11 +1858,11 @@ const TITLE_EXAMPLES: { nom: string; vars: Record<string, string> }[] = [
     nom: "Product with two options",
     vars: {
       product_title: "Organic cotton sweatshirt",
-      variant_title: "Navy / M",
-      option1: "Navy",
+      variant_title: "Rust / M",
+      option1: "Rust",
       option2: "M",
       option3: "",
-      "option:color": "Navy",
+      "option:color": "Rust",
       "option:size": "M",
       price: "$59.00",
       compare_at_price: "$79.00",
@@ -2147,7 +2147,7 @@ function TitrePanel({ form, set }: PanelProps) {
 
           <Banner tone="info">
             <p>
-              If the color is already in your product names — &ldquo;Blue tee&rdquo; — a template that adds
+              If the color is already in your product names — &ldquo;Rust tee&rdquo; — a template that adds
               it will repeat itself. Prefer a name without the color in that case.
             </p>
           </Banner>

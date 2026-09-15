@@ -2,8 +2,7 @@ import { Button, Card } from "@shopify/polaris";
 import { Link } from "@remix-run/react";
 import type { ReactNode } from "react";
 import {
-  BEIGE,
-  BLUE,
+  APRICOT,
   FicheMiniature,
   SchemaAssignation,
   SchemaAvantApres,
@@ -11,6 +10,8 @@ import {
   SchemaGroupe,
   SchemaOptions,
   SchemaRetraitOption,
+  RUST,
+  TANGERINE,
   Vignette,
 } from "./schemas";
 
@@ -30,8 +31,6 @@ import {
    Variantsy ne sait lire ni le thème ni les médias des variantes : chaque étape
    porte donc « Check once », jamais une coche qu'on ne peut pas garantir.
    ========================================================================== */
-
-const ARGILE = "#C0715A";
 
 type OngletCible = "apparence" | "groupes";
 
@@ -98,7 +97,7 @@ function Figure({ legende, children }: { legende?: ReactNode; children: ReactNod
 function MiniPastilles({ choisie = 0 }: { choisie?: number }) {
   return (
     <span className="vy-mini-dots" aria-hidden="true">
-      {[BLUE, BEIGE, ARGILE].map((c, i) => (
+      {[RUST, APRICOT, TANGERINE].map((c, i) => (
         <i key={c} className={i === choisie ? "on" : ""} style={{ background: c }} />
       ))}
     </span>
@@ -170,8 +169,8 @@ export function InstallationPanel({
             <div className="vy-how__card">
               <span className="vy-how__label">Shopify</span>
               <span className="vy-how__visual" aria-hidden="true">
-                <Vignette color={BLUE} pinned legende="Blue" />
-                <Vignette color={BEIGE} pinned legende="Beige" />
+                <Vignette color={RUST} pinned legende="Rust" />
+                <Vignette color={APRICOT} pinned legende="Apricot" />
               </span>
               <span className="vy-how__title">1. One photo per color</span>
               <span className="vy-how__text">The first photo of each color goes on its variant.</span>
@@ -303,7 +302,7 @@ export function InstallationPanel({
                   other photos right after it. This is the one step Variantsy cannot do for you.
                 </p>
                 <Chemin
-                  etapes={["Products", "Your product", "Variants", "Blue", "Add image", "First Blue photo", "Save"]}
+                  etapes={["Products", "Your product", "Variants", "Rust", "Add image", "First Rust photo", "Save"]}
                 />
                 <div className="vy-figures">
                   <Figure legende="Attach a photo to each variant.">
@@ -318,11 +317,11 @@ export function InstallationPanel({
                     }
                   >
                     <span style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                      <Vignette color={BLUE} pinned legende="Blue" />
-                      <Vignette color={BLUE} legende="Blue" />
-                      <Vignette color={BLUE} legende="Blue" />
-                      <Vignette color={BEIGE} pinned legende="Beige" />
-                      <Vignette color={BEIGE} legende="Beige" />
+                      <Vignette color={RUST} pinned legende="Rust" />
+                      <Vignette color={RUST} legende="Rust" />
+                      <Vignette color={RUST} legende="Rust" />
+                      <Vignette color={APRICOT} pinned legende="Apricot" />
+                      <Vignette color={APRICOT} legende="Apricot" />
                     </span>
                   </Figure>
                 </div>
@@ -338,16 +337,16 @@ export function InstallationPanel({
             )}
             <div className="vy-figures">
               <FicheMiniature
-                titre="Tee · Blue"
-                couleur={BLUE}
-                pastilles={[BLUE, BEIGE]}
+                titre="Tee · Rust"
+                couleur={RUST}
+                pastilles={[RUST, APRICOT]}
                 choisie={0}
                 miniatures={2}
               />
               <FicheMiniature
-                titre="Tee · Beige"
-                couleur={BEIGE}
-                pastilles={[BLUE, BEIGE]}
+                titre="Tee · Apricot"
+                couleur={APRICOT}
+                pastilles={[RUST, APRICOT]}
                 choisie={1}
                 miniatures={2}
               />
