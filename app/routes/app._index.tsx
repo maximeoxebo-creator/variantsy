@@ -16,7 +16,6 @@ import {
   Layout,
   Page,
   RangeSlider,
-  Tabs,
   Text,
   TextField,
   Banner,
@@ -26,6 +25,7 @@ import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
 import { authenticate } from "../shopify.server";
 import { apparenceServie, getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { publierStyle } from "../publier-style.server";
+import { AdminTabs, BrandHero, ProBadge } from "../components/brand";
 import { listGroups, saveGroup, deleteGroup } from "../groups.server";
 import { SwatchPreview } from "../components/SwatchPreview";
 import { InstallationPanel } from "../components/InstallationPanel";
@@ -237,34 +237,6 @@ const CLES_TITRE = [
  *  rien perdre. C'est la différence avec l'ancien écran « Setup », qui posait
  *  la même question pour ne montrer que des instructions, et renvoyait vers un
  *  onglet au lieu d'y mener. */
-/**
- * Ce que le forfait gratuit ne fait pas — dit une fois, en haut, plutôt que
- * dispersé en cadenas dans chaque réglage.
- *
- * Ce bandeau porte aussi une obligation de la revue Shopify (règle 1.2.1) :
- * la page de tarification doit être joignable depuis l'app. Elle l'était
- * autrefois par une redirection forcée ; le forfait gratuit l'a supprimée,
- * c'est donc ce bouton qui en tient lieu. Ne pas le retirer.
- *
- * `target="_top"` est obligatoire : la page de tarification refuse d'être
- * affichée dans l'iframe embarquée.
- */
-function BandeauPlan({ pricingUrl }: { pricingUrl: string }) {
-  return (
-    <Banner
-      tone="info"
-      title="You are on the free plan"
-      action={{ content: "See plans", url: pricingUrl, target: "_top" }}
-    >
-      <p>
-        Swatches, dynamic titles and theme matching are yours, with no limit on products.
-        Customizing the selector, a photo gallery per color and linked product pages come
-        with Pro — $9.90 a month, 14 days free.
-      </p>
-    </Banner>
-  );
-}
-
 function SelecteurMode({
   mode,
   onChange,
@@ -336,11 +308,9 @@ function SelecteurMode({
               padding: 16,
               borderRadius: 14,
               cursor: verrouillee ? "not-allowed" : "pointer",
-              background: actif
-                ? "var(--p-color-bg-surface-selected)"
-                : "var(--p-color-bg-surface)",
+              background: actif ? "var(--vy-orange-50)" : "var(--p-color-bg-surface)",
               border: actif
-                ? "2px solid var(--p-color-border-emphasis)"
+                ? "2px solid var(--vy-brand)"
                 : "1px solid var(--p-color-border-secondary)",
               WebkitAppearance: "none",
               appearance: "none",
@@ -351,7 +321,7 @@ function SelecteurMode({
             <span>
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 650 }}>{c.titre}</span>
-                {"paye" in c && c.paye && !pro && <Badge tone="info">Pro</Badge>}
+                {"paye" in c && c.paye && !pro && <ProBadge />}
               </span>
               <span
                 style={{
@@ -515,9 +485,11 @@ export default function SettingsPage() {
   };
 
   return (
+    // L'enveloppe porte le fond, la police et les jetons de marque de la
+    // famille d'apps (app/styles/brand.css). Le titre de page cède la place à
+    // l'en-tête : « Settings » redisait ce que le nom de l'app dit mieux.
+    <div className="vy-app">
     <Page
-      title="Settings"
-      subtitle="Swatch appearance, dynamic title and theme integration"
       primaryAction={{
         content: "Save",
         onAction: save,
@@ -533,42 +505,18 @@ export default function SettingsPage() {
       <Layout>
         <Layout.Section>
           <BlockStack gap="400">
-            {/* L'interrupteur maître ne vit dans aucun onglet : c'est le seul
-                réglage dont la réponse change tout, et le chercher derrière un
-                onglet n'aurait aucun sens. */}
-            <Card padding="0">
-              <div
-                style={{
-                  borderInlineStart: `4px solid ${
-                    form.enabled ? "var(--p-color-bg-fill-success)" : "var(--p-color-border)"
-                  }`,
-                  borderRadius: "inherit",
-                  padding: "var(--p-space-400) var(--p-space-500)",
-                }}
-              >
-              <InlineStack align="space-between" blockAlign="center" gap="400">
-                <BlockStack gap="100">
-                  <Text as="h2" variant="headingMd">
-                    Variantsy
-                  </Text>
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    {form.enabled
-                      ? "Your swatches and per-color galleries are live."
-                      : "Nothing shows on your storefront while the app is turned off."}
-                  </Text>
-                </BlockStack>
-                {/* L'état et son interrupteur voyagent ensemble : le badge
-                    nomme ce que la capsule montre, les séparer obligeait à
-                    traverser la carte pour relier les deux. */}
-                <InlineStack gap="300" blockAlign="center" wrap={false}>
-                  <Badge tone={form.enabled ? "success" : undefined}>
-                    {form.enabled ? "On" : "Off"}
-                  </Badge>
-                  <Interrupteur actif={form.enabled} onChange={(v) => set("enabled", v)} />
-                </InlineStack>
-              </InlineStack>
-              </div>
-            </Card>
+            {/* L'en-tête de la famille d'apps : nom en deux tons, état,
+                interrupteur maître, plan et Upgrade, puis le bandeau d'aide.
+                L'interrupteur maître y vit hors des onglets, comme avant : c'est
+                le seul réglage dont la réponse change tout. L'Upgrade, toujours
+                visible, tient l'exigence 1.2.1 de la revue Shopify. */}
+            <BrandHero
+              plan={pro ? "pro" : "free"}
+              enabled={form.enabled}
+              onToggle={(v) => set("enabled", v)}
+              upgradeUrl={parent?.pricingUrl ?? ""}
+              deepLink={deepLink}
+            />
 
             {/* La fonctionnalité principale coupée, et son interrupteur enterré
                 dans un repli fermé : sans ce signal, un marchand cherche
@@ -611,23 +559,17 @@ export default function SettingsPage() {
               </Banner>
             )}
 
-            {/* La barre d'onglets garde sa carte ; le CONTENU en sort.
-                Tant qu'il restait dedans, chaque bloc de réglages était une
-                carte imbriquée dans une autre — Polaris les aplatit, et la mise
-                en groupes ne se voyait pas. Posés sur le fond de la page, les
-                blocs redeviennent des cartes à part entière. */}
-            {!pro && parent?.pricingUrl && <BandeauPlan pricingUrl={parent.pricingUrl} />}
-
             <SelecteurMode mode={mode} onChange={changerMode} nbGroupes={groups.length} pro={pro} />
 
-            <Card padding="0">
-              <Tabs
-                tabs={onglets as unknown as { id: string; content: string }[]}
-                selected={Math.min(tab, onglets.length - 1)}
-                onSelect={setTab}
-                fitted
-              />
-            </Card>
+            {/* Commande segmentée de la famille d'apps, à la place des onglets
+                Polaris. Les réglages restent hors de toute carte englobante :
+                imbriqués, chaque bloc devenait une carte dans une carte. */}
+            <AdminTabs
+              onglets={onglets}
+              value={actif}
+              onChange={(id) => setTab(onglets.findIndex((o) => o.id === id))}
+              label="Variantsy sections"
+            />
 
             {/* L'aperçu occupait un tiers de la page en colonne de droite et
                 écrasait les volets. En pleine largeur il ne dispute la place à
@@ -700,6 +642,7 @@ export default function SettingsPage() {
               </Card>
             )}
 
+            <div role="tabpanel" id={`vy-panel-${actif}`} aria-labelledby={`vy-tab-${actif}`}>
             <BlockStack gap="400">
                   {actif === "installation" && (
                     <InstallationPanel themeName={themeName} deepLink={deepLink} mode={mode} />
@@ -740,6 +683,7 @@ export default function SettingsPage() {
                       }}
                     />}
             </BlockStack>
+            </div>
 
             {/* Respiration en pied de page. Sans elle, la dernière carte
                 touchait le bord de la fenêtre : rien n'indiquait que la page
@@ -750,6 +694,7 @@ export default function SettingsPage() {
 
       </Layout>
     </Page>
+    </div>
   );
 }
 

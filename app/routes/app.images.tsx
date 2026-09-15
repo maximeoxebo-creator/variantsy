@@ -278,6 +278,8 @@ export default function ImagesPage() {
       : null;
 
   return (
+    // Fond, police et jetons de la famille d'apps : voir app/styles/brand.css.
+    <div className="vy-app">
     <Page
       title="Inspect a product"
       subtitle="See exactly how Variantsy groups a product's media."
@@ -372,6 +374,7 @@ export default function ImagesPage() {
         </Layout.Section>
       </Layout>
     </Page>
+    </div>
   );
 }
 

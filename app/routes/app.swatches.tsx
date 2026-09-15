@@ -197,6 +197,8 @@ export default function SwatchesPage() {
   };
 
   return (
+    // Fond, police et jetons de la famille d'apps : voir app/styles/brand.css.
+    <div className="vy-app">
     <Page
       title="Color library"
       subtitle="Map every option value to a color or an image. The mapping applies to the whole store."
@@ -389,6 +391,7 @@ export default function SwatchesPage() {
         </Modal>
       )}
     </Page>
+    </div>
   );
 }
 

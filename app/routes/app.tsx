@@ -4,12 +4,19 @@ import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
+import brandStyles from "../styles/brand.css?url";
 import { authenticate } from "../shopify.server";
 import { planActuel } from "../billing.server";
 import { enregistrerPlan, getSettings } from "../settings.server";
 import { publierStyle } from "../publier-style.server";
 
-export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+// La feuille de marque est chargée au niveau du LAYOUT, après celle de
+// Polaris : toutes les pages de l'app y ont accès, et ses jetons l'emportent
+// sur ceux de Polaris à spécificité égale.
+export const links = () => [
+  { rel: "stylesheet", href: polarisStyles },
+  { rel: "stylesheet", href: brandStyles },
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
