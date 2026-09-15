@@ -21,7 +21,7 @@
 .pastilles-p i.on { box-shadow: 0 0 0 3px var(--carte), 0 0 0 5px #fff; }
 .bouton-p { margin-top: 14px; padding: 19px; border-radius: 12px; background: #F4F5F7; color: #10131A; text-align: center; font-weight: 700; font-size: 18px; }
 .bulle { position: absolute; left: -72px; bottom: -42px; padding: 20px 26px; border-radius: 16px;
-  background: linear-gradient(120deg,#5B7BF0,#7B6BF0); box-shadow: 0 24px 60px rgba(80,110,240,.42); z-index: 4; }
+  background: linear-gradient(120deg,var(--plein-1),var(--plein-2)); box-shadow: 0 24px 60px rgba(var(--marque-rgb),.36); z-index: 4; }
 .bulle b { display: block; font-size: 19px; font-weight: 700; }
 .bulle span { font-size: 16px; color: rgba(255,255,255,.84); }
 
@@ -38,9 +38,9 @@
 .rangee i.on { box-shadow: 0 0 0 3px var(--carte), 0 0 0 5px #fff; }
 .compte { font-size: 15px; color: var(--gris-fort); }
 .tag { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); padding: 8px 20px; border-radius: 999px; font-size: 14px; font-weight: 800; letter-spacing: .1em; }
-.tag.avant { background: #C0503C; }
-.tag.apres { background: #1E9E63; }
-.fleche { text-align: center; font-size: 34px; color: var(--bleu); }
+.tag.avant { background: #3A3F46; color: #C9CED6; }
+.tag.apres { background: linear-gradient(120deg,var(--plein-1),var(--plein-2)); }
+.fleche { text-align: center; font-size: 34px; color: var(--marque); }
 
 /* ---- planche 3 : produits liés --------------------------------------- */
 .p3 { grid-template-columns: 690px 1fr; gap: 70px; align-items: center; align-content: center; height: 900px; }
@@ -57,8 +57,8 @@
 .rangee-liee i { width: 26px; height: 26px; border-radius: 50%; display: block; }
 .rangee-liee i.on { box-shadow: 0 0 0 2px var(--carte), 0 0 0 4px #fff; }
 .bus { margin-top: 22px; position: relative; height: 54px; }
-.bus .mont { position: absolute; top: 0; width: 2px; height: 22px; background: rgba(120,150,230,.55); }
-.bus .barre { position: absolute; top: 20px; left: 16.6%; right: 16.6%; height: 2px; background: rgba(120,150,230,.55); }
+.bus .mont { position: absolute; top: 0; width: 2px; height: 22px; background: rgba(var(--marque-rgb),.55); }
+.bus .barre { position: absolute; top: 20px; left: 16.6%; right: 16.6%; height: 2px; background: rgba(var(--marque-rgb),.55); }
 .bus .txt { position: absolute; top: 30px; left: 0; right: 0; text-align: center; font-size: 16px; color: #8E9AB0; }
 
 /* ---- planche 4 : titre ----------------------------------------------- */
@@ -66,7 +66,7 @@
 .p4 .col-d { display: grid; gap: 30px; justify-items: start; }
 .constructeur { padding: 40px; }
 .jetons { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
-.jeton { padding: 15px 22px; border-radius: 12px; font-size: 18px; background: #1C2130; border: 1px solid rgba(110,140,220,.34); color: #DCE3F0; }
+.jeton { padding: 15px 22px; border-radius: 12px; font-size: 18px; background: var(--jeton-fond); border: 1px solid rgba(var(--marque-rgb),.36); color: var(--marque-texte); }
 .jeton.off { background: #171A21; border-color: rgba(255,255,255,.08); color: #6E7683; }
 .plus { color: var(--gris-fort); font-size: 20px; }
 .sep-h { height: 1px; background: var(--carte-bord); margin: 34px 0 26px; }
@@ -75,7 +75,7 @@
 .ligne-t i.on { box-shadow: 0 0 0 3px var(--carte), 0 0 0 5px #fff; }
 .ligne-t b { font-size: 22px; font-weight: 700; }
 .ligne-t.pale b { color: #99A1AE; font-weight: 600; }
-.note { margin-top: 22px; padding: 20px 24px; border-radius: 12px; background: rgba(75,123,229,.10); border: 1px solid rgba(75,123,229,.24); font-size: 16px; color: #C2CCE0; }
+.note { margin-top: 22px; padding: 20px 24px; border-radius: 12px; background: rgba(var(--marque-rgb),.09); border: 1px solid rgba(var(--marque-rgb),.24); font-size: 16px; color: var(--marque-texte); }
 
 /* ---- planche 5 : trois rendus ---------------------------------------- */
 .p5 { align-content: start; }
@@ -88,7 +88,7 @@
 .sw i.on { box-shadow: 0 0 0 3px var(--carte), 0 0 0 5px #fff; }
 .btns { display: flex; gap: 14px; margin-top: 26px; }
 .btn-t { padding: 15px 26px; border-radius: 10px; font-size: 18px; border: 1px solid rgba(255,255,255,.12); color: #C9D0DA; }
-.btn-t.on { border-color: var(--bleu); color: #fff; font-weight: 700; }
+.btn-t.on { border-color: var(--marque); color: #fff; font-weight: 700; }
 .liste { margin-top: 26px; padding: 18px 22px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12);
   display: flex; justify-content: space-between; align-items: center; font-size: 18px; color: #E4E8EE; }
 
@@ -98,7 +98,7 @@
 .admin { position: relative; padding: 0; overflow: hidden; }
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 26px 26px 20px; }
 .mode { padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,.09); background: #161A21; }
-.mode.on { border: 2px solid var(--bleu); background: rgba(75,123,229,.09); }
+.mode.on { border: 2px solid var(--marque); background: rgba(var(--marque-rgb),.08); }
 .mode.off { opacity: .5; }
 .mode b { font-size: 17px; display: block; }
 .mode span { font-size: 14px; color: var(--gris-fort); display: block; margin-top: 3px; }
@@ -111,11 +111,11 @@
 .apercu-bloc { padding: 22px; border-radius: 14px; background: #0E1116; border: 1px solid var(--carte-bord); }
 .formes { display: flex; gap: 16px; margin-top: 14px; }
 .formes i { width: 56px; height: 56px; display: block; background: #232833; border: 1px solid rgba(255,255,255,.09); }
-.formes i:nth-child(1) { border-radius: 50%; background: #2F5E9E; border-color: #4B7BE5; }
+.formes i:nth-child(1) { border-radius: 50%; background: #2F5E9E; border: 2px solid var(--marque); }
 .formes i:nth-child(2) { border-radius: 14px; }
 .formes i:nth-child(3) { border-radius: 4px; }
 .curseur { height: 6px; border-radius: 3px; background: #232833; margin-top: 16px; position: relative; }
-.curseur::before { content:""; position:absolute; left:0; top:0; height:6px; width:46%; border-radius:3px; background: var(--bleu); }
+.curseur::before { content:""; position:absolute; left:0; top:0; height:6px; width:46%; border-radius:3px; background: var(--marque); }
 .curseur::after { content:""; position:absolute; left:46%; top:-7px; width:20px; height:20px; border-radius:50%; background:#fff; }
 .barre-bas { padding: 20px 26px; border-top: 1px solid var(--carte-bord); display:flex; justify-content: space-between; align-items:center; font-size:15px; color: var(--gris-fort); }
 .sauver { padding: 12px 26px; border-radius: 10px; background:#F4F5F7; color:#10131A; font-weight:700; font-size:15px; }

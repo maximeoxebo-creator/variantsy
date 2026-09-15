@@ -15,6 +15,18 @@ import { BlockStack, Text } from "@shopify/polaris";
 export const BLUE = "#2C5AA0";
 export const BEIGE = "#D8C3A5";
 
+/** Couleur de MARQUE de Variantsy — émeraude, celle de l'icône.
+ *
+ *  Réservée aux endroits où c'est VARIANTSY qui est dessiné : le câblage des
+ *  fiches liées, la galerie filtrée, l'app dans l'éditeur de thème. Les
+ *  maquettes de l'interface SHOPIFY gardent les jetons Polaris : y mettre la
+ *  marque ferait croire que Shopify porte nos couleurs.
+ *
+ *  `MARQUE` est plus sombre que l'émeraude de l'icône : elle sert à des traits
+ *  fins et à du texte de 8 px sur blanc, où la teinte claire disparaît. */
+export const MARQUE = "#0E8C6C";
+export const DEGRADE_MARQUE = "linear-gradient(145deg,#14B8A6 0%,#12A77F 46%,#3E9F5C 100%)";
+
 /** Teinte d'une silhouette posée sur un aplat de couleur.
  *
  *  Une seule valeur, sans exception : la version précédente assombrissait la
@@ -588,7 +600,7 @@ export function SchemaGroupe() {
               top: 0,
               width: 1.5,
               height: 8,
-              background: "var(--p-color-border-emphasis)",
+              background: MARQUE,
             }}
           />
         ))}
@@ -599,7 +611,7 @@ export function SchemaGroupe() {
             right: "16.7%",
             top: 7,
             height: 1.5,
-            background: "var(--p-color-border-emphasis)",
+            background: MARQUE,
           }}
         />
         <span
@@ -731,7 +743,7 @@ export function SchemaEditeurTheme() {
               width: 18,
               height: 18,
               borderRadius: 4,
-              background: BLUE,
+              background: DEGRADE_MARQUE,
               flex: "0 0 auto",
             }}
           />
@@ -777,7 +789,7 @@ export function SchemaAvantApres() {
         // Le cadre délimite les deux situations : sans lui les deux grilles
         // se lisaient comme une seule galerie de dix photos.
         border: accentue
-          ? "1.5px solid var(--p-color-border-emphasis)"
+          ? `1.5px solid ${MARQUE}`
           : "1px solid var(--p-color-border-secondary)",
       }}
     >
@@ -838,7 +850,7 @@ export function SchemaAvantApres() {
         />
         <Zone
           etiquette="WITH VARIANTSY"
-          teinte="var(--p-color-text-emphasis)"
+          teinte={MARQUE}
           photos={[CHOISI, CHOISI, CHOISI, CHOISI]}
           accentue
         />

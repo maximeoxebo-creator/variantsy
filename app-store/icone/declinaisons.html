@@ -1,0 +1,66 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+/* Direction « signature », déclinée en couleur.
+   La composition est celle de directions.html, au pixel : fiches de verre
+   inclinées à ±8°, fiche blanche de tête, trois pastilles dont seule celle du
+   milieu est pleine. Seules changent les CINQ valeurs qui portent la couleur :
+   les trois arrêts du dégradé, le trait du t-shirt, et la teinte des ombres.
+
+   Les ombres suivent la palette, et ce n'est pas un détail : une ombre bleu
+   nuit sous une fiche verte la salit. Chaque palette a donc son ombre, tirée
+   vers le plus sombre de sa propre gamme. */
+* { margin:0; padding:0; box-sizing:border-box; }
+.icone { position:relative; width:1200px; height:1200px; overflow:hidden;
+         display:grid; place-items:center; }
+.scene { position:relative; width:1000px; height:1000px; display:grid; place-items:center; }
+svg { display:block; position:relative; z-index:2; }
+.carte { position:absolute; display:grid; place-items:center; }
+</style></head><body>
+<div id="cible"></div>
+<script>
+const TEE = (c, t, ep) => `
+<svg width="${t}" height="${t}" viewBox="0 0 48 48" fill="none">
+  <path d="M17.5 6 L9 10.5 L5.5 20 L12 22.5 L13 18 L13 43 L35 43 L35 18 L36 22.5 L42.5 20 L39 10.5 L30.5 6
+           C30.5 11.5 17.5 11.5 17.5 6 Z"
+        stroke="${c}" stroke-width="${ep || 3.1}" stroke-linejoin="round" fill="none"/>
+</svg>`;
+
+/* Chaque dégradé garde le GLISSEMENT de teinte de l'original — du froid au
+   chaud, sur une quarantaine de degrés — plutôt qu'un dégradé de luminosité
+   d'une seule teinte : c'est ce glissement qui donnait sa vie à la version
+   violette. */
+const PALETTES = {
+  violet:   { d:["#5B7BF0","#7B6BF0","#A96BF0"], tee:"#6E7BF0", ombre:"30,30,90"  },
+  emeraude: { d:["#14B8A6","#12A77F","#3E9F5C"], tee:"#12A382", ombre:"8,62,52"   },
+  foret:    { d:["#3DAF7E","#23905F","#17724A"], tee:"#218C5C", ombre:"8,52,34"   },
+  soleil:   { d:["#FFB53F","#FF8C3B","#F2623A"], tee:"#F27C38", ombre:"120,50,12" },
+  corail:   { d:["#FF8F5E","#F2694A","#DE4A5C"], tee:"#EC6247", ombre:"112,34,30" },
+};
+
+const p = PALETTES[new URLSearchParams(location.search).get("p") || "violet"];
+const VERRE = `background:rgba(255,255,255,.22);
+  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.65), 0 34px 78px rgba(${p.ombre},.30)`;
+
+document.getElementById("cible").innerHTML = `
+<div class="icone" style="background:linear-gradient(145deg,${p.d[0]} 0%,${p.d[1]} 46%,${p.d[2]} 100%)">
+  <div class="scene">
+    <div class="carte" style="left:0;top:150px;width:520px;height:580px;border-radius:100px;
+         transform:rotate(-8deg);${VERRE}">${TEE("rgba(255,255,255,.72)", 250)}</div>
+    <div class="carte" style="right:0;top:150px;width:520px;height:580px;border-radius:100px;
+         transform:rotate(8deg);${VERRE}">${TEE("rgba(255,255,255,.72)", 250)}</div>
+    <div class="carte" style="z-index:3;top:126px;width:580px;height:604px;border-radius:132px;
+         background:#FFFFFF;
+         box-shadow:0 50px 110px rgba(${p.ombre},.38), inset 0 -3px 2px rgba(0,0,0,.05)">
+      ${TEE(p.tee, 310, 3.4)}</div>
+    <div style="position:absolute;bottom:34px;left:0;right:0;display:flex;
+                justify-content:center;align-items:center;gap:62px;z-index:4">
+      <span style="width:112px;height:112px;border-radius:50%;${VERRE}"></span>
+      <span style="width:112px;height:112px;border-radius:50%;background:#FFFFFF;
+                   box-shadow:0 0 0 14px rgba(255,255,255,.22), 0 12px 30px rgba(${p.ombre},.32)"></span>
+      <span style="width:112px;height:112px;border-radius:50%;${VERRE}"></span>
+    </div>
+  </div>
+</div>`;
+</script></body></html>

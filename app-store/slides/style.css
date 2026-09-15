@@ -10,8 +10,25 @@
   --texte: #FFFFFF;
   --gris: #9BA3AF;
   --gris-fort: #6B7280;
-  --bleu: #4B7BE5;
-  --violet: #8B7BF0;
+  /* ---- Couleur de MARQUE : émeraude ----------------------------------
+     TOUTE la charte tient dans ce bloc. Changer de couleur de marque, c'est
+     changer ces huit lignes et rien d'autre : aucune teinte de marque n'est
+     écrite en dur ailleurs, dans ce fichier comme dans slides.html.
+
+     À ne pas confondre avec les teintes des PRODUITS montrés dans les
+     maquettes (--*-tee) : elles décrivent la boutique d'un marchand et ne
+     suivent pas la charte. */
+  --marque: #14B8A6;                 /* points, liserés, états choisis */
+  --marque-rgb: 20,184,166;          /* voiles et ombres en rgba() */
+  --marque-texte: #CFF1E8;           /* texte clair teinté */
+  --titre-1: #5EEAD4;                /* dégradé du titre : clair, */
+  --titre-2: #2DD4A7;                /* car posé sur fond presque */
+  --titre-3: #6EE08A;                /* noir */
+  --plein-1: #0F9C8A;                /* aplats portant du texte blanc : */
+  --plein-2: #2E8C4E;                /* plus sombres, pour rester lisibles */
+  --jeton-fond: #16201E;
+  --lueur-rgb: 20,130,110;
+  --lueur-2-rgb: 15,70,60;
   --bleu-tee: #2F5E9E;
   --beige-tee: #DFC9A3;
   --terre-tee: #B65C3F;
@@ -25,8 +42,8 @@ body { background: var(--fond); }
   width: 1600px;
   height: 900px;
   background:
-    radial-gradient(1100px 700px at 82% 8%, rgba(40,70,140,.20), transparent 60%),
-    radial-gradient(900px 600px at 10% 100%, rgba(30,40,80,.16), transparent 65%),
+    radial-gradient(1100px 700px at 82% 8%, rgba(var(--lueur-rgb),.20), transparent 60%),
+    radial-gradient(900px 600px at 10% 100%, rgba(var(--lueur-2-rgb),.15), transparent 65%),
     var(--fond);
   color: var(--texte);
   font-family: Inter, -apple-system, "Helvetica Neue", Arial, sans-serif;
@@ -43,18 +60,18 @@ body { background: var(--fond); }
   gap: 10px;
   padding: 11px 22px;
   border-radius: 999px;
-  background: rgba(75,123,229,.10);
-  border: 1px solid rgba(75,123,229,.30);
+  background: rgba(var(--marque-rgb),.10);
+  border: 1px solid rgba(var(--marque-rgb),.32);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: .12em;
-  color: #C7D4EE;
+  color: var(--marque-texte);
 }
 .pastille::before {
   content: "";
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--bleu);
+  background: var(--marque);
 }
 
 h1 {
@@ -64,7 +81,7 @@ h1 {
   font-weight: 800;
 }
 h1 .accent {
-  background: linear-gradient(96deg, #5B8DEF 0%, #7B7BF0 45%, #A66BF0 100%);
+  background: linear-gradient(96deg, var(--titre-1) 0%, var(--titre-2) 45%, var(--titre-3) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -88,7 +105,7 @@ h1 .accent {
   content: "";
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--bleu);
+  background: var(--marque);
 }
 
 .pied {
