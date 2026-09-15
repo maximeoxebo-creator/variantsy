@@ -402,6 +402,16 @@ export function InstallationPanel({
             </details>
           </Etape>
         </ol>
+
+        {/* Même pied que le guide de LinguaBar : la même adresse de contact pour
+            toute la famille d'apps. */}
+        <p className="vy-text">
+          Stuck? Write to{" "}
+          <a className="vy-link" href="mailto:contact.zeppelin.studio@gmail.com">
+            contact.zeppelin.studio@gmail.com
+          </a>{" "}
+          and we will help you set it up.
+        </p>
       </div>
     </Card>
   );
