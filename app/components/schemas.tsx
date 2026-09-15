@@ -15,17 +15,17 @@ import { BlockStack, Text } from "@shopify/polaris";
 export const BLUE = "#2C5AA0";
 export const BEIGE = "#D8C3A5";
 
-/** Couleur de MARQUE de Variantsy — émeraude, celle de l'icône.
+/** Couleur de MARQUE de Variantsy — orange Soleil, celle de l'icône.
  *
  *  Réservée aux endroits où c'est VARIANTSY qui est dessiné : le câblage des
  *  fiches liées, la galerie filtrée, l'app dans l'éditeur de thème. Les
  *  maquettes de l'interface SHOPIFY gardent les jetons Polaris : y mettre la
  *  marque ferait croire que Shopify porte nos couleurs.
  *
- *  `MARQUE` est plus sombre que l'émeraude de l'icône : elle sert à des traits
+ *  `MARQUE` est plus sombre que l'orange de l'icône : elle sert à des traits
  *  fins et à du texte de 8 px sur blanc, où la teinte claire disparaît. */
-export const MARQUE = "#0E8C6C";
-export const DEGRADE_MARQUE = "linear-gradient(145deg,#14B8A6 0%,#12A77F 46%,#3E9F5C 100%)";
+export const MARQUE = "#C2410C";
+export const DEGRADE_MARQUE = "linear-gradient(145deg,#FFB53F 0%,#FF8C3B 46%,#F2623A 100%)";
 
 /** Teinte d'une silhouette posée sur un aplat de couleur.
  *

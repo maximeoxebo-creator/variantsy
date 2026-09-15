@@ -195,7 +195,7 @@ pages », devenue mensongère.
 
 ## À fournir par Maxime
 
-- App icon 1200×1200 — icone/variantsy-icon.png (émeraude), à téléverser au Partner Dashboard
+- App icon 1200×1200 — icone/variantsy-icon.png (orange Soleil), à téléverser au Partner Dashboard
 - Demo store URL — la boutique est encore protégée par mot de passe
 - Screencast URL — vidéo de 3 à 8 minutes, obligatoire
 - Confirmer QUELLE boutique sert de démonstration. Les instructions de test
