@@ -645,7 +645,18 @@ export default function SettingsPage() {
             <div role="tabpanel" id={`vy-panel-${actif}`} aria-labelledby={`vy-tab-${actif}`}>
             <BlockStack gap="400">
                   {actif === "installation" && (
-                    <InstallationPanel themeName={themeName} deepLink={deepLink} mode={mode} />
+                    <InstallationPanel
+                      themeName={themeName}
+                      deepLink={deepLink}
+                      mode={mode}
+                      pro={pro}
+                      // Les liens du guide ouvrent l'onglet visé, au lieu de
+                      // demander au marchand de le retrouver lui-même.
+                      onGoTo={(id) => {
+                        const i = onglets.findIndex((o) => o.id === id);
+                        if (i >= 0) setTab(i);
+                      }}
+                    />
                   )}
                   {actif === "apparence" && <ApparencePanel form={vue} set={ecrire as never} pro={pro} />}
                   {actif === "titre" && <TitrePanel form={vue} set={ecrire as never} />}
