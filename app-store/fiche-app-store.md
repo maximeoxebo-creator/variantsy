@@ -186,12 +186,23 @@ de test.
 
 ## Feature media + Screenshots
 
-Feature media : variantsy-01.png
-Screenshots 1 à 5 : variantsy-02 à variantsy-06.png
+Feature media : planches-jpg/variantsy-01.jpg
+Screenshots 1 à 6 : planches-jpg/variantsy-02 à variantsy-07.jpg
 Textes alternatifs : voir alt-text.md
 
-Planche 03 : produits liés. Elle a remplacé l'ancienne planche « catalog
-pages », devenue mensongère.
+Sept images, le maximum admis : un média vedette et six captures, toutes en
+1600 × 900. Shopify en demande 3 à 6 en plus du média vedette, chacune sur une
+fonctionnalité différente, dont au moins une montrant l'interface de l'app.
+
+DA de la famille d'apps, reprise des slides de LinguaBar (gabarits, Poppins,
+fenêtres, annotations, clôture sombre) dans l'orange de Variantsy. Les écrans
+sont de vraies captures de l'admin, rendues avec ses composants
+(slides/captures/). Aucune mention de Shopify sur les images, comme chez
+LinguaBar : les captures du guide d'installation, qui affichent « Shopify
+admin », en sont donc exclues. Aucun prix non plus sur la planche des forfaits.
+
+01 ouverture · 02 galerie filtrée · 03 pastilles · 04 produits liés ·
+05 titre dynamique · 06 forfaits · 07 clôture.
 
 ## À fournir par Maxime
 
