@@ -12,7 +12,7 @@
 client_id = "5ab53bf17b214ba23f6dcc9847e02ecb"
 name = "Variantsy"
 handle = "variantsy"
-application_url = "https://variantsy.vercel.app"
+application_url = "https://variantsy.zeppelin-apps.com"
 embedded = true
 
 [build]
@@ -27,21 +27,21 @@ scopes = "read_products,write_products,read_themes"
 
 [auth]
 redirect_urls = [
-  "https://variantsy.vercel.app/auth/callback",
-  "https://variantsy.vercel.app/auth/shopify/callback",
-  "https://variantsy.vercel.app/api/auth/callback"
+  "https://variantsy.zeppelin-apps.com/auth/callback",
+  "https://variantsy.zeppelin-apps.com/auth/shopify/callback",
+  "https://variantsy.zeppelin-apps.com/api/auth/callback"
 ]
 
 # ---------------------------------------------------------------------------
 # App proxy : le storefront appelle https://boutique.com/apps/variantsy/settings
-# qui est proxifié vers https://variantsy.vercel.app/proxy/settings
+# qui est proxifié vers https://variantsy.zeppelin-apps.com/proxy/settings
 #
 # Avantage vs endpoint public + CORS (approche LiquidPop) : même origine, donc
 # zéro préflight CORS, cookies du thème conservés, et Shopify signe la requête
 # (HMAC) donc on sait de quelle boutique elle vient sans paramètre falsifiable.
 # ---------------------------------------------------------------------------
 [app_proxy]
-url = "https://variantsy.vercel.app/proxy"
+url = "https://variantsy.zeppelin-apps.com/proxy"
 prefix = "apps"
 subpath = "variantsy"
 
