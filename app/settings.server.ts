@@ -117,13 +117,34 @@ export async function getSettings(shop: string): Promise<ShopSettings> {
   return withRetry(async () => {
     const existing = await prisma.shopSettings.findUnique({ where: { shop } });
     if (existing) return existing;
-    // upsert plutôt que create : deux requêtes concurrentes au premier
-    // chargement (loader + preview) provoqueraient sinon une violation d'unicité.
-    return prisma.shopSettings.upsert({
-      where: { shop },
-      create: { shop, ...DEFAULT_SETTINGS },
-      update: {},
-    });
+
+    // PREMIÈRE INSTALLATION — la course qui renvoyait un 500 au marchand.
+    //
+    // Remix exécute les loaders parent et enfant EN PARALLÈLE : `app.tsx` et
+    // `app._index.tsx` appellent tous deux getSettings(). Sur une boutique
+    // neuve, les deux passent le findUnique sans rien trouver, puis insèrent.
+    //
+    // `upsert` NE SUFFIT PAS, contrairement à ce que disait le commentaire
+    // précédent : il n'est pas atomique ici, et le perdant de la course reçoit
+    // P2002 (violation d'unicité sur `shop`). Observé en production le
+    // 2026-10-06 : GET /app en 500, puis 200 au rafraîchissement, la ligne
+    // existant désormais.
+    //
+    // withRetry ne rattrape pas P2002, et c'est voulu : une violation
+    // d'unicité n'est pas une panne de connexion. La bonne réponse est de
+    // relire la ligne que l'autre requête vient d'écrire.
+    try {
+      return await prisma.shopSettings.upsert({
+        where: { shop },
+        create: { shop, ...DEFAULT_SETTINGS },
+        update: {},
+      });
+    } catch (error) {
+      if ((error as { code?: string })?.code !== "P2002") throw error;
+      const concurrent = await prisma.shopSettings.findUnique({ where: { shop } });
+      if (concurrent) return concurrent;
+      throw error;
+    }
   });
 }
 
