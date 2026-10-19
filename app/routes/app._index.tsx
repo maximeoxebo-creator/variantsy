@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
-import { useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate, useRouteLoaderData } from "@remix-run/react";
 import {
   Badge,
   BlockStack,
@@ -280,22 +280,22 @@ function SelecteurMode({
     <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
       {choix.map((c) => {
         const actif = mode === c.id;
-        // Verrouillée, la carte cesse d'être un bouton qui ment : ni clic, ni
-        // survol qui la rallume. Le badge « Pro » dit pourquoi.
-        const verrouillee = "paye" in c && c.paye === true && !pro;
+        // La carte payante reste cliquable en gratuit : c'est la seule façon de
+        // voir l'écran des groupes avant d'acheter. Le badge « Pro » dit ce qui
+        // est réservé, et un bandeau sur l'onglet précise que la rangée n'est
+        // pas encore visible sur la boutique.
         return (
           <button
             key={c.id}
             type="button"
-            disabled={verrouillee}
             onClick={() => onChange(c.id)}
-            onMouseEnter={() => !verrouillee && setSurvolee(c.id)}
+            onMouseEnter={() => setSurvolee(c.id)}
             onMouseLeave={() => setSurvolee(null)}
-            onFocus={() => !verrouillee && setSurvolee(c.id)}
+            onFocus={() => setSurvolee(c.id)}
             onBlur={() => setSurvolee(null)}
             aria-pressed={actif}
             style={{
-              opacity: verrouillee ? 0.45 : actif || survolee === c.id ? 1 : 0.55,
+              opacity: actif || survolee === c.id ? 1 : 0.55,
               transition: "opacity 150ms ease",
               // PIÈGE N°5 : un bouton étiré par la grille centre son contenu.
               display: "flex",
@@ -307,7 +307,7 @@ function SelecteurMode({
               textAlign: "left",
               padding: 16,
               borderRadius: 14,
-              cursor: verrouillee ? "not-allowed" : "pointer",
+              cursor: "pointer",
               background: actif ? "var(--vy-orange-50)" : "var(--p-color-bg-surface)",
               border: actif
                 ? "2px solid var(--vy-brand)"
@@ -368,6 +368,8 @@ export default function SettingsPage() {
   // rendu serveur — un localStorage désynchroniserait l'hydratation.
   const [mode, setMode] = useState<Mode>(groups.length > 0 ? "linked" : "variants");
   const [tab, setTab] = useState(0);
+  const navigate = useNavigate();
+  const [accueilFerme, setAccueilFerme] = useState(false);
   const onglets = ONGLETS[mode];
   const actif = onglets[Math.min(tab, onglets.length - 1)].id;
   const changerMode = (m: Mode) => {
@@ -559,6 +561,27 @@ export default function SettingsPage() {
               </Banner>
             )}
 
+            {/* En gratuit, les écrans de réglages sont soit grisés, soit sans
+                effet visible : le marchand qui compare des apps n'y voit pas ce
+                qui distingue Variantsy. L'inspecteur, lui, montre la galerie par
+                couleur sur SON produit, sans rien activer. */}
+            {!pro && !accueilFerme && (
+              <Banner
+                tone="info"
+                title="See the photo gallery per color on one of your products"
+                action={{
+                  content: "Inspect a product",
+                  onAction: () => navigate("/app/images"),
+                }}
+                onDismiss={() => setAccueilFerme(true)}
+              >
+                <p>
+                  Pick any product: you see how its photos split by color, exactly as your
+                  shoppers would get them with Pro. Nothing is changed on your store.
+                </p>
+              </Banner>
+            )}
+
             <SelecteurMode mode={mode} onChange={changerMode} nbGroupes={groups.length} pro={pro} />
 
             {/* Commande segmentée de la famille d'apps, à la place des onglets
@@ -640,6 +663,18 @@ export default function SettingsPage() {
                   />
                 </InlineStack>
               </Card>
+            )}
+
+            {/* Les groupes se composent et s'enregistrent en gratuit, mais la
+                rangée n'apparaît sur la boutique qu'en Pro (voir `linked` dans
+                settings.server.ts). Sans ce mot, le marchand croirait à une panne. */}
+            {actif === "groupes" && !pro && (
+              <Banner tone="info" title="Linked products are on the Pro plan">
+                <p>
+                  You can build and save groups here. The row linking the pages shows on
+                  your store once you are on Pro.
+                </p>
+              </Banner>
             )}
 
             <div role="tabpanel" id={`vy-panel-${actif}`} aria-labelledby={`vy-tab-${actif}`}>
