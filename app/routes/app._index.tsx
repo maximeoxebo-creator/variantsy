@@ -22,6 +22,7 @@ import {
 } from "@shopify/polaris";
 import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { TEMPLATE_VARIABLES, renderTemplate } from "../shared";
+import { demanderAvis } from "../avis";
 import { authenticate } from "../shopify.server";
 import { apparenceServie, getSettings, updateSettings, DEFAULT_SETTINGS } from "../settings.server";
 import { publierStyle } from "../publier-style.server";
@@ -457,11 +458,13 @@ export default function SettingsPage() {
     const kind = (fetcher.data as { kind?: string }).kind;
     if (kind === "group") {
       shopify.toast.show("Group saved");
+      demanderAvis();
     } else if (kind === "group-deleted") {
       shopify.toast.show("Group deleted");
     } else {
       setDirty(false);
       shopify.toast.show("Settings saved");
+      demanderAvis();
     }
   }, [fetcher.state, fetcher.data, shopify]);
 

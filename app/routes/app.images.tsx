@@ -18,6 +18,7 @@ import { SaveBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { getSettings, updateSettings, DEFAULT_SETTINGS, estPro } from "../settings.server";
 import { computeGroups } from "../grouping.js";
+import { demanderAvis } from "../avis";
 
 /**
  * Requête d'inspection : tout ce qu'il faut pour rejouer exactement le groupage
@@ -246,6 +247,7 @@ export default function ImagesPage() {
     if (saveFetcher.state === "idle" && saveFetcher.data?.ok) {
       setDirty(false);
       shopify.toast.show("Settings saved");
+      demanderAvis();
     }
   }, [saveFetcher.state, saveFetcher.data, shopify]);
 
